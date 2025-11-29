@@ -24,6 +24,37 @@ const TicketPage = () => {
     fetchEvent();
   }, [eventId]);
 
+  // --- NEW: CALENDAR EXPORT LOGIC ---
+  const handleAddToCalendar = () => {
+    if (!event) return;
+
+    // Format dates for ICS file (YYYYMMDDTHHMMSSZ)
+    const formatDate = (date) => date.toISOString().replace(/-|:|\.\d\d\d/g, "");
+    
+    const startDate = new Date(event.date);
+    const endDate = new Date(startDate.getTime() + 2 * 60 * 60 * 1000); // Default duration 2 hours
+
+    const icsContent = `BEGIN:VCALENDAR
+VERSION:2.0
+BEGIN:VEVENT
+URL:${window.location.href}
+DTSTART:${formatDate(startDate)}
+DTEND:${formatDate(endDate)}
+SUMMARY:${event.title}
+DESCRIPTION:${event.description}
+LOCATION:${event.location}
+END:VEVENT
+END:VCALENDAR`;
+
+    const blob = new Blob([icsContent], { type: "text/calendar;charset=utf-8" });
+    const link = document.createElement("a");
+    link.href = window.URL.createObjectURL(blob);
+    link.setAttribute("download", `${event.title.replace(/\s+/g, "_")}.ics`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   if (!event) return <div className="p-10 text-center">Loading Ticket...</div>;
 
   // Unique Ticket Data for the QR Code
@@ -66,6 +97,14 @@ const TicketPage = () => {
                     <p className="text-xs uppercase tracking-wider opacity-70">Attendee</p>
                     <p className="text-xl font-semibold">{user.firstName} {user.lastName}</p>
                 </div>
+
+                {/* --- NEW: CALENDAR BUTTON --- */}
+                <button 
+                    onClick={handleAddToCalendar}
+                    className="mt-4 bg-white/20 hover:bg-white/30 text-white border border-white/50 px-4 py-2 rounded-lg flex items-center gap-2 text-sm font-bold transition shadow-sm w-fit"
+                >
+                    📅 Add to Calendar
+                </button>
             </div>
         </div>
 
