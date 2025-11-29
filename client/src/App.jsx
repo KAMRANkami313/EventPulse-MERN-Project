@@ -15,9 +15,10 @@ import AdminDashboard from "./pages/admin/AdminDashboard";
 import PaymentSuccess from "./pages/tickets/PaymentSuccess";
 import ForgotPassword from "./pages/auth/ForgotPassword";
 import ResetPassword from "./pages/auth/ResetPassword";
+import NotFound from "./pages/NotFound";
 
-// ✅ NEW: 404 PAGE IMPORT
-import NotFound from "./pages/NotFound"; 
+// ✅ NEW: SCROLL COMPONENT IMPORT
+import ScrollToTop from "./components/ScrollToTop"; 
 
 function App() {
   const isAuth = Boolean(localStorage.getItem("token"));
@@ -50,6 +51,9 @@ function App() {
 
   return (
     <BrowserRouter>
+      {/* ✅ ADD SCROLL TO TOP HERE (Inside Router, Outside Routes) */}
+      <ScrollToTop /> 
+
       <Routes>
         <Route path="/" element={<Login />} />
         <Route path="/login" element={<Login />} />
@@ -107,7 +111,7 @@ function App() {
           element={isAuth ? <PaymentSuccess /> : <Navigate to="/login" />} 
         />
 
-        {/* ✅ NEW: 404 CATCH-ALL ROUTE (Must be at the bottom) */}
+        {/* CATCH-ALL ROUTE */}
         <Route path="*" element={<NotFound />} />
         
       </Routes>
