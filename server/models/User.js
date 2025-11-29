@@ -29,15 +29,28 @@ const UserSchema = new mongoose.Schema(
       type: String,
       default: "",
     },
-    role: {
-        type: String,
-        enum: ["user", "admin", "organizer"],
-        default: "user"
+    friends: {
+      type: Array,
+      default: [],
     },
     location: String,
     occupation: String,
+    viewedProfile: Number,
+    impressions: Number,
+    role: {
+        type: String,
+        default: "user" // 'user' or 'admin'
+    },
+    
+    // --- NEW FIELDS FOR PASSWORD RESET ---
+    resetPasswordToken: {
+        type: String
+    },
+    resetPasswordExpires: {
+        type: Date
+    }
   },
-  { timestamps: true } // Automatically adds createdAt and updatedAt
+  { timestamps: true }
 );
 
 const User = mongoose.model("User", UserSchema);

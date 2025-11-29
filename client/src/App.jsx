@@ -12,7 +12,11 @@ import ProfilePage from "./pages/profile/ProfilePage";
 import TicketPage from "./pages/tickets/TicketPage";
 import ScanTicket from "./pages/tickets/ScanTicket";
 import AdminDashboard from "./pages/admin/AdminDashboard";
-import PaymentSuccess from "./pages/tickets/PaymentSuccess"; // <--- IMPORT THIS
+import PaymentSuccess from "./pages/tickets/PaymentSuccess";
+
+// ✅ NEW IMPORTS FOR PASSWORD RESET
+import ForgotPassword from "./pages/auth/ForgotPassword";
+import ResetPassword from "./pages/auth/ResetPassword";
 
 function App() {
   const isAuth = Boolean(localStorage.getItem("token"));
@@ -49,6 +53,10 @@ function App() {
         <Route path="/" element={<Login />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+
+        {/* ✅ NEW PASSWORD ROUTES */}
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password/:token" element={<ResetPassword />} />
 
         {/* Dashboard receives theme + toggle */}
         <Route
@@ -92,7 +100,7 @@ function App() {
           element={isAuth ? <AdminDashboard /> : <Navigate to="/login" />}
         />
 
-        {/* PAYMENT SUCCESS PAGE (New) */}
+        {/* PAYMENT SUCCESS PAGE */}
         <Route 
           path="/payment/success" 
           element={isAuth ? <PaymentSuccess /> : <Navigate to="/login" />} 

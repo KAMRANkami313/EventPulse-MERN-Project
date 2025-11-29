@@ -1,7 +1,7 @@
 import { useState } from "react";
 import axios from "axios";
 import { useNavigate, Link } from "react-router-dom";
-import { GoogleLogin } from '@react-oauth/google'; // ✅ Import Google Button
+import { GoogleLogin } from '@react-oauth/google'; 
 
 const Login = () => {
   const navigate = useNavigate();
@@ -101,6 +101,13 @@ const Login = () => {
                     />
                 </div>
 
+                {/* ✅ ADDED FORGOT PASSWORD LINK */}
+                <div className="flex justify-end -mt-4">
+                    <Link to="/forgot-password" className="text-sm text-blue-600 hover:underline font-medium">
+                        Forgot Password?
+                    </Link>
+                </div>
+
                 <button
                     type="submit"
                     disabled={loading}
@@ -127,7 +134,7 @@ const Login = () => {
                     }}
                     theme="filled_blue"
                     size="large"
-                    width="350" // Ensures it fits nicely in the container
+                    width="350"
                     text="signin_with"
                     shape="rectangular"
                 />

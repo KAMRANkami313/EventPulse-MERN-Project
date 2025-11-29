@@ -1,8 +1,9 @@
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import { OAuth2Client } from "google-auth-library"; // ✅ Import Google Library
+import { OAuth2Client } from "google-auth-library"; 
+import crypto from "crypto"; // <--- NEW IMPORT
 import User from "../models/User.js";
-import { sendWelcomeEmail } from "../services/email.js"; // ✅ Import Email Service
+import { sendWelcomeEmail, sendResetEmail } from "../services/email.js"; // <--- UPDATED IMPORT
 
 // Initialize Google Client
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
@@ -138,6 +139,71 @@ export const googleLogin = async (req, res) => {
 
   } catch (err) {
     console.error("Google Auth Error:", err);
+    res.status(500).json({ error: err.message });
+  }
+};
+
+/* --- NEW: FORGOT PASSWORD (SEND EMAIL) --- */
+export const forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+    const user = await User.findOne({ email });
+
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    // 1. Generate Token
+    const resetToken = crypto.randomBytes(32).toString("hex");
+    
+    // 2. Hash it before saving to DB (Security Best Practice)
+    user.resetPasswordToken = crypto.createHash("sha256").update(resetToken).digest("hex");
+    user.resetPasswordExpires = Date.now() + 3600000; // 1 hour from now
+
+    await user.save();
+
+    // 3. Send Email
+    // Use CLIENT_URL from .env or default to localhost
+    const clientUrl = process.env.CLIENT_URL || "http://localhost:5173";
+    const resetUrl = `${clientUrl}/reset-password/${resetToken}`;
+    
+    sendResetEmail(user.email, resetUrl);
+
+    res.status(200).json({ message: "Email sent" });
+
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+/* --- NEW: RESET PASSWORD (VERIFY & UPDATE) --- */
+export const resetPassword = async (req, res) => {
+  try {
+    const { token } = req.params;
+    const { password } = req.body;
+
+    // 1. Hash the token from URL to compare with DB
+    const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
+
+    // 2. Find user with this token AND make sure it hasn't expired
+    const user = await User.findOne({
+      resetPasswordToken: hashedToken,
+      resetPasswordExpires: { $gt: Date.now() },
+    });
+
+    if (!user) return res.status(400).json({ message: "Invalid or expired token" });
+
+    // 3. Encrypt new password
+    const salt = await bcrypt.genSalt(10);
+    user.password = await bcrypt.hash(password, salt);
+
+    // 4. Clear reset fields
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpires = undefined;
+
+    await user.save();
+
+    res.status(200).json({ message: "Password updated successfully" });
+
+  } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
