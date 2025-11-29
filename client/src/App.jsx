@@ -13,10 +13,11 @@ import TicketPage from "./pages/tickets/TicketPage";
 import ScanTicket from "./pages/tickets/ScanTicket";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import PaymentSuccess from "./pages/tickets/PaymentSuccess";
-
-// ✅ NEW IMPORTS FOR PASSWORD RESET
 import ForgotPassword from "./pages/auth/ForgotPassword";
 import ResetPassword from "./pages/auth/ResetPassword";
+
+// ✅ NEW: 404 PAGE IMPORT
+import NotFound from "./pages/NotFound"; 
 
 function App() {
   const isAuth = Boolean(localStorage.getItem("token"));
@@ -27,9 +28,9 @@ function App() {
   // --- INITIALIZE SCROLL ANIMATIONS ---
   useEffect(() => {
     AOS.init({
-      duration: 800, // Animation speed (ms)
-      once: true,    // Only animate once when scrolling down
-      offset: 100,   // Trigger animation 100px before element is visible
+      duration: 800,
+      once: true,
+      offset: 100,
     });
   }, []);
 
@@ -54,11 +55,11 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
 
-        {/* ✅ NEW PASSWORD ROUTES */}
+        {/* PASSWORD ROUTES */}
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password/:token" element={<ResetPassword />} />
 
-        {/* Dashboard receives theme + toggle */}
+        {/* Dashboard */}
         <Route
           path="/dashboard"
           element={
@@ -105,6 +106,9 @@ function App() {
           path="/payment/success" 
           element={isAuth ? <PaymentSuccess /> : <Navigate to="/login" />} 
         />
+
+        {/* ✅ NEW: 404 CATCH-ALL ROUTE (Must be at the bottom) */}
+        <Route path="*" element={<NotFound />} />
         
       </Routes>
     </BrowserRouter>
