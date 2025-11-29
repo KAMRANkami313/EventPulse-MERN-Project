@@ -1,59 +1,96 @@
-# EventPulse - MERN Stack Event Management Platform
+# EventPulse - Community Event Management System 🚀
 
-A full-stack social event management application built with the MERN stack (MongoDB, Express, React, Node.js). 
-Features include real-time chat, Google Authentication, QR Code ticketing, and an Admin Dashboard.
+EventPulse is a full-stack web application designed to help communities discover, organize, and attend events. Built using the MERN Stack (MongoDB, Express, React, Node.js), it features real-time capabilities, secure authentication, and a modern UI.
 
-## 🚀 Features
+## 🌟 Key Features
 
-- **Authentication:** JWT-based Auth & Google OAuth (Sign in with Google).
-- **Events:** Create, Join, Like, and Comment on events.
-- **Ticketing:** Automatic QR Code ticket generation sent via Email.
-- **Scanner:** Built-in QR Code scanner to verify tickets.
-- **Real-time Chat:** Socket.io integration for live chat in event rooms.
-- **Maps:** Interactive maps using Leaflet to view event locations.
-- **Admin Panel:** Dashboard to manage users and events.
+### 🔐 Authentication & Security
+*   **Secure Login/Register:** JWT-based authentication with Bcrypt password hashing.
+*   **Google OAuth:** One-click sign-in using Google Accounts.
+*   **Security:** Protected routes, Helmet headers, and CORS configuration.
+
+### 📅 Event Management
+*   **CRUD Operations:** Users can create, update, and delete events.
+*   **Interactive Maps:** Visual location selection using Leaflet API.
+*   **Rich Media:** Image uploads for event covers via Multer.
+
+### 💬 Social & Real-Time
+*   **Live Chat:** Real-time group chat for every event using Socket.io.
+*   **Engagement:** Like, comment, and join events instantly.
+*   **Notifications:** Real-time alerts for joins and likes.
+
+### 🎟️ Ticketing System
+*   **QR Codes:** Automatic ticket generation sent via Email (Nodemailer).
+*   **Scanner:** Built-in QR Code scanner for event organizers to verify attendees.
+
+### 🛡️ Admin Dashboard
+*   **Analytics:** View total users, events, and engagement stats.
+*   **Moderation:** Ability to ban users or delete inappropriate events.
+
+### 🎨 Modern UI/UX
+*   **Design:** Responsive layout using Tailwind CSS.
+*   **Theming:** Toggle between Light and Dark mode.
+*   **Animations:** Smooth transitions using AOS (Animate On Scroll).
+
+---
 
 ## 🛠️ Tech Stack
 
-- **Frontend:** React (Vite), Tailwind CSS, Redux Toolkit.
-- **Backend:** Node.js, Express.js.
-- **Database:** MongoDB (Mongoose).
-- **Services:** Nodemailer (Email), Socket.io (Chat), Google Cloud Console (Auth).
+| Domain | Technologies |
+| :--- | :--- |
+| **Frontend** | React (Vite), Tailwind CSS, Axios, React Router, Leaflet Maps, Socket.io Client |
+| **Backend** | Node.js, Express.js, Mongoose, Socket.io, Nodemailer, Google Auth Library |
+| **Database** | MongoDB Atlas |
+| **Tools** | Git, Postman, VS Code |
 
-## 💻 How to Run Locally
+---
 
-1. **Clone the Repository**
-   ```bash
-   git clone https://github.com/KAMRANkami313/EventPulse-MERN-Project.git
-Setup Environment Variables (.env)
-Create a .env file in the server folder with your credentials (MONGO_URL, JWT_SECRET, GOOGLE_CLIENT_ID).
-Install Dependencies
+## 🚀 How to Run Locally
+
+Follow these steps to set up the project on your machine.
+
+### 1. Clone the Repository
+```bash
+git clone https://github.com/KAMRANkami313/EventPulse-MERN-Project.git
+cd EventPulse-MERN-Project
+2. Backend Setup
+Navigate to the server folder and install dependencies.
 code
 Bash
-cd client && npm install
-cd ../server && npm install
-Run the App
-Server: npm start
-Client: npm run dev
+cd server
+npm install
+⚠️ Important: Environment Variables
+Create a file named .env inside the server folder and add the following keys:
 code
-Code
-### **Step 2: Push the New File to GitHub**
-
-Now that the file exists, you need to tell Git to upload it.
-
-Run these 3 commands in your terminal:
-
-1.  **Add the file:**
-    ```cmd
-    git add .
-    ```
-
-2.  **Save it:**
-    ```cmd
-    git commit -m "Add Project README"
-    ```
-
-3.  **Upload it:**
-    ```cmd
-    git push
-    ```
+Env
+PORT=5000
+MONGO_URL=your_mongodb_connection_string
+JWT_SECRET=your_super_secret_key
+EMAIL_USER=your_email@gmail.com
+EMAIL_PASS=your_gmail_app_password
+GOOGLE_CLIENT_ID=your_google_cloud_client_id
+Start the Server:
+code
+Bash
+npm start
+3. Frontend Setup
+Open a new terminal, navigate to the client folder, and install dependencies.
+code
+Bash
+cd client
+npm install
+Start the Client:
+code
+Bash
+npm run dev
+4. Access the App
+Open your browser and go to: http://localhost:5173
+👨‍💻 Admin Access
+By default, all new users are "users". To access the Admin Dashboard:
+Register a new account.
+Go to your MongoDB Database -> users collection.
+Find your user document and change the role field from "user" to "admin".
+Refresh the page, and the Admin Panel button will appear in the Navbar.
+📄 License
+This project was developed for a Semester Project submission.
+Developed by Muhammad Kamran Kami
