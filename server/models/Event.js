@@ -22,7 +22,7 @@ const EventSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-    // NEW: Store Coordinates
+    // Store Coordinates
     coordinates: {
         lat: { type: Number, required: true },
         lng: { type: Number, required: true }
@@ -35,6 +35,11 @@ const EventSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    // NEW: Price Field for Payments
+    price: { 
+      type: Number, 
+      default: 0 
+    }, 
     picturePath: {
         type: String,
         default: "",

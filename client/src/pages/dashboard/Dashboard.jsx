@@ -4,8 +4,13 @@ import { useNavigate, Link } from "react-router-dom";
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import ChatBox from "../../components/ChatBox";
-import SkeletonEvent from "../../components/SkeletonEvent"; // Import Skeleton
-import { getImageUrl } from "../../utils/imageHelper"; // <--- NEW CLOUDINARY IMPORT
+import SkeletonEvent from "../../components/SkeletonEvent"; 
+import { getImageUrl } from "../../utils/imageHelper"; 
+import { loadStripe } from "@stripe/stripe-js"; // <--- STRIPE IMPORT
+
+// --- STRIPE CONFIGURATION ---
+// ⚠️ REPLACE 'pk_test_...' WITH YOUR ACTUAL STRIPE PUBLIC KEY
+const stripePromise = loadStripe("pk_test_51SH0CJ7HwdZq8BC7oyKPjQxaAQ47C8IBRy0hzIgeUo4jdCSL6q6fTnI4Ut3JkRjgfvd0ys0cfWaiyVPqFSX3gKFd00ZEBHxmlC");
 
 // Swiper Imports (Carousel)
 import { Swiper, SwiperSlide } from 'swiper/react';
@@ -78,6 +83,7 @@ const Dashboard = ({ toggleTheme, theme }) => {
     coordinates: { lat: CITIES[0].lat, lng: CITIES[0].lng },
     date: "",
     category: "",
+    price: 0, // <--- ADDED PRICE
     picture: null,
   });
 
@@ -116,7 +122,7 @@ const Dashboard = ({ toggleTheme, theme }) => {
     } catch (err) {
       console.error("Error fetching events", err);
     } finally {
-      // Small delay to show off the skeleton animation (optional, purely for UX feel)
+      // Small delay to show off the skeleton animation
       setTimeout(() => setLoading(false), 800);
     }
   };
@@ -178,6 +184,7 @@ const Dashboard = ({ toggleTheme, theme }) => {
       formData.append("coordinates", JSON.stringify(newEvent.coordinates));
       formData.append("date", newEvent.date);
       formData.append("category", newEvent.category);
+      formData.append("price", newEvent.price); // <--- APPEND PRICE
       if (newEvent.picture) formData.append("picture", newEvent.picture);
 
       const response = await axios.post("http://localhost:5000/events", formData, {
@@ -190,7 +197,7 @@ const Dashboard = ({ toggleTheme, theme }) => {
         setNewEvent({
           title: "", description: "",
           location: CITIES[0].name, coordinates: { lat: CITIES[0].lat, lng: CITIES[0].lng },
-          date: "", category: "", picture: null
+          date: "", category: "", price: 0, picture: null
         });
       }
     } catch (err) {
@@ -207,6 +214,31 @@ const Dashboard = ({ toggleTheme, theme }) => {
       const updatedEvent = response.data;
       setEvents(events.map((e) => (e._id === eventId ? updatedEvent : e)));
     } catch (err) { console.error(err); }
+  };
+
+// --- PAYMENT HANDLER ---
+  const handlePayment = async (event) => {
+    try {
+        // 1. Ask backend to create a Stripe session
+        const response = await axios.post("http://localhost:5000/payment/create-checkout-session", {
+            eventId: event._id,
+            eventTitle: event.title,
+            price: event.price,
+            userId: user._id
+        }, { headers: { Authorization: `Bearer ${token}` } });
+
+        // 2. Redirect user to the Stripe URL provided by backend
+        if (response.data.url) {
+            window.location.href = response.data.url;
+        } else {
+            console.error("No payment URL received");
+            alert("Payment Error: No URL received");
+        }
+
+    } catch (err) {
+        console.error("Payment Error", err);
+        alert("Could not initiate payment.");
+    }
   };
 
   const handleLike = async (eventId) => {
@@ -373,14 +405,26 @@ const Dashboard = ({ toggleTheme, theme }) => {
                 </select>
               </div>
 
-              <input
-                name="date"
-                type="date"
-                value={newEvent.date}
-                onChange={handleChange}
-                className="w-full p-3 rounded-lg bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 outline-none transition"
-                required
-              />
+              {/* DATE AND PRICE ROW */}
+              <div className="flex gap-2">
+                  <input
+                    name="date"
+                    type="date"
+                    value={newEvent.date}
+                    onChange={handleChange}
+                    className="w-full p-3 rounded-lg bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 outline-none transition"
+                    required
+                  />
+                  <input 
+                    name="price" 
+                    type="number"
+                    min="0"
+                    value={newEvent.price} 
+                    onChange={handleChange} 
+                    placeholder="Price ($)" 
+                    className="w-28 p-3 rounded-lg bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 outline-none transition" 
+                  />
+              </div>
 
               <input
                 name="category"
@@ -424,7 +468,7 @@ const Dashboard = ({ toggleTheme, theme }) => {
                       {/* Background Image */}
                       {event.picturePath ? (
                         <img 
-                          src={getImageUrl(event.picturePath)} // <--- UPDATED FOR CLOUDINARY
+                          src={getImageUrl(event.picturePath)} 
                           className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" 
                           alt="featured" 
                         />
@@ -585,6 +629,15 @@ const Dashboard = ({ toggleTheme, theme }) => {
                           </span>
                         </div>
 
+                        {/* PRICE TAG DISPLAY */}
+                        <div className="mb-2">
+                            {event.price > 0 ? (
+                                <span className="text-green-600 bg-green-50 px-2 py-1 rounded text-xs font-extrabold border border-green-200">💰 ${event.price}</span>
+                            ) : (
+                                <span className="text-gray-500 bg-gray-100 px-2 py-1 rounded text-xs font-bold border border-gray-200">Free</span>
+                            )}
+                        </div>
+
                         <p className="mt-2 text-gray-600 dark:text-gray-300 leading-relaxed">{event.description}</p>
 
                         <div className="mt-6 flex justify-between items-center border-t dark:border-gray-700 pt-4">
@@ -633,7 +686,7 @@ const Dashboard = ({ toggleTheme, theme }) => {
                               </button>
                             )}
 
-                            {/* Ticket OR Join Button */}
+                            {/* Ticket OR Buy OR Join Button */}
                             {isJoined ? (
                               <button
                                 onClick={() => navigate(`/ticket/${event._id}`)}
@@ -642,12 +695,23 @@ const Dashboard = ({ toggleTheme, theme }) => {
                                 🎟️ Ticket
                               </button>
                             ) : (
-                              <button
-                                onClick={() => handleJoin(event._id)}
-                                className="px-6 py-2 rounded-lg text-sm font-bold bg-gradient-to-r from-blue-500 to-blue-700 text-white hover:shadow-lg hover:shadow-blue-500/30 transition transform hover:-translate-y-0.5 active:scale-95"
-                              >
-                                Join
-                              </button>
+                                // IF PRICE > 0 -> SHOW BUY BUTTON
+                                event.price > 0 ? (
+                                    <button 
+                                        onClick={() => handlePayment(event)}
+                                        className="px-6 py-2 rounded-lg text-sm font-bold bg-gradient-to-r from-green-500 to-emerald-600 text-white hover:shadow-lg hover:shadow-green-500/30 transition transform hover:-translate-y-0.5 active:scale-95 flex items-center gap-2"
+                                    >
+                                        Buy Ticket ${event.price}
+                                    </button>
+                                ) : (
+                                    // FREE EVENT -> SHOW JOIN BUTTON
+                                    <button
+                                        onClick={() => handleJoin(event._id)}
+                                        className="px-6 py-2 rounded-lg text-sm font-bold bg-gradient-to-r from-blue-500 to-blue-700 text-white hover:shadow-lg hover:shadow-blue-500/30 transition transform hover:-translate-y-0.5 active:scale-95"
+                                    >
+                                        Join
+                                    </button>
+                                )
                             )}
                           </div>
 

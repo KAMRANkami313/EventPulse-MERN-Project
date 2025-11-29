@@ -3,13 +3,13 @@ import User from "../models/User.js";
 import Notification from "../models/Notification.js";
 import { sendTicketEmail } from "../services/email.js"; 
 
-/* CREATE */
+/* CREATE - FIXED TO INCLUDE PRICE */
 export const createEvent = async (req, res) => {
   try {
-    // Extract + parse coordinates (FormData sends string)
-    const { userId, title, description, location, date, category, coordinates } = req.body;
+    // 1. Extract 'price' along with other fields
+    const { userId, title, description, location, date, category, coordinates, price } = req.body;
     
-    // ✅ UPDATED: Get the Full Cloudinary URL (.path) instead of just filename
+    // Get the Full Cloudinary URL
     const picturePath = req.file ? req.file.path : "";  
     
     const parsedCoordinates = JSON.parse(coordinates);
@@ -25,16 +25,20 @@ export const createEvent = async (req, res) => {
       coordinates: parsedCoordinates,
       date,
       category,
-      picturePath, // Now contains "https://res.cloudinary.com/..."
+      price: price || 0, // <--- 2. SAVE THE PRICE HERE
+      picturePath, 
       participants: [],
       comments: [],
       likes: {},
     });
 
     await newEvent.save();
-    const post = await Event.find();
-    res.status(201).json(post);
+    
+    // Return all events sorted by newest
+    const events = await Event.find().sort({ createdAt: -1 });
+    res.status(201).json(events);
   } catch (err) {
+    console.error("Create Event Error:", err);
     res.status(409).json({ message: err.message });
   }
 };
@@ -188,7 +192,8 @@ export const likeEvent = async (req, res) => {
 export const deleteEvent = async (req, res) => {
   try {
     const { id } = req.params;
-    const userId = req.user.id; // From Token
+    // Note: Assuming 'verifyToken' middleware puts user info in req.user
+    const userId = req.user.id; 
 
     const user = await User.findById(userId);
     const event = await Event.findById(id);
@@ -255,7 +260,6 @@ export const verifyTicket = async (req, res) => {
 export const getAttendingEvents = async (req, res) => {
   try {
     const { userId } = req.params;
-    // Find events where participants array contains the userId
     const events = await Event.find({ participants: userId });
     res.status(200).json(events);
   } catch (err) {
