@@ -28,6 +28,43 @@ const AdminDashboard = () => {
     } catch (err) { console.error(err); }
   };
 
+  // --- NEW: CSV EXPORT LOGIC ---
+  const downloadCSV = () => {
+    if (!allUsers || allUsers.length === 0) return alert("No user data to export.");
+
+    // Define Headers
+    const headers = ["User ID,First Name,Last Name,Email,Role,Location,Occupation,Joined Date"];
+    
+    // Map Data Rows
+    const rows = allUsers.map(u => {
+        // Handle potentially missing fields or commas in data
+        const clean = (text) => (text ? `"${text.replace(/"/g, '""')}"` : "");
+        
+        return [
+            u._id,
+            clean(u.firstName),
+            clean(u.lastName),
+            clean(u.email),
+            u.role,
+            clean(u.location),
+            clean(u.occupation),
+            new Date(u.createdAt).toLocaleDateString()
+        ].join(",");
+    });
+
+    // Combine Headers and Rows
+    const csvContent = "data:text/csv;charset=utf-8," + [headers, ...rows].join("\n");
+    
+    // Create Download Link
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `eventpulse_users_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   const handleDeleteUser = async (userId) => {
       if(userId === user._id) { alert("Cannot delete self."); return; }
       if(!window.confirm("Delete this user and all their events?")) return;
@@ -119,7 +156,18 @@ const AdminDashboard = () => {
               {/* === USERS TAB === */}
               {activeTab === "users" && (
                   <div className="max-w-6xl mx-auto animate-fadeIn">
-                    <h2 className="text-2xl font-bold mb-6 text-gray-800">User Database</h2>
+                    
+                    {/* Header with Export Button */}
+                    <div className="flex justify-between items-center mb-6">
+                        <h2 className="text-2xl font-bold text-gray-800">User Database</h2>
+                        <button 
+                            onClick={downloadCSV}
+                            className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-bold shadow flex items-center gap-2 transition transform active:scale-95"
+                        >
+                            📥 Export to Excel
+                        </button>
+                    </div>
+
                     <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
                         <table className="w-full text-left">
                             <thead className="bg-gray-50 border-b">
