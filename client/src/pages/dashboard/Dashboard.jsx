@@ -6,10 +6,9 @@ import 'leaflet/dist/leaflet.css';
 import ChatBox from "../../components/ChatBox";
 import SkeletonEvent from "../../components/SkeletonEvent"; 
 import { getImageUrl } from "../../utils/imageHelper"; 
-import { loadStripe } from "@stripe/stripe-js"; // <--- STRIPE IMPORT
+import { loadStripe } from "@stripe/stripe-js"; 
 
 // --- STRIPE CONFIGURATION ---
-// ⚠️ REPLACE 'pk_test_...' WITH YOUR ACTUAL STRIPE PUBLIC KEY
 const stripePromise = loadStripe("pk_test_51SH0CJ7HwdZq8BC7oyKPjQxaAQ47C8IBRy0hzIgeUo4jdCSL6q6fTnI4Ut3JkRjgfvd0ys0cfWaiyVPqFSX3gKFd00ZEBHxmlC");
 
 // Swiper Imports (Carousel)
@@ -33,7 +32,7 @@ let DefaultIcon = L.icon({
 
 L.Marker.prototype.options.icon = DefaultIcon;
 
-// PRESET CITIES (Lat/Lng) - Used for Auto-Mapping
+// PRESET CITIES
 const CITIES = [
   { name: "New York, USA", lat: 40.7128, lng: -74.0060 },
   { name: "London, UK", lat: 51.5074, lng: -0.1278 },
@@ -69,8 +68,11 @@ const Dashboard = ({ toggleTheme, theme }) => {
   // --- STATES ---
   const [loading, setLoading] = useState(true);
   
+  // Feed Toggle State
+  const [feedType, setFeedType] = useState("all"); // 'all' or 'following'
+
   // Chat State
-  const [activeChat, setActiveChat] = useState(null); // { id, title }
+  const [activeChat, setActiveChat] = useState(null); 
 
   // Event Data
   const [events, setEvents] = useState([]);
@@ -83,7 +85,7 @@ const Dashboard = ({ toggleTheme, theme }) => {
     coordinates: { lat: CITIES[0].lat, lng: CITIES[0].lng },
     date: "",
     category: "",
-    price: 0, // <--- ADDED PRICE
+    price: 0,
     picture: null,
   });
 
@@ -108,21 +110,27 @@ const Dashboard = ({ toggleTheme, theme }) => {
       fetchEvents();
       fetchNotifications();
     }
-  }, []);
+  }, [feedType]); // <--- Re-fetch when feedType changes
 
   // --- API FETCH FUNCTIONS ---
 
   const fetchEvents = async () => {
     setLoading(true); 
     try {
-      const response = await axios.get("http://localhost:5000/events", {
+      let url = "http://localhost:5000/events";
+      
+      // If toggle is set to 'following', change the URL
+      if (feedType === "following") {
+          url = `http://localhost:5000/events/following/${user._id}`;
+      }
+
+      const response = await axios.get(url, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setEvents(response.data);
     } catch (err) {
       console.error("Error fetching events", err);
     } finally {
-      // Small delay to show off the skeleton animation
       setTimeout(() => setLoading(false), 800);
     }
   };
@@ -184,7 +192,7 @@ const Dashboard = ({ toggleTheme, theme }) => {
       formData.append("coordinates", JSON.stringify(newEvent.coordinates));
       formData.append("date", newEvent.date);
       formData.append("category", newEvent.category);
-      formData.append("price", newEvent.price); // <--- APPEND PRICE
+      formData.append("price", newEvent.price);
       if (newEvent.picture) formData.append("picture", newEvent.picture);
 
       const response = await axios.post("http://localhost:5000/events", formData, {
@@ -193,7 +201,7 @@ const Dashboard = ({ toggleTheme, theme }) => {
 
       if (response.status === 201) {
         alert("Event Created!");
-        setEvents(response.data);
+        setEvents(response.data); 
         setNewEvent({
           title: "", description: "",
           location: CITIES[0].name, coordinates: { lat: CITIES[0].lat, lng: CITIES[0].lng },
@@ -216,10 +224,8 @@ const Dashboard = ({ toggleTheme, theme }) => {
     } catch (err) { console.error(err); }
   };
 
-// --- PAYMENT HANDLER ---
   const handlePayment = async (event) => {
     try {
-        // 1. Ask backend to create a Stripe session
         const response = await axios.post("http://localhost:5000/payment/create-checkout-session", {
             eventId: event._id,
             eventTitle: event.title,
@@ -227,7 +233,6 @@ const Dashboard = ({ toggleTheme, theme }) => {
             userId: user._id
         }, { headers: { Authorization: `Bearer ${token}` } });
 
-        // 2. Redirect user to the Stripe URL provided by backend
         if (response.data.url) {
             window.location.href = response.data.url;
         } else {
@@ -300,7 +305,6 @@ const Dashboard = ({ toggleTheme, theme }) => {
             {theme === "dark" ? "☀️" : "🌙"}
           </button>
 
-          {/* SCANNER BUTTON */}
           <Link
             to="/scan"
             className="text-xl hover:text-blue-200 transition hover:scale-110"
@@ -309,7 +313,6 @@ const Dashboard = ({ toggleTheme, theme }) => {
             📷
           </Link>
 
-          {/* NOTIFICATION BELL */}
           <div className="relative cursor-pointer hover:text-blue-200 transition hover:scale-110" onClick={handleMarkRead}>
             <span className="text-xl">🔔</span>
             {unreadCount > 0 && (
@@ -319,7 +322,6 @@ const Dashboard = ({ toggleTheme, theme }) => {
             )}
           </div>
 
-          {/* NOTIFICATION DROPDOWN */}
           {showNotifications && (
             <div className="absolute top-12 right-20 w-80 bg-white dark:bg-gray-700 shadow-2xl rounded-xl overflow-hidden border dark:border-gray-600 z-50 animate-fadeIn">
               <div className="p-3 font-bold border-b dark:border-gray-600 text-gray-700 dark:text-gray-200 bg-gray-50 dark:bg-gray-800">
@@ -346,7 +348,6 @@ const Dashboard = ({ toggleTheme, theme }) => {
             <Link to={`/profile/${user._id}`} className="hover:underline font-semibold text-sm">
               Welcome, {user?.firstName}
             </Link>
-            {/* Admin Dashboard Link */}
             {user.role === "admin" && (
               <Link
                 to="/admin"
@@ -390,7 +391,6 @@ const Dashboard = ({ toggleTheme, theme }) => {
                 required
               />
 
-              {/* City Selector */}
               <div className="p-2 rounded-lg bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600">
                 <label className="block text-xs mb-1 text-gray-500 dark:text-gray-300 font-bold uppercase tracking-wide">Location</label>
                 <select
@@ -405,7 +405,6 @@ const Dashboard = ({ toggleTheme, theme }) => {
                 </select>
               </div>
 
-              {/* DATE AND PRICE ROW */}
               <div className="flex gap-2">
                   <input
                     name="date"
@@ -450,8 +449,8 @@ const Dashboard = ({ toggleTheme, theme }) => {
         {/* RIGHT COLUMN: FEED & MAP */}
         <div className="lg:col-span-2 space-y-6">
 
-          {/* FEATURED CAROUSEL / SLIDER (Only show in List view & not loading) */}
-          {!showMap && !loading && events.length > 0 && (
+          {/* FEATURED CAROUSEL */}
+          {!showMap && !loading && events.length > 0 && feedType === 'all' && (
             <div className="rounded-2xl overflow-hidden shadow-2xl relative mb-6 border border-gray-100 dark:border-gray-700" data-aos="fade-down">
               <Swiper
                 modules={[Autoplay, Pagination, EffectFade]}
@@ -465,7 +464,6 @@ const Dashboard = ({ toggleTheme, theme }) => {
                 {events.slice(0, 5).map((event) => (
                   <SwiperSlide key={`slide-${event._id}`}>
                     <div className="relative w-full h-full cursor-pointer group" onClick={() => navigate(`/ticket/${event._id}`)}>
-                      {/* Background Image */}
                       {event.picturePath ? (
                         <img 
                           src={getImageUrl(event.picturePath)} 
@@ -475,11 +473,7 @@ const Dashboard = ({ toggleTheme, theme }) => {
                       ) : (
                         <div className="w-full h-full bg-gradient-to-r from-blue-800 to-indigo-900"></div>
                       )}
-                      
-                      {/* Overlay */}
                       <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent"></div>
-                      
-                      {/* Content */}
                       <div className="absolute bottom-0 left-0 p-8 text-white w-full">
                         <span className="bg-blue-600 text-[10px] uppercase font-bold px-2 py-1 rounded mb-2 inline-block tracking-wider">Featured</span>
                         <h2 className="text-3xl font-extrabold truncate drop-shadow-lg">{event.title}</h2>
@@ -497,13 +491,32 @@ const Dashboard = ({ toggleTheme, theme }) => {
 
           {/* CONTROLS BAR */}
           <div className="bg-white dark:bg-gray-800 p-4 rounded-2xl shadow-sm mb-6 transition-colors border border-gray-100 dark:border-gray-700 sticky top-24 z-10">
-            <div className="flex justify-between items-center mb-4">
-              <button
-                onClick={() => setShowMap(!showMap)}
-                className={`px-4 py-2 rounded-lg font-bold shadow transition flex items-center gap-2 active:scale-95 ${showMap ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600'}`}
-              >
-                {showMap ? "📋 List View" : "🗺️ Map View"}
-              </button>
+            <div className="flex justify-between items-center mb-4 flex-wrap gap-4">
+              
+              <div className="flex items-center gap-4">
+                <button
+                    onClick={() => setShowMap(!showMap)}
+                    className={`px-4 py-2 rounded-lg font-bold shadow transition flex items-center gap-2 active:scale-95 ${showMap ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600'}`}
+                >
+                    {showMap ? "📋 List View" : "🗺️ Map View"}
+                </button>
+
+                {/* FEED TOGGLE SWITCH */}
+                <div className="flex bg-gray-100 dark:bg-gray-700 p-1 rounded-lg">
+                    <button 
+                        onClick={() => setFeedType("all")}
+                        className={`px-4 py-1.5 rounded-md text-sm font-bold transition ${feedType === "all" ? "bg-white dark:bg-gray-600 shadow text-blue-600 dark:text-blue-300" : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"}`}
+                    >
+                        Global
+                    </button>
+                    <button 
+                        onClick={() => setFeedType("following")}
+                        className={`px-4 py-1.5 rounded-md text-sm font-bold transition ${feedType === "following" ? "bg-white dark:bg-gray-600 shadow text-blue-600 dark:text-blue-300" : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"}`}
+                    >
+                        Following
+                    </button>
+                </div>
+              </div>
 
               <input
                 type="text"
@@ -563,18 +576,22 @@ const Dashboard = ({ toggleTheme, theme }) => {
             </div>
           )}
 
-          {/* VIEW 2: LIST VIEW (MODERN CARDS) */}
+          {/* VIEW 2: LIST VIEW */}
           {!showMap && (
             <>
               {loading ? (
-                // SKELETON LOADING STATE
                 <>
                   <SkeletonEvent />
                   <SkeletonEvent />
                   <SkeletonEvent />
                 </>
               ) : (
-                // ACTUAL EVENTS LIST
+                events.length === 0 ? (
+                    <div className="text-center py-20 bg-white dark:bg-gray-800 rounded-2xl shadow">
+                        <h3 className="text-xl font-bold text-gray-600 dark:text-gray-300">No events found here.</h3>
+                        <p className="text-gray-400 mt-2">Try switching tabs or creating a new event!</p>
+                    </div>
+                ) : (
                 events
                   .filter((event) => {
                     if (searchTerm === "") return event;
@@ -599,17 +616,16 @@ const Dashboard = ({ toggleTheme, theme }) => {
                     return (
                       <div 
                         key={event._id} 
-                        data-aos="fade-up" // Scroll Animation
+                        data-aos="fade-up" 
                         className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 border border-gray-100 dark:border-gray-700 mb-8 relative overflow-hidden group"
                       >
 
-                        {/* Decorative Gradient Line */}
                         <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-400 to-purple-500"></div>
 
                         {event.picturePath && (
                           <div className="overflow-hidden rounded-xl mb-5 h-56 shadow-sm">
                             <img
-                              src={getImageUrl(event.picturePath)} // <--- UPDATED FOR CLOUDINARY
+                              src={getImageUrl(event.picturePath)} 
                               alt="event"
                               className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                             />
@@ -629,7 +645,6 @@ const Dashboard = ({ toggleTheme, theme }) => {
                           </span>
                         </div>
 
-                        {/* PRICE TAG DISPLAY */}
                         <div className="mb-2">
                             {event.price > 0 ? (
                                 <span className="text-green-600 bg-green-50 px-2 py-1 rounded text-xs font-extrabold border border-green-200">💰 ${event.price}</span>
@@ -665,7 +680,6 @@ const Dashboard = ({ toggleTheme, theme }) => {
                               💬 <span className="text-xs font-bold">{event.comments.length}</span>
                             </button>
 
-                            {/* CHAT BUTTON */}
                             {isJoined && (
                               <button
                                 onClick={() => setActiveChat({ id: event._id, title: event.title })}
@@ -675,7 +689,6 @@ const Dashboard = ({ toggleTheme, theme }) => {
                               </button>
                             )}
 
-                            {/* Delete Button */}
                             {(event.userId === user._id || user.role === "admin") && (
                               <button
                                 onClick={() => handleDelete(event._id)}
@@ -686,7 +699,6 @@ const Dashboard = ({ toggleTheme, theme }) => {
                               </button>
                             )}
 
-                            {/* Ticket OR Buy OR Join Button */}
                             {isJoined ? (
                               <button
                                 onClick={() => navigate(`/ticket/${event._id}`)}
@@ -695,7 +707,6 @@ const Dashboard = ({ toggleTheme, theme }) => {
                                 🎟️ Ticket
                               </button>
                             ) : (
-                                // IF PRICE > 0 -> SHOW BUY BUTTON
                                 event.price > 0 ? (
                                     <button 
                                         onClick={() => handlePayment(event)}
@@ -704,7 +715,6 @@ const Dashboard = ({ toggleTheme, theme }) => {
                                         Buy Ticket ${event.price}
                                     </button>
                                 ) : (
-                                    // FREE EVENT -> SHOW JOIN BUTTON
                                     <button
                                         onClick={() => handleJoin(event._id)}
                                         className="px-6 py-2 rounded-lg text-sm font-bold bg-gradient-to-r from-blue-500 to-blue-700 text-white hover:shadow-lg hover:shadow-blue-500/30 transition transform hover:-translate-y-0.5 active:scale-95"
@@ -761,6 +771,7 @@ const Dashboard = ({ toggleTheme, theme }) => {
                       </div>
                     );
                   })
+                )
               )}
             </>
           )}

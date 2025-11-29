@@ -266,3 +266,18 @@ export const getAttendingEvents = async (req, res) => {
     res.status(404).json({ message: err.message });
   }
 };
+
+/* NEW: GET FOLLOWING FEED (Social Graph) */
+export const getFollowingEvents = async (req, res) => {
+    try {
+        const { userId } = req.params;
+        const user = await User.findById(userId);
+        
+        // Find events where the creator (userId) is inside the current user's friends list
+        const events = await Event.find({ userId: { $in: user.friends } }).sort({ createdAt: -1 });
+        
+        res.status(200).json(events);
+    } catch (err) {
+        res.status(404).json({ message: err.message });
+    }
+};

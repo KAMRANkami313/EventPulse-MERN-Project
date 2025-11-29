@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { useParams, useNavigate } from "react-router-dom";
-import { getImageUrl } from "../../utils/imageHelper"; // <--- NEW CLOUDINARY IMPORT
+import { getImageUrl } from "../../utils/imageHelper"; 
 
 const ProfilePage = () => {
   const { userId } = useParams();
   const navigate = useNavigate();
+  
+  // Get current user from local storage
   const loggedInUser = JSON.parse(localStorage.getItem("user"));
   const token = localStorage.getItem("token");
 
@@ -15,8 +17,9 @@ const ProfilePage = () => {
   const [attendingEvents, setAttendingEvents] = useState([]);
   
   // UI States
-  const [activeTab, setActiveTab] = useState("hosted"); // 'hosted' or 'attending'
+  const [activeTab, setActiveTab] = useState("hosted");
   const [isEditing, setIsEditing] = useState(false);
+  const [isFollowing, setIsFollowing] = useState(false); // <--- NEW STATE
   
   // Edit Form State
   const [editFormData, setEditFormData] = useState({
@@ -48,10 +51,38 @@ const ProfilePage = () => {
         });
         setAttendingEvents(attendingRes.data);
 
+        // <--- NEW: CHECK IF FOLLOWING
+        if (loggedInUser.friends && loggedInUser.friends.includes(userId)) {
+            setIsFollowing(true);
+        } else {
+            setIsFollowing(false);
+        }
+
       } catch (err) { console.error(err); }
     };
     fetchData();
   }, [userId]);
+
+  // <--- NEW: FOLLOW HANDLER
+  const handleFollow = async () => {
+    try {
+        const response = await axios.patch(`http://localhost:5000/users/${loggedInUser._id}/${userId}`, {}, {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+        
+        // 1. Toggle UI state
+        setIsFollowing(!isFollowing);
+
+        // 2. Update Local Storage so other pages (like Dashboard) know about the change immediately
+        // The API returns the list of friend objects, we just need IDs for the local storage 'friends' array
+        const updatedFriendIds = response.data.map(f => f._id); 
+        const updatedUser = { ...loggedInUser, friends: updatedFriendIds };
+        localStorage.setItem("user", JSON.stringify(updatedUser));
+        
+    } catch (err) { 
+        console.error("Follow Error:", err); 
+    }
+  };
 
   const handleEditChange = (e) => setEditFormData({ ...editFormData, [e.target.name]: e.target.value });
   const handleImageChange = (e) => setEditFormData({ ...editFormData, picture: e.target.files[0] });
@@ -73,7 +104,9 @@ const ProfilePage = () => {
           setUserProfile(res.data);
           // If editing own profile, update local storage
           if(loggedInUser._id === userId) {
-              localStorage.setItem("user", JSON.stringify({ ...res.data, password: loggedInUser.password }));
+              // Keep friends list intact when updating profile info
+              const currentUserData = JSON.parse(localStorage.getItem("user"));
+              localStorage.setItem("user", JSON.stringify({ ...res.data, friends: currentUserData.friends, password: loggedInUser.password }));
           }
           setIsEditing(false);
           alert("Profile Updated!");
@@ -104,7 +137,7 @@ const ProfilePage = () => {
                   <div className="w-40 h-40 rounded-full border-4 border-white dark:border-gray-800 shadow-lg overflow-hidden bg-gray-200">
                       {userProfile.picturePath ? (
                           <img 
-                            src={getImageUrl(userProfile.picturePath)} // <--- UPDATED FOR CLOUDINARY
+                            src={getImageUrl(userProfile.picturePath)} 
                             alt="profile" 
                             className="w-full h-full object-cover" 
                           />
@@ -139,15 +172,28 @@ const ProfilePage = () => {
                   </div>
               </div>
 
-              {/* Edit Button */}
-              {isOwnProfile && (
-                  <button 
-                    onClick={() => setIsEditing(!isEditing)}
-                    className="bg-gray-100 hover:bg-gray-200 text-gray-800 px-6 py-2 rounded-lg font-bold transition"
-                  >
-                      {isEditing ? "Cancel" : "Edit Profile"}
-                  </button>
-              )}
+              {/* ACTIONS (Edit OR Follow) */}
+              <div className="flex gap-3">
+                  {isOwnProfile ? (
+                      <button 
+                        onClick={() => setIsEditing(!isEditing)}
+                        className="bg-gray-100 hover:bg-gray-200 text-gray-800 px-6 py-2 rounded-lg font-bold transition"
+                      >
+                          {isEditing ? "Cancel" : "Edit Profile"}
+                      </button>
+                  ) : (
+                      <button 
+                        onClick={handleFollow}
+                        className={`px-6 py-2 rounded-lg font-bold transition shadow-lg ${
+                            isFollowing 
+                            ? 'bg-gray-200 text-gray-800 hover:bg-gray-300' 
+                            : 'bg-blue-600 hover:bg-blue-700 text-white'
+                        }`}
+                      >
+                          {isFollowing ? "Unfollow" : "Follow"}
+                      </button>
+                  )}
+              </div>
           </div>
 
           {/* 3. EDIT FORM (Conditional) */}
@@ -195,7 +241,7 @@ const ProfilePage = () => {
                       <div className="h-32 bg-gray-200 dark:bg-gray-700 relative">
                           {event.picturePath ? (
                               <img 
-                                src={getImageUrl(event.picturePath)} // <--- UPDATED FOR CLOUDINARY
+                                src={getImageUrl(event.picturePath)} 
                                 className="w-full h-full object-cover" 
                                 alt="event" 
                               />

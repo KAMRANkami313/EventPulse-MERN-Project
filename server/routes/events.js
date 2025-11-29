@@ -9,15 +9,16 @@ import {
     likeEvent, 
     getEvent, 
     verifyTicket, 
-    getAttendingEvents 
+    getAttendingEvents,
+    getFollowingEvents // <--- NEW IMPORT
 } from "../controllers/events.js"; 
 import { verifyToken } from "../middleware/auth.js";
 import multer from "multer";
-import storage from "../config/cloudinary.js"; // ✅ Import Cloud Configuration
+import storage from "../config/cloudinary.js"; 
 
 const router = express.Router();
 
-// ✅ USE CLOUDINARY STORAGE (Replaces the old diskStorage)
+// Use Cloudinary Storage
 const upload = multer({ storage });
 
 /* READ ROUTES */
@@ -28,11 +29,13 @@ router.get("/", verifyToken, getFeedEvents);
 router.get("/user/:userId", verifyToken, getUserEvents);
 router.get("/attending/:userId", verifyToken, getAttendingEvents);
 
+// NEW: FOLLOWING FEED ROUTE
+router.get("/following/:userId", verifyToken, getFollowingEvents); // <--- ADD THIS
+
 // 3. Dynamic ID Route (MUST come last among GETs)
 router.get("/:id", verifyToken, getEvent);
 
 /* WRITE ROUTES */
-// ✅ The 'upload' middleware now sends files directly to the Cloud
 router.post("/", verifyToken, upload.single("picture"), createEvent);
 router.post("/verify", verifyToken, verifyTicket);
 

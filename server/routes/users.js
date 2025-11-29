@@ -1,5 +1,5 @@
 import express from "express";
-import { getUser, getAllUsers, deleteUser, updateUser } from "../controllers/users.js";
+import { getUser, getAllUsers, deleteUser, updateUser, addRemoveFriend } from "../controllers/users.js";
 import { verifyToken } from "../middleware/auth.js";
 import multer from "multer";
 import storage from "../config/cloudinary.js"; // ✅ Import Cloud Configuration
@@ -17,6 +17,7 @@ router.get("/", verifyToken, getAllUsers);
 router.delete("/:id", verifyToken, deleteUser);
 
 /* UPDATE ROUTE */
+router.patch("/:id/:friendId", verifyToken, addRemoveFriend);
 // ✅ 'upload.single' sends the profile picture to the cloud
 router.patch("/:id", verifyToken, upload.single("picture"), updateUser);
 
