@@ -13,18 +13,11 @@ import {
 } from "../controllers/events.js"; 
 import { verifyToken } from "../middleware/auth.js";
 import multer from "multer";
+import storage from "../config/cloudinary.js"; // ✅ Import Cloud Configuration
 
 const router = express.Router();
 
-// Multer Config
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, "public/assets");
-  },
-  filename: function (req, file, cb) {
-    cb(null, file.originalname);
-  },
-});
+// ✅ USE CLOUDINARY STORAGE (Replaces the old diskStorage)
 const upload = multer({ storage });
 
 /* READ ROUTES */
@@ -39,6 +32,7 @@ router.get("/attending/:userId", verifyToken, getAttendingEvents);
 router.get("/:id", verifyToken, getEvent);
 
 /* WRITE ROUTES */
+// ✅ The 'upload' middleware now sends files directly to the Cloud
 router.post("/", verifyToken, upload.single("picture"), createEvent);
 router.post("/verify", verifyToken, verifyTicket);
 

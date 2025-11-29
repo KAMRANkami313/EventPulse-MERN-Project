@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { useParams, useNavigate } from "react-router-dom";
+import { getImageUrl } from "../../utils/imageHelper"; // <--- NEW CLOUDINARY IMPORT
 
 const ProfilePage = () => {
   const { userId } = useParams();
@@ -102,7 +103,11 @@ const ProfilePage = () => {
               <div className="relative">
                   <div className="w-40 h-40 rounded-full border-4 border-white dark:border-gray-800 shadow-lg overflow-hidden bg-gray-200">
                       {userProfile.picturePath ? (
-                          <img src={`http://localhost:5000/assets/${userProfile.picturePath}`} alt="profile" className="w-full h-full object-cover" />
+                          <img 
+                            src={getImageUrl(userProfile.picturePath)} // <--- UPDATED FOR CLOUDINARY
+                            alt="profile" 
+                            className="w-full h-full object-cover" 
+                          />
                       ) : (
                           <div className="w-full h-full flex items-center justify-center text-5xl font-bold text-gray-400">
                               {userProfile.firstName[0]}
@@ -189,7 +194,11 @@ const ProfilePage = () => {
                   <div key={event._id} className="bg-white dark:bg-gray-800 rounded-xl shadow-md overflow-hidden hover:shadow-lg transition border border-gray-100 dark:border-gray-700">
                       <div className="h-32 bg-gray-200 dark:bg-gray-700 relative">
                           {event.picturePath ? (
-                              <img src={`http://localhost:5000/assets/${event.picturePath}`} className="w-full h-full object-cover" alt="event" />
+                              <img 
+                                src={getImageUrl(event.picturePath)} // <--- UPDATED FOR CLOUDINARY
+                                className="w-full h-full object-cover" 
+                                alt="event" 
+                              />
                           ) : (
                               <div className="w-full h-full flex items-center justify-center text-4xl">📅</div>
                           )}

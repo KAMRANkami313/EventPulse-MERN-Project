@@ -8,7 +8,10 @@ export const createEvent = async (req, res) => {
   try {
     // Extract + parse coordinates (FormData sends string)
     const { userId, title, description, location, date, category, coordinates } = req.body;
-    const picturePath = req.file ? req.file.filename : "";  
+    
+    // ✅ UPDATED: Get the Full Cloudinary URL (.path) instead of just filename
+    const picturePath = req.file ? req.file.path : "";  
+    
     const parsedCoordinates = JSON.parse(coordinates);
 
     const user = await User.findById(userId);
@@ -22,7 +25,7 @@ export const createEvent = async (req, res) => {
       coordinates: parsedCoordinates,
       date,
       category,
-      picturePath,
+      picturePath, // Now contains "https://res.cloudinary.com/..."
       participants: [],
       comments: [],
       likes: {},

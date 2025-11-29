@@ -5,6 +5,7 @@ import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import ChatBox from "../../components/ChatBox";
 import SkeletonEvent from "../../components/SkeletonEvent"; // Import Skeleton
+import { getImageUrl } from "../../utils/imageHelper"; // <--- NEW CLOUDINARY IMPORT
 
 // Swiper Imports (Carousel)
 import { Swiper, SwiperSlide } from 'swiper/react';
@@ -423,7 +424,7 @@ const Dashboard = ({ toggleTheme, theme }) => {
                       {/* Background Image */}
                       {event.picturePath ? (
                         <img 
-                          src={`http://localhost:5000/assets/${event.picturePath}`} 
+                          src={getImageUrl(event.picturePath)} // <--- UPDATED FOR CLOUDINARY
                           className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" 
                           alt="featured" 
                         />
@@ -564,7 +565,7 @@ const Dashboard = ({ toggleTheme, theme }) => {
                         {event.picturePath && (
                           <div className="overflow-hidden rounded-xl mb-5 h-56 shadow-sm">
                             <img
-                              src={`http://localhost:5000/assets/${event.picturePath}`}
+                              src={getImageUrl(event.picturePath)} // <--- UPDATED FOR CLOUDINARY
                               alt="event"
                               className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                             />

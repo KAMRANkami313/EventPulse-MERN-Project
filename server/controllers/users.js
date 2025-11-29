@@ -1,5 +1,6 @@
 import User from "../models/User.js";
 import Event from "../models/Event.js";
+
 /* READ */
 export const getUser = async (req, res) => {
   try {
@@ -49,8 +50,8 @@ export const updateUser = async (req, res) => {
     const { id } = req.params;
     const { firstName, lastName, location, occupation } = req.body;
     
-    // Check if image was uploaded
-    const picturePath = req.file ? req.file.filename : undefined;
+    // ✅ UPDATED: Get the full Cloudinary URL (.path) if a file is uploaded
+    const picturePath = req.file ? req.file.path : undefined;
 
     const updateData = {
       firstName,
@@ -58,6 +59,8 @@ export const updateUser = async (req, res) => {
       location,
       occupation
     };
+    
+    // Only update picture if a new one was uploaded
     if (picturePath) updateData.picturePath = picturePath;
 
     const updatedUser = await User.findByIdAndUpdate(id, updateData, { new: true });
