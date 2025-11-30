@@ -8,6 +8,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import { createServer } from "http"; 
 import { Server } from "socket.io";
+import rateLimit from "express-rate-limit"; // <--- NEW IMPORT
 
 import authRoutes from "./routes/auth.js";
 import userRoutes from "./routes/users.js";
@@ -24,6 +25,19 @@ const __dirname = path.dirname(__filename);
 
 dotenv.config();
 const app = express();
+
+// --- RATE LIMITER CONFIGURATION (Phase 20) ---
+const limiter = rateLimit({
+	windowMs: 15 * 60 * 1000, // 15 minutes
+	max: 100, // Limit each IP to 100 requests per windowMs
+	standardHeaders: true, 
+	legacyHeaders: false,
+    message: JSON.stringify({ message: "Too many requests, please try again later." })
+});
+
+// Apply rate limiting globally for security
+app.use(limiter); 
+// -----------------------------------------------
 
 // --- MIDDLEWARE (UPDATED FOR GOOGLE LOGIN) ---
 app.use(express.json());
@@ -42,6 +56,7 @@ app.use("/assets", express.static(path.join(__dirname, "public/assets")));
 // ---------------------------------------------
 
 // Routes
+// Note: Limiter is already applied globally above (app.use(limiter))
 app.use("/auth", authRoutes);
 app.use("/users", userRoutes);
 app.use("/events", eventRoutes);
@@ -49,6 +64,7 @@ app.use("/notifications", notificationRoutes);
 app.use("/messages", messageRoutes);
 app.use("/admin", adminRoutes);
 app.use("/payment", paymentRoutes);
+
 // DB
 const PORT = process.env.PORT || 5000;
 const MONGO_URL = process.env.MONGO_URL;
