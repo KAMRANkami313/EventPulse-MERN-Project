@@ -77,6 +77,12 @@ const Dashboard = ({ toggleTheme, theme }) => {
   // Event Data
   const [events, setEvents] = useState([]);
 
+  // PAGINATION STATES (NEW)
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const [isFetchingMore, setIsFetchingMore] = useState(false);
+
+
   // Create Event Form State
   const [newEvent, setNewEvent] = useState({
     title: "",
@@ -101,37 +107,65 @@ const Dashboard = ({ toggleTheme, theme }) => {
   const [showNotifications, setShowNotifications] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
 
-  // --- EFFECTS ---
-
-  useEffect(() => {
-    if (!token) {
-      navigate("/login");
-    } else {
-      fetchEvents();
-      fetchNotifications();
-    }
-  }, [feedType]); // <--- Re-fetch when feedType changes
-
   // --- API FETCH FUNCTIONS ---
+  
+  // NOTE: This function is completely rewritten to handle pagination and backend filtering.
+  const fetchEvents = async (pageNum = 1, reset = false) => {
+    // Show main skeleton loader only on reset (initial load or filter change)
+    if (reset) setLoading(true); 
+    // Show button spinner when loading next pages
+    if (pageNum > 1) setIsFetchingMore(true);
 
-  const fetchEvents = async () => {
-    setLoading(true); 
     try {
-      let url = "http://localhost:5000/events";
       
-      // If toggle is set to 'following', change the URL
+      let url;
+      
+      // Case 1: Following Feed (Non-paginated, based on current backend setup)
       if (feedType === "following") {
           url = `http://localhost:5000/events/following/${user._id}`;
+          
+          const response = await axios.get(url, {
+              headers: { Authorization: `Bearer ${token}` },
+          });
+          
+          setEvents(response.data);
+          setHasMore(false); // Always false for the following feed (it loads all)
+          setPage(1); 
+          
+      } else {
+          // Case 2: Global Feed (PAGINATED + FILTERED)
+          const params = new URLSearchParams({
+              page: pageNum,
+              limit: 5, // Fixed limit of 5 per page
+              search: searchTerm,
+              category: selectedCategory,
+              sort: sortOption
+          });
+
+          url = `http://localhost:5000/events?${params.toString()}`;
+
+          const response = await axios.get(url, {
+              headers: { Authorization: `Bearer ${token}` },
+          });
+
+          if (reset) {
+              // New Search/Filter/Initial Load: Replace all events
+              setEvents(response.data.data);
+          } else {
+              // Load More: Append new events to existing list
+              setEvents((prev) => [...prev, ...response.data.data]);
+          }
+
+          // Check if we reached the end
+          setHasMore(pageNum < response.data.totalPages);
+          setPage(pageNum);
       }
 
-      const response = await axios.get(url, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setEvents(response.data);
     } catch (err) {
       console.error("Error fetching events", err);
     } finally {
-      setTimeout(() => setLoading(false), 800);
+      setLoading(false);
+      setIsFetchingMore(false);
     }
   };
 
@@ -148,7 +182,27 @@ const Dashboard = ({ toggleTheme, theme }) => {
     }
   };
 
+  // --- EFFECTS (MERGED) ---
+  
+  // Replaces the old useEffect. This runs on initial load AND whenever filters change.
+  useEffect(() => {
+    if (!token) {
+      navigate("/login");
+    } else {
+      // Use a timeout for Search (Debounce) to prevent API spam while typing
+      const delayDebounceFn = setTimeout(() => {
+        fetchEvents(1, true); // Always reset to Page 1 when filters or feedType changes
+        fetchNotifications();
+      }, 500);
+      
+      return () => clearTimeout(delayDebounceFn);
+    }
+    // Dependencies include all filters and the feed type
+  }, [token, navigate, user?._id, feedType, searchTerm, selectedCategory, sortOption]); 
+
+
   // --- EVENT HANDLERS ---
+// ... (All other handlers remain the same) ...
 
   const handleMarkRead = async () => {
     if (unreadCount > 0) {
@@ -201,7 +255,8 @@ const Dashboard = ({ toggleTheme, theme }) => {
 
       if (response.status === 201) {
         alert("Event Created!");
-        setEvents(response.data); 
+        // After creating an event, trigger a reset fetch to show the new event on page 1
+        fetchEvents(1, true); 
         setNewEvent({
           title: "", description: "",
           location: CITIES[0].name, coordinates: { lat: CITIES[0].lat, lng: CITIES[0].lng },
@@ -531,6 +586,7 @@ const Dashboard = ({ toggleTheme, theme }) => {
                 <select
                   className="p-2 border rounded-lg text-sm bg-gray-50 dark:bg-gray-700 dark:border-gray-600 dark:text-white outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
                   onChange={(e) => setSelectedCategory(e.target.value)}
+                  value={selectedCategory} // Ensure select reflects state
                 >
                   <option value="All">All Categories</option>
                   <option value="Music">Music</option>
@@ -544,6 +600,7 @@ const Dashboard = ({ toggleTheme, theme }) => {
                 <select
                   className="p-2 border rounded-lg text-sm bg-gray-50 dark:bg-gray-700 dark:border-gray-600 dark:text-white outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
                   onChange={(e) => setSortOption(e.target.value)}
+                  value={sortOption} // Ensure select reflects state
                 >
                   <option value="Newest">Newest First</option>
                   <option value="Oldest">Oldest First</option>
@@ -579,6 +636,7 @@ const Dashboard = ({ toggleTheme, theme }) => {
           {/* VIEW 2: LIST VIEW */}
           {!showMap && (
             <>
+              {/* SKELETON LOADING */}
               {loading ? (
                 <>
                   <SkeletonEvent />
@@ -586,28 +644,10 @@ const Dashboard = ({ toggleTheme, theme }) => {
                   <SkeletonEvent />
                 </>
               ) : (
-                events.length === 0 ? (
-                    <div className="text-center py-20 bg-white dark:bg-gray-800 rounded-2xl shadow">
-                        <h3 className="text-xl font-bold text-gray-600 dark:text-gray-300">No events found here.</h3>
-                        <p className="text-gray-400 mt-2">Try switching tabs or creating a new event!</p>
-                    </div>
-                ) : (
-                events
-                  .filter((event) => {
-                    if (searchTerm === "") return event;
-                    return event.title.toLowerCase().includes(searchTerm.toLowerCase()) || event.category.toLowerCase().includes(searchTerm.toLowerCase());
-                  })
-                  .filter((event) => {
-                    if (selectedCategory === "All") return event;
-                    return event.category.toLowerCase() === selectedCategory.toLowerCase();
-                  })
-                  .sort((a, b) => {
-                    if (sortOption === "Newest") return new Date(b.createdAt) - new Date(a.createdAt);
-                    if (sortOption === "Oldest") return new Date(a.createdAt) - new Date(b.createdAt);
-                    if (sortOption === "Popular") return b.participants.length - a.participants.length;
-                    return 0;
-                  })
-                  .map((event) => {
+                // Events found?
+                events.length > 0 ? (
+                  // Map directly over the events array (Frontend filtering is removed!)
+                  events.map((event) => { 
                     const isJoined = event.participants.includes(user._id);
                     const isCommentsOpen = openComments[event._id];
                     const isLiked = Boolean(event.likes && event.likes[user._id]);
@@ -693,7 +733,7 @@ const Dashboard = ({ toggleTheme, theme }) => {
                               <button
                                 onClick={() => handleDelete(event._id)}
                                 className="px-3 py-2 rounded-lg text-sm font-semibold bg-red-50 text-red-600 hover:bg-red-100 transition active:scale-95"
-                                title="Delete Event"
+                                title="🗑️"
                               >
                                 🗑️
                               </button>
@@ -771,7 +811,41 @@ const Dashboard = ({ toggleTheme, theme }) => {
                       </div>
                     );
                   })
+                ) : (
+                  // No events found based on current filters/search
+                  <div className="text-center py-20 bg-white dark:bg-gray-800 rounded-2xl shadow">
+                        <h3 className="text-xl font-bold text-gray-600 dark:text-gray-300">🔍 No events found.</h3>
+                        <p className="text-gray-400 mt-2">Try adjusting your search or filters.</p>
+                    </div>
                 )
+              )}
+              
+              {/* LOAD MORE BUTTON UI */}
+              {/* Only show Load More if not loading the initial page, we have more pages, and we are in Global feed */}
+              {!loading && hasMore && events.length > 0 && feedType === 'all' && (
+                  <div className="flex justify-center mt-8 mb-12">
+                      <button 
+                        onClick={() => fetchEvents(page + 1, false)} // false = append, don't reset
+                        disabled={isFetchingMore}
+                        className="bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 px-8 py-3 rounded-full font-bold shadow-sm hover:shadow-md hover:bg-gray-50 dark:hover:bg-gray-700 transition disabled:opacity-50 flex items-center gap-2"
+                      >
+                          {isFetchingMore ? (
+                              <>
+                                <span className="w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin"></span>
+                                Loading...
+                              </>
+                          ) : (
+                              "Load More Events ↓"
+                          )}
+                      </button>
+                  </div>
+              )}
+              
+              {/* END OF RESULTS MESSAGE */}
+              {!loading && !hasMore && events.length > 0 && (
+                  <p className="text-center text-gray-400 text-sm mt-8 mb-12">
+                      🎉 You've reached the end of the list!
+                  </p>
               )}
             </>
           )}

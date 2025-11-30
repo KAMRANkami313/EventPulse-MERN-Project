@@ -43,14 +43,54 @@ export const createEvent = async (req, res) => {
   }
 };
 
-/* READ FEED */
+/* READ FEED (PAGINATION + SEARCH + FILTER) */
 export const getFeedEvents = async (req, res) => {
-  try {
-    const post = await Event.find().sort({ createdAt: -1 });
-    res.status(200).json(post);
-  } catch (err) {
-    res.status(404).json({ message: err.message });
+try {
+  // 1. Get Params from URL
+  const { page = 1, limit = 5, search = "", category = "All", sort = "Newest" } = req.query;
+
+  // 2. Build the Query Object
+  const query = {};
+
+  // Search Logic (Regex = Partial Match, case insensitive)
+  if (search) {
+      query.$or = [
+          { title: { $regex: search, $options: "i" } },
+          { description: { $regex: search, $options: "i" } }
+      ];
   }
+
+  // Category Logic
+  if (category !== "All") {
+      query.category = category;
+  }
+
+  // 3. Build Sort Object
+  let sortQuery = { createdAt: -1 }; // Default: Newest
+  if (sort === "Oldest") {
+      sortQuery = { createdAt: 1 };
+  } 
+  
+  // 4. Pagination Math
+  const startIndex = (parseInt(page) - 1) * parseInt(limit);
+  const total = await Event.countDocuments(query); // Count only matching items based on filters
+
+  // 5. Fetch Data
+  const posts = await Event.find(query)
+      .sort(sortQuery)
+      .limit(parseInt(limit))
+      .skip(startIndex);
+
+  res.status(200).json({
+    data: posts,
+    currentPage: parseInt(page),
+    totalPages: Math.ceil(total / parseInt(limit)),
+    totalEvents: total
+  });
+
+} catch (err) {
+  res.status(404).json({ message: err.message });
+}
 };
 
 /* READ USER EVENTS (Hosted) */
@@ -67,6 +107,7 @@ export const getUserEvents = async (req, res) => {
 /* UPDATE JOIN (WITH NOTIFICATION & EMAIL) */
 export const joinEvent = async (req, res) => {
   try {
+// ... rest of joinEvent function ...
     const { id } = req.params;
     const { userId } = req.body;
 
@@ -118,6 +159,7 @@ export const joinEvent = async (req, res) => {
 /* UPDATE COMMENT */
 export const postComment = async (req, res) => {
   try {
+// ... rest of postComment function ...
     const { id } = req.params;
     const { userId, text } = req.body;
 
@@ -147,6 +189,7 @@ export const postComment = async (req, res) => {
 /* UPDATE LIKE (WITH NOTIFICATION) */
 export const likeEvent = async (req, res) => {
   try {
+// ... rest of likeEvent function ...
     const { id } = req.params;
     const { userId } = req.body;
 
@@ -191,6 +234,7 @@ export const likeEvent = async (req, res) => {
 /* DELETE */
 export const deleteEvent = async (req, res) => {
   try {
+// ... rest of deleteEvent function ...
     const { id } = req.params;
     // Note: Assuming 'verifyToken' middleware puts user info in req.user
     const userId = req.user.id; 
@@ -215,6 +259,7 @@ export const deleteEvent = async (req, res) => {
 /* READ SINGLE EVENT (For Ticket Page) */
 export const getEvent = async (req, res) => {
   try {
+// ... rest of getEvent function ...
     const { id } = req.params;
     const event = await Event.findById(id);
     res.status(200).json(event);
@@ -226,6 +271,7 @@ export const getEvent = async (req, res) => {
 /* VERIFY TICKET (SCANNER LOGIC) */
 export const verifyTicket = async (req, res) => {
   try {
+// ... rest of verifyTicket function ...
     const { eventId, userId } = req.body;
 
     const event = await Event.findById(eventId);
@@ -259,6 +305,7 @@ export const verifyTicket = async (req, res) => {
 /* READ EVENTS USER IS ATTENDING (For Profile) */
 export const getAttendingEvents = async (req, res) => {
   try {
+// ... rest of getAttendingEvents function ...
     const { userId } = req.params;
     const events = await Event.find({ participants: userId });
     res.status(200).json(events);
@@ -270,6 +317,7 @@ export const getAttendingEvents = async (req, res) => {
 /* NEW: GET FOLLOWING FEED (Social Graph) */
 export const getFollowingEvents = async (req, res) => {
     try {
+// ... rest of getFollowingEvents function ...
         const { userId } = req.params;
         const user = await User.findById(userId);
         

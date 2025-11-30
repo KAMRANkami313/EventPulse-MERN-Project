@@ -3,12 +3,16 @@ import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 
 export default defineConfig({
+  server: {
+    host: true,       // 👈 Allow LAN access
+    port: 5173        // (optional, default is 5173)
+  },
   plugins: [
     react(),
     VitePWA({
       registerType: 'autoUpdate',
       devOptions: {
-        enabled: true // Allows you to test PWA in npm run dev
+        enabled: true
       },
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg'],
       manifest: {
@@ -17,7 +21,7 @@ export default defineConfig({
         description: 'Connect, Organize, and Celebrate with EventPulse.',
         theme_color: '#ffffff',
         background_color: '#ffffff',
-        display: 'standalone', // Looks like a native app (no browser bar)
+        display: 'standalone',
         icons: [
           {
             src: 'pwa-192x192.png',
