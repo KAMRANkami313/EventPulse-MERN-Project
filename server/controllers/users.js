@@ -117,3 +117,56 @@ export const addRemoveFriend = async (req, res) => {
     res.status(404).json({ message: err.message });
   }
 };
+
+
+/* GET RECOMMENDED EVENTS */
+export const getUserRecommendations = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const user = await User.findById(id);
+
+    // 1. Find all events the user participated in
+    const historyEvents = await Event.find({ participants: id });
+
+    // 2. Calculate Favorite Category
+    const categoryCounts = {};
+    historyEvents.forEach((event) => {
+      categoryCounts[event.category] = (categoryCounts[event.category] || 0) + 1;
+    });
+
+    // Find the category with max count
+    let favoriteCategory = "";
+    let maxCount = 0;
+    
+    Object.entries(categoryCounts).forEach(([cat, count]) => {
+      if (count > maxCount) {
+        maxCount = count;
+        favoriteCategory = cat;
+      }
+    });
+
+    // Default if no history or current user is null
+    if (!favoriteCategory || !user) {
+        // Just return general trending events (most recent)
+        const trending = await Event.find({ date: { $gte: new Date() } }) // Future only
+            .sort({ createdAt: -1 }) 
+            .limit(3);
+        return res.status(200).json({ type: "trending", data: trending });
+    }
+    
+    // Collect IDs of events already seen/joined to exclude them
+    const excludedIds = historyEvents.map(e => e._id);
+
+    // 3. Find Future Events in that Category
+    const recommendations = await Event.find({
+        category: favoriteCategory,
+        date: { $gte: new Date() }, // Future events only
+        _id: { $nin: excludedIds } // Exclude ones already joined/seen
+    }).limit(3);
+
+    res.status(200).json({ type: "based_on_history", category: favoriteCategory, data: recommendations });
+
+  } catch (err) {
+    res.status(404).json({ message: err.message });
+  }
+};

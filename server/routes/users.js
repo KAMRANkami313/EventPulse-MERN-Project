@@ -1,5 +1,12 @@
 import express from "express";
-import { getUser, getAllUsers, deleteUser, updateUser, addRemoveFriend } from "../controllers/users.js";
+import { 
+    getUser, 
+    getAllUsers, 
+    deleteUser, 
+    updateUser, 
+    addRemoveFriend,
+    getUserRecommendations // <--- NEW IMPORT
+} from "../controllers/users.js";
 import { verifyToken } from "../middleware/auth.js";
 import multer from "multer";
 import storage from "../config/cloudinary.js"; // ✅ Import Cloud Configuration
@@ -12,6 +19,9 @@ const upload = multer({ storage });
 /* READ ROUTES */
 router.get("/:id", verifyToken, getUser);
 router.get("/", verifyToken, getAllUsers);
+
+// NEW RECOMMENDATIONS ROUTE
+router.get("/:id/recommendations", verifyToken, getUserRecommendations); // <--- ADDED THIS
 
 /* DELETE ROUTE */
 router.delete("/:id", verifyToken, deleteUser);

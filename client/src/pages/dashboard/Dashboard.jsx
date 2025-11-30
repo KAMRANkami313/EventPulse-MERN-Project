@@ -7,8 +7,9 @@ import ChatBox from "../../components/ChatBox";
 import SkeletonEvent from "../../components/SkeletonEvent"; 
 import { getImageUrl } from "../../utils/imageHelper"; 
 import { loadStripe } from "@stripe/stripe-js"; 
-import StarRating from "../../components/StarRating"; // <--- NEW IMPORT
-import { FaStar, FaStarHalfAlt, FaRegStar } from "react-icons/fa"; // <--- NEW ICONS IMPORT
+import StarRating from "../../components/StarRating"; 
+import { FaStar, FaStarHalfAlt, FaRegStar } from "react-icons/fa"; 
+import Recommendations from "../../components/Recommendations"; // <--- NEW IMPORT
 
 // --- STRIPE CONFIGURATION ---
 const stripePromise = loadStripe("pk_test_51SH0CJ7HwdZq8BC7oyKPjQxaAQ47C8IBRy0hzIgeUo4jdCSL6q6fTnI4Ut3JkRjgfvd0ys0cfWaiyVPqFSX3gKFd00ZEBHxmlC");
@@ -445,8 +446,12 @@ const Dashboard = ({ toggleTheme, theme }) => {
       {/* MAIN GRID LAYOUT */}
       <div className="container mx-auto p-6 grid grid-cols-1 lg:grid-cols-3 gap-8">
 
-        {/* LEFT COLUMN: CREATE EVENT FORM */}
+        {/* LEFT COLUMN: RECOMMENDATIONS & CREATE EVENT FORM */}
         <div className="lg:col-span-1">
+          
+          {/* RECOMMENDATIONS WIDGET */}
+          <Recommendations userId={user._id} token={token} /> 
+
           <div className="bg-white dark:bg-gray-800 dark:text-white p-6 rounded-2xl shadow-xl sticky top-24 transition-colors border border-gray-100 dark:border-gray-700">
             <h3 className="text-xl font-bold mb-4 text-gray-800 dark:text-white">Create Event</h3>
 
