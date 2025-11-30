@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  # BACKEND SERVICE (Connects to Atlas/External Mongo)
+  server:
+    build: ./server
+    ports:
+      - "5000:5000"
+    # IMPORTANT: Use volumes for live development sync (optional, but standard for development)
+    volumes:
+      - ./server:/app
+      - /app/node_modules # Exclude node_modules from host mounting
+    env_file:
+      - ./server/.env # Loads your environment variables for Atlas connection, JWT, etc.
+    restart: always # Keep service running
+
+  # FRONTEND SERVICE
+  client:
+    build: ./client
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./client:/app
+      - /app/node_modules
+    # Tell the React app how to find the Node server (using Docker's internal DNS name 'server')
+    environment:
+      # We use localhost here because the browser runs on the host machine
+      - VITE_API_URL=http://localhost:5000 
+    stdin_open: true
+    tty: true
+    restart: always
+
+# Note on MongoDB: Since you are using Atlas (external), we omit the Mongo service. 
+# Your server container will simply connect to the Mongo URL defined in server/.env. 
+
+# If you wanted a local Mongo database in Docker, you would add the 'mongo' service and update MONGO_URL.
