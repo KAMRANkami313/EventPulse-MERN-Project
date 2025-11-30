@@ -7,6 +7,8 @@ import ChatBox from "../../components/ChatBox";
 import SkeletonEvent from "../../components/SkeletonEvent"; 
 import { getImageUrl } from "../../utils/imageHelper"; 
 import { loadStripe } from "@stripe/stripe-js"; 
+import StarRating from "../../components/StarRating"; // <--- NEW IMPORT
+import { FaStar, FaStarHalfAlt, FaRegStar } from "react-icons/fa"; // <--- NEW ICONS IMPORT
 
 // --- STRIPE CONFIGURATION ---
 const stripePromise = loadStripe("pk_test_51SH0CJ7HwdZq8BC7oyKPjQxaAQ47C8IBRy0hzIgeUo4jdCSL6q6fTnI4Ut3JkRjgfvd0ys0cfWaiyVPqFSX3gKFd00ZEBHxmlC");
@@ -77,10 +79,13 @@ const Dashboard = ({ toggleTheme, theme }) => {
   // Event Data
   const [events, setEvents] = useState([]);
 
-  // PAGINATION STATES (NEW)
+  // PAGINATION STATES (NEW in Phase 17)
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [isFetchingMore, setIsFetchingMore] = useState(false);
+
+  // REVIEW STATES (NEW in Phase 18)
+  const [tempRating, setTempRating] = useState(5); 
 
 
   // Create Event Form State
@@ -322,6 +327,24 @@ const Dashboard = ({ toggleTheme, theme }) => {
       setEvents(events.map((e) => (e._id === eventId ? updatedEvent : e)));
     } catch (err) { console.error(err); }
   };
+  
+  // --- NEW RATING HANDLER ---
+  const handleRateEvent = async (eventId, rating, text) => {
+    try {
+      const response = await axios.post(`http://localhost:5000/events/${eventId}/reviews`, 
+        { userId: user._id, rating, text },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      // Update local state
+      const updatedEvent = response.data;
+      setEvents(events.map((e) => (e._id === eventId ? updatedEvent : e)));
+      setTempRating(5); // Reset temp rating for next use
+      alert("Review Submitted successfully!");
+    } catch (err) {
+      alert(err.response?.data?.message || "Error submitting review");
+    }
+  };
+  // --------------------------
 
   const handleDelete = async (eventId) => {
     if (!window.confirm("Are you sure?")) return;
@@ -652,6 +675,7 @@ const Dashboard = ({ toggleTheme, theme }) => {
                     const isCommentsOpen = openComments[event._id];
                     const isLiked = Boolean(event.likes && event.likes[user._id]);
                     const likeCount = event.likes ? Object.keys(event.likes).length : 0;
+                    const userReview = event.reviews?.find(r => r.userId === user._id); // Check for user's existing review
 
                     return (
                       <div 
@@ -675,6 +699,14 @@ const Dashboard = ({ toggleTheme, theme }) => {
                         <div className="flex justify-between items-start mb-3">
                           <div>
                             <h4 className="text-2xl font-bold text-gray-900 dark:text-white group-hover:text-blue-500 transition-colors">{event.title}</h4>
+                            
+                            {/* START: NEW RATING DISPLAY */}
+                            <div className="flex items-center gap-2 mt-1">
+                                <StarRating rating={event.averageRating || 0} />
+                                <span className="text-xs text-gray-500 dark:text-gray-400">({event.reviews?.length || 0})</span>
+                            </div>
+                            {/* END: NEW RATING DISPLAY */}
+
                             <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                               by <Link to={`/profile/${event.userId}`} className="hover:text-blue-600 font-semibold underline decoration-transparent hover:decoration-blue-600 transition">{event.creatorName}</Link>
                               • {new Date(event.date).toDateString()}
@@ -694,6 +726,54 @@ const Dashboard = ({ toggleTheme, theme }) => {
                         </div>
 
                         <p className="mt-2 text-gray-600 dark:text-gray-300 leading-relaxed">{event.description}</p>
+                        
+                        {/* --- REVIEW SECTION --- */}
+                        {new Date(event.date) < new Date() && (
+                            <div className="mt-4 p-3 bg-yellow-50 dark:bg-gray-700/50 rounded-lg border border-yellow-200 dark:border-gray-600">
+                                
+                                {/* Check if user has already reviewed */}
+                                {!userReview ? (
+                                    <div>
+                                        <p className="text-sm font-bold text-yellow-800 dark:text-yellow-200 mb-2">
+                                            Event Finished. How was it?
+                                        </p>
+                                        <div className="flex gap-2 mb-2">
+                                            {/* Use the tempRating state for the interactive stars */}
+                                            <StarRating rating={tempRating} setRating={setTempRating} isEditable={true} />
+                                        </div>
+                                        <form 
+                                            onSubmit={(e) => {
+                                                e.preventDefault();
+                                                handleRateEvent(event._id, tempRating, e.target.reviewText.value);
+                                                e.target.reviewText.value = ""; // Clear input after submission
+                                            }}
+                                            className="flex gap-2"
+                                        >
+                                            <input 
+                                                name="reviewText"
+                                                placeholder="Write a review..."
+                                                className="w-full p-2 text-sm border rounded bg-white dark:bg-gray-800 dark:border-gray-600 dark:text-white outline-none"
+                                                required 
+                                            />
+                                            <button type="submit" className="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded text-sm font-bold transition active:scale-95">
+                                                Submit
+                                            </button>
+                                        </form>
+                                    </div>
+                                ) : (
+                                    // If already reviewed, show their review status
+                                    <div className="text-sm text-gray-600 dark:text-gray-300 flex items-center gap-2">
+                                        <span className="text-lg">✅</span>
+                                        <p>You rated this event: 
+                                           <b className="ml-1">{userReview.rating} Stars</b>
+                                           {userReview.text && <span className="italic ml-2">("{userReview.text}")</span>}
+                                        </p>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                        {/* --- END REVIEW SECTION --- */}
+
 
                         <div className="mt-6 flex justify-between items-center border-t dark:border-gray-700 pt-4">
                           <div className="flex items-center text-gray-500 dark:text-gray-400 text-sm gap-5 font-medium">

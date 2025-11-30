@@ -52,6 +52,26 @@ const EventSchema = new mongoose.Schema(
       type: Array,
       default: [], 
     },
+    
+    // --- START: NEW REVIEW FIELDS ---
+    reviews: {
+      type: [
+        {
+          userId: { type: String, required: true },
+          firstName: { type: String, required: true },
+          rating: { type: Number, required: true, min: 1, max: 5 },
+          text: { type: String },
+          createdAt: { type: Date, default: Date.now }
+        }
+      ],
+      default: []
+    },
+    averageRating: {
+        type: Number,
+        default: 0
+    },
+    // --- END: NEW REVIEW FIELDS ---
+    
     likes: {
       type: Map,
       of: Boolean,

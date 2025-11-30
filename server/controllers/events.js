@@ -329,3 +329,54 @@ export const getFollowingEvents = async (req, res) => {
         res.status(404).json({ message: err.message });
     }
 };
+
+/* ADD REVIEW */
+export const addReview = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { userId, rating, text } = req.body;
+
+    // We must fetch the user here to get their firstName for the review
+    const event = await Event.findById(id);
+    const user = await User.findById(userId);
+
+    if (!event) return res.status(404).json({ message: "Event not found" });
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    // 1. Check if Event is Finished
+    if (new Date(event.date) > new Date()) {
+        return res.status(400).json({ message: "You can only rate past events." });
+    }
+
+    // 2. Check if User Attended (Optional - strict mode)
+    if (!event.participants.includes(userId) && event.userId !== userId) {
+        return res.status(403).json({ message: "You must participate or be the creator to rate this event." });
+    }
+
+    // 3. Check for Duplicate Review
+    const alreadyReviewed = event.reviews.find(r => r.userId === userId);
+    if (alreadyReviewed) {
+        return res.status(400).json({ message: "You have already reviewed this event." });
+    }
+
+    // 4. Add Review
+    const newReview = {
+        userId,
+        firstName: user.firstName,
+        rating: Number(rating),
+        text
+    };
+    event.reviews.push(newReview);
+
+    // 5. Calculate New Average (Rounded to one decimal place)
+    const totalStars = event.reviews.reduce((acc, item) => item.rating + acc, 0);
+    event.averageRating = Math.round((totalStars / event.reviews.length) * 10) / 10; 
+
+    await event.save();
+    res.status(200).json(event);
+
+  } catch (err) {
+    console.error("Add Review Error:", err);
+    res.status(404).json({ message: err.message });
+  }
+};

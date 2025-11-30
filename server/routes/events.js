@@ -10,7 +10,8 @@ import {
     getEvent, 
     verifyTicket, 
     getAttendingEvents,
-    getFollowingEvents // <--- NEW IMPORT
+    getFollowingEvents, 
+    addReview // <--- NEW IMPORT
 } from "../controllers/events.js"; 
 import { verifyToken } from "../middleware/auth.js";
 import multer from "multer";
@@ -30,7 +31,7 @@ router.get("/user/:userId", verifyToken, getUserEvents);
 router.get("/attending/:userId", verifyToken, getAttendingEvents);
 
 // NEW: FOLLOWING FEED ROUTE
-router.get("/following/:userId", verifyToken, getFollowingEvents); // <--- ADD THIS
+router.get("/following/:userId", verifyToken, getFollowingEvents);
 
 // 3. Dynamic ID Route (MUST come last among GETs)
 router.get("/:id", verifyToken, getEvent);
@@ -42,6 +43,10 @@ router.post("/verify", verifyToken, verifyTicket);
 /* UPDATE ROUTES */
 router.patch("/:id/join", verifyToken, joinEvent);
 router.post("/:id/comments", verifyToken, postComment);
+
+// NEW REVIEW ROUTE
+router.post("/:id/reviews", verifyToken, addReview); // <--- ADDED THIS ROUTE
+
 router.patch("/:id/like", verifyToken, likeEvent);
 
 /* DELETE ROUTES */
