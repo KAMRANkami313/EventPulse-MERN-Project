@@ -1,7 +1,7 @@
 # 🎉 EventPulse — Commercial Grade Progressive Web Application (PWA)
 
 EventPulse is a high-performance, full-stack MERN platform built as a **Progressive Web Application (PWA)**.
-It features scalable infrastructure, secure monetization via Stripe, real-time engagement tools, and modern event management capabilities.
+It features scalable infrastructure, advanced security, real-time engagement, intelligent recommendations, and a modern event management suite designed for commercial deployment.
 
 ---
 
@@ -14,65 +14,83 @@ It features scalable infrastructure, secure monetization via Stripe, real-time e
 * **PWA Ready**
   Fully installable on desktop and mobile (iOS/Android) with offline capabilities and native-like speed.
 
-* **Server-Side Pagination**
-  Efficient `.skip()` and `.limit()` handling for loading only **5 events at a time**, ensuring smooth performance even with thousands of events.
+* **Infinite Scroll Pagination**
+  Efficient server-side pagination loading **10 events at a time** (improved from static bulk loading). Prevents crashes when scaling to thousands of events.
 
-* **Backend Filtering & Search**
-  Server-side filtering, searching, and sorting (category, keyword, date) powered by MongoDB.
+* **Server-Side Filtering, Search & Sorting**
+  Advanced MongoDB-powered filtering by category, keyword, and event date.
 
 * **Cloudinary CDN Storage**
-  Persistent, fast, secure storage for all event media.
+  Fast, persistent, secure media hosting.
 
 * **Scroll Management**
-  Global Scroll-to-Top component for smoother navigation and better UX.
+  Global Scroll-to-Top component for smooth navigation.
+
+* **Dockerized Deployment**
+  Fully containerized frontend + backend for consistent, environment-agnostic deployment.
 
 ---
 
 ## 💳 Monetization & Business Logic
 
 * **Stripe Payment Integration** via Stripe Checkout
-* **Webhooks for Ticket Verification** ensures payment success before issuing tickets.
-* **Admin Data Export** (CSV/Excel) for analytics and reporting.
+* **Secure Stripe Webhooks** for verifying successful payments before issuing tickets.
+* **Admin Data Export** (CSV/Excel) for business analytics.
 
 ---
 
-## 🤝 Social Proof & User Retention
+## 🤝 Social Proof, Smart Feed & User Retention
 
-* **Follow System** enabling a personalized “Following Feed”.
+* **Follow System**
+  Personalized feed showing events from creators you follow.
+
 * **Event Ratings & Reviews**
-  5-star rating system available only after event participation.
-* **Live Event Chat** using Socket.io
-* **Real-Time Notifications** for joins, likes, and more.
+  5-star review system available only *after event participation*.
+
+* **AI-Lite “Smart Recommendations”**
+  Uses user activity + preferences to suggest relevant events instead of random feeds.
+
+* **Live Event Chat (Socket.io)**
+
+* **Real-Time Notifications** for joins, likes, follows, and more.
 
 ---
 
 ## 🎟️ Ticketing & Event Management
 
-* **Full CRUD for Events** including price, coordinates, media, etc.
+* **Full Event CRUD** including title, pricing, coordinates, media, etc.
 * **QR Ticket System** with automatic email delivery (Nodemailer).
-* **Built-in QR Code Scanner** for organizers.
-* **Calendar Integration** with downloadable `.ics` files.
+* **In-App QR Code Scanner** for organizers to validate tickets.
+* **Calendar Integration** with downloadable `.ics` event files.
 
 ---
 
 ## 🛡️ Security & Administration
 
-* **JWT Authentication** with Bcrypt hashing
+* **JWT Authentication** with Bcrypt
+
 * **Google OAuth Login**
-* **Forgot Password Flow** with secure email tokens
-* **Admin Dashboard** for moderation and analytics
+
+* **Forgot Password w/ Secure Tokens**
+
+* **Admin Dashboard** for moderation, analytics, and user management
+
+* **Rate Limiting (Security Hardening)**
+  Protects the API from bot attacks, request flooding, and brute-force attempts.
+
 * **Custom 404 Page** for invalid routes
 
 ---
 
 ## 🛠️ Tech Stack
 
-| Domain          | Technologies                                      | Details                                |
-| --------------- | ------------------------------------------------- | -------------------------------------- |
-| **Frontend**    | React (Vite), Tailwind CSS, Vite-PWA, React Icons | Fast builds, responsive UI, PWA-ready  |
-| **Backend**     | Node.js, Express.js, Socket.io, Nodemailer        | API + real-time communication          |
-| **Database**    | MongoDB Atlas + Mongoose                          | NoSQL, schema modeling                 |
-| **Third-Party** | Stripe SDK, Cloudinary, Leaflet                   | Payments, CDN storage, map integration |
+| Domain             | Technologies                                      | Details                             |
+| ------------------ | ------------------------------------------------- | ----------------------------------- |
+| **Frontend**       | React (Vite), Tailwind CSS, Vite-PWA, React Icons | PWA-ready, responsive, fast builds  |
+| **Backend**        | Node.js, Express.js, Socket.io, Nodemailer        | API + real-time communication       |
+| **Database**       | MongoDB Atlas + Mongoose                          | NoSQL, schema modeling              |
+| **Infrastructure** | Docker, Cloudinary CDN                            | Containerized deployment, media CDN |
+| **Third-Party**    | Stripe SDK, Leaflet                               | Payments, maps, and integrations    |
 
 ---
 
@@ -158,27 +176,43 @@ Open your browser:
 
 ---
 
+# 🐳 Running With Docker (Optional)
+
+EventPulse includes full Docker support for production deployment.
+
+### Build & Run:
+
+```bash
+docker compose up --build
+```
+
+Your app will be available at the configured ports for frontend & backend.
+
+---
+
 # 👨‍💻 Admin Access
 
 1. Register a new user account.
-2. In MongoDB Atlas ➝ `users` collection, find your user.
-3. Change:
+2. In MongoDB Atlas → navigate to the `users` collection.
+3. Update the user role:
 
 ```json
 "role": "user"
 ```
 
-to:
+➡️ Change to:
 
 ```json
 "role": "admin"
 ```
 
-4. Refresh the app — the **Admin Panel** will now appear in the navbar.
+4. Refresh the app — the **Admin Panel** will appear in the navbar.
 
 ---
 
 ## 📄 License
 
 This project was developed by **KAMRANkami313**.
+
+---
 
