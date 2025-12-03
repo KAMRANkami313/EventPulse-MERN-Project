@@ -101,8 +101,8 @@ const Login = () => {
                     />
                 </div>
 
-                {/* ✅ ADDED FORGOT PASSWORD LINK */}
-                <div className="flex justify-end -mt-4">
+                {/* FORGOT PASSWORD LINK */}
+                <div className="flex justify-end">
                     <Link to="/forgot-password" className="text-sm text-blue-600 hover:underline font-medium">
                         Forgot Password?
                     </Link>
@@ -117,21 +117,21 @@ const Login = () => {
                 </button>
             </form>
 
-            {/* 🏳️‍🌈 DIVIDER */}
+            {/* DIVIDER */}
             <div className="flex items-center my-6">
                 <div className="flex-1 border-t border-gray-300"></div>
                 <p className="mx-4 text-gray-500 text-sm font-medium">OR</p>
                 <div className="flex-1 border-t border-gray-300"></div>
             </div>
 
-            {/* 🏳️‍🌈 GOOGLE BUTTON */}
+            {/* GOOGLE BUTTON (Fixed Props) */}
             <div className="flex justify-center w-full">
                 <GoogleLogin
                     onSuccess={handleGoogleSuccess}
                     onError={() => {
                         console.log('Login Failed');
-                        alert("Google Sign In Failed");
                     }}
+                    useOneTap={false} // Important to fix console errors
                     theme="filled_blue"
                     size="large"
                     width="350"

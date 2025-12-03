@@ -11,6 +11,10 @@ import StarRating from "../../components/StarRating";
 import { FaStar, FaStarHalfAlt, FaRegStar } from "react-icons/fa"; 
 import Recommendations from "../../components/Recommendations"; // <--- NEW IMPORT
 
+// --- i18n Imports (Phase 22) ---
+import { useTranslation } from "react-i18next"; 
+// -----------------------------
+
 // --- STRIPE CONFIGURATION ---
 const stripePromise = loadStripe("pk_test_51SH0CJ7HwdZq8BC7oyKPjQxaAQ47C8IBRy0hzIgeUo4jdCSL6q6fTnI4Ut3JkRjgfvd0ys0cfWaiyVPqFSX3gKFd00ZEBHxmlC");
 
@@ -64,6 +68,10 @@ const getCategoryIcon = (category) => {
 
 const Dashboard = ({ toggleTheme, theme }) => {
   const navigate = useNavigate();
+
+  // --- i18n Hook Initialization (Phase 22) ---
+  const { t, i18n } = useTranslation(); 
+  // ------------------------------------------
 
   const user = JSON.parse(localStorage.getItem("user"));
   const token = localStorage.getItem("token");
@@ -379,6 +387,17 @@ const Dashboard = ({ toggleTheme, theme }) => {
       <nav className="bg-blue-600/90 backdrop-blur-md dark:bg-gray-800/90 text-white p-4 shadow-lg flex justify-between items-center sticky top-0 z-[1000] border-b border-white/10">
         <h1 className="text-2xl font-extrabold tracking-tight">EventPulse</h1>
         <div className="flex items-center gap-5 relative">
+          
+          {/* LANGUAGE SWITCHER (PHASE 22) */}
+          <div className="flex gap-1.5 text-lg p-1 bg-white/10 rounded-full">
+              <button onClick={() => i18n.changeLanguage('en')} className="hover:scale-110 transition active:scale-95" title="English">🇺🇸</button>
+              <button onClick={() => i18n.changeLanguage('es')} className="hover:scale-110 transition active:scale-95" title="Spanish">🇪🇸</button>
+              <button onClick={() => i18n.changeLanguage('fr')} className="hover:scale-110 transition active:scale-95" title="French">🇫🇷</button>
+              <button onClick={() => i18n.changeLanguage('tr')} className="hover:scale-110 transition active:scale-95" title="Turkish">🇹🇷</button>
+              <button onClick={() => i18n.changeLanguage('ur')} className="hover:scale-110 transition active:scale-95" title="Urdu">🇵🇰</button>
+              <button onClick={() => i18n.changeLanguage('ar')} className="hover:scale-110 transition active:scale-95" title="Arabic">🇸🇦</button>
+          </div>
+          {/* END LANGUAGE SWITCHER */}
 
           <button onClick={toggleTheme} className="text-xl hover:text-yellow-300 transition hover:scale-110">
             {theme === "dark" ? "☀️" : "🌙"}
@@ -425,7 +444,8 @@ const Dashboard = ({ toggleTheme, theme }) => {
 
           <div className="flex flex-col items-end">
             <Link to={`/profile/${user._id}`} className="hover:underline font-semibold text-sm">
-              Welcome, {user?.firstName}
+              {/* Translated Welcome Message */}
+              {t('welcome')}, {user?.firstName}
             </Link>
             {user.role === "admin" && (
               <Link
@@ -438,7 +458,8 @@ const Dashboard = ({ toggleTheme, theme }) => {
           </div>
 
           <button onClick={handleLogout} className="bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-lg text-sm font-bold transition active:scale-95">
-            Logout
+            {/* Translated Logout Button */}
+            {t('logout')}
           </button>
         </div>
       </nav>
@@ -453,7 +474,10 @@ const Dashboard = ({ toggleTheme, theme }) => {
           <Recommendations userId={user._id} token={token} /> 
 
           <div className="bg-white dark:bg-gray-800 dark:text-white p-6 rounded-2xl shadow-xl sticky top-24 transition-colors border border-gray-100 dark:border-gray-700">
-            <h3 className="text-xl font-bold mb-4 text-gray-800 dark:text-white">Create Event</h3>
+            <h3 className="text-xl font-bold mb-4 text-gray-800 dark:text-white">
+                {/* Translated Create Event Header */}
+                {t('create_event')}
+            </h3>
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <input
@@ -523,7 +547,8 @@ const Dashboard = ({ toggleTheme, theme }) => {
               </div>
 
               <button type="submit" className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-3 rounded-lg font-bold shadow-lg hover:shadow-blue-500/30 transition transform hover:-translate-y-0.5 active:scale-95">
-                Post Event
+                {/* Translated Post/Create Event Button */}
+                {t('create_event')}
               </button>
             </form>
           </div>
