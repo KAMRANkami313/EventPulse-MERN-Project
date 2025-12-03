@@ -1,6 +1,7 @@
 import User from "../models/User.js";
 import Event from "../models/Event.js";
-import Notification from "../models/Notification.js"; // <-- NEW IMPORT
+import Notification from "../models/Notification.js";
+import Report from "../models/Report.js"; // <--- NEW IMPORT
 
 /* GET ADMIN STATS (ENHANCED) */
 export const getAdminStats = async (req, res) => {
@@ -38,8 +39,8 @@ export const getAdminStats = async (req, res) => {
       totalUsers,
       totalEvents,
       totalRSVPs,
-      totalRevenue, // NEW
-      categoryData, // NEW
+      totalRevenue, 
+      categoryData, 
       recentUsers,
       recentEvents
     });
@@ -49,7 +50,7 @@ export const getAdminStats = async (req, res) => {
   }
 };
 
-/* GET ALL EVENTS (ADMIN VIEW) - Existing function, kept for completeness */
+/* GET ALL EVENTS (ADMIN VIEW) */
 export const getAllEvents = async (req, res) => {
   try {
     const events = await Event.find().sort({ createdAt: -1 });
@@ -60,19 +61,17 @@ export const getAllEvents = async (req, res) => {
 };
 
 
-/* SEND GLOBAL BROADCAST (NEW FUNCTION) */
+/* SEND GLOBAL BROADCAST */
 export const sendBroadcast = async (req, res) => {
     try {
         const { message, title } = req.body;
         const users = await User.find();
 
-        // Create a notification for EVERY user
-        // Note: In huge apps, this is done via a Queue (Redis/Bull), but for this project, simple loop is fine.
         const notifications = users.map(user => ({
             userId: user._id,
             fromUserId: "ADMIN",
             fromUserName: "System Admin",
-            type: "alert", // Assuming 'alert' type exists or is handled gracefully
+            type: "alert",
             message: `${title}: ${message}`,
             isRead: false
         }));
@@ -82,5 +81,42 @@ export const sendBroadcast = async (req, res) => {
         res.status(200).json({ message: "Broadcast sent successfully" });
     } catch (err) {
         res.status(500).json({ message: err.message });
+    }
+};
+
+// --- NEW MODERATION FUNCTIONS ---
+
+/* CREATE REPORT (User Action) */
+export const createReport = async (req, res) => {
+    try {
+        const { reporterId, reporterName, targetEventId, eventTitle, reason } = req.body;
+        const newReport = new Report({
+            reporterId, reporterName, targetEventId, eventTitle, reason
+        });
+        await newReport.save();
+        res.status(201).json({ message: "Report submitted" });
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+};
+
+/* GET PENDING REPORTS (Admin Action) */
+export const getReports = async (req, res) => {
+    try {
+        const reports = await Report.find({ status: "pending" }).sort({ createdAt: -1 });
+        res.status(200).json(reports);
+    } catch (err) {
+        res.status(404).json({ message: err.message });
+    }
+};
+
+/* RESOLVE REPORT (Admin Action) */
+export const resolveReport = async (req, res) => {
+    try {
+        const { id } = req.params;
+        await Report.findByIdAndUpdate(id, { status: "resolved" });
+        res.status(200).json({ message: "Report resolved" });
+    } catch (err) {
+        res.status(404).json({ message: err.message });
     }
 };

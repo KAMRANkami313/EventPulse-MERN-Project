@@ -1,13 +1,21 @@
 import express from "express";
-import { getAdminStats, getAllEvents, sendBroadcast } from "../controllers/admin.js"; // Import sendBroadcast
+import { getAdminStats, getAllEvents, sendBroadcast, createReport, getReports, resolveReport } from "../controllers/admin.js"; // <-- UPDATED IMPORTS
 import { verifyToken } from "../middleware/auth.js";
 
 const router = express.Router();
 
-// Only logged in users can try, and we should ideally check for Admin role here too
-// For this project, verifyToken is enough, we handle UI hiding on frontend
+// Existing Admin Routes
 router.get("/stats", verifyToken, getAdminStats);
 router.get("/events", verifyToken, getAllEvents);
-router.post("/broadcast", verifyToken, sendBroadcast); // NEW ROUTE
+router.post("/broadcast", verifyToken, sendBroadcast); 
+
+// --- NEW MODERATION ROUTES ---
+
+// USER route (Anyone can report)
+router.post("/report", verifyToken, createReport);
+
+// ADMIN routes
+router.get("/reports", verifyToken, getReports);
+router.patch("/reports/:id", verifyToken, resolveReport);
 
 export default router;

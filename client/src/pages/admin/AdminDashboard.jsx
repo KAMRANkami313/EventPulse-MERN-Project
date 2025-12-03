@@ -3,7 +3,7 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { 
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Legend,
-  PieChart, Pie, Cell // <--- UPDATED IMPORT for Pie Chart
+  PieChart, Pie, Cell // UPDATED IMPORT for Pie Chart
 } from 'recharts';
 
 // Pie Chart Colors
@@ -20,9 +20,12 @@ const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState("overview"); 
   const [graphData, setGraphData] = useState([]);
 
-  // --- NEW BROADCAST STATE ---
+  // --- BROADCAST STATE ---
   const [broadcast, setBroadcast] = useState({ title: "", message: "" });
-  // ---------------------------
+  
+  // --- NEW MODERATION STATE (Phase 25) ---
+  const [reports, setReports] = useState([]); 
+  // ---------------------------------------
 
   useEffect(() => {
     if (!user || user.role !== "admin") {
@@ -34,17 +37,24 @@ const AdminDashboard = () => {
 
   const fetchAllData = async () => {
     try {
-      // NOTE: The backend /stats now returns totalRevenue and categoryData
+      // Fetch core stats
       const statsRes = await axios.get("http://localhost:5000/admin/stats", { headers: { Authorization: `Bearer ${token}` } });
       setStats(statsRes.data);
 
+      // Fetch user data
       const usersRes = await axios.get("http://localhost:5000/users", { headers: { Authorization: `Bearer ${token}` } });
       setAllUsers(usersRes.data);
 
+      // Fetch event data
       const eventsRes = await axios.get("http://localhost:5000/admin/events", { headers: { Authorization: `Bearer ${token}` } });
       setAllEvents(eventsRes.data);
 
-      // PREPARE CHART DATA (Group users by Month created)
+      // --- FETCH REPORTS (Phase 25) ---
+      const reportsRes = await axios.get("http://localhost:5000/admin/reports", { headers: { Authorization: `Bearer ${token}` } });
+      setReports(reportsRes.data);
+      // --------------------------------
+      
+      // PREPARE CHART DATA
       processChartData(usersRes.data, eventsRes.data);
 
     } catch (err) { console.error(err); }
@@ -91,7 +101,6 @@ const AdminDashboard = () => {
       } catch (err) { alert("Failed to delete."); }
   };
 
-  // --- NEW BROADCAST HANDLER ---
   const handleBroadcast = async (e) => {
       e.preventDefault();
       if(!window.confirm("Send this message to ALL users?")) return;
@@ -103,7 +112,35 @@ const AdminDashboard = () => {
           setBroadcast({ title: "", message: "" });
       } catch (err) { alert("Failed to send."); }
   };
-  // ---------------------------
+  
+  // --- NEW MODERATION HANDLERS (Phase 25) ---
+  const handleDismissReport = async (reportId) => {
+    if(!window.confirm("Are you sure you want to dismiss this report?")) return;
+    await axios.patch(`http://localhost:5000/admin/reports/${reportId}`, {}, { headers: { Authorization: `Bearer ${token}` } });
+    setReports(reports.filter(r => r._id !== reportId));
+    alert("Report dismissed.");
+  };
+
+  const handleBanEvent = async (report) => {
+    if(!window.confirm(`Are you sure you want to DELETE the event "${report.eventTitle}" based on this report? This action is permanent.`)) return;
+    try {
+        // 1. Delete Event
+        await axios.delete(`http://localhost:5000/events/${report.targetEventId}`, { headers: { Authorization: `Bearer ${token}` } });
+        
+        // 2. Mark Report Resolved
+        await axios.patch(`http://localhost:5000/admin/reports/${report._id}`, {}, { headers: { Authorization: `Bearer ${token}` } });
+        
+        // 3. Update local state (remove event and report)
+        setAllEvents(allEvents.filter(e => e._id !== report.targetEventId));
+        setReports(reports.filter(r => r._id !== report._id));
+        
+        alert("Event Deleted & Report Resolved");
+    } catch (err) {
+        alert("Failed to complete ban/resolution process.");
+        console.error(err);
+    }
+  };
+  // ------------------------------------------
 
 
   if (!stats) return <div className="p-10 text-center text-gray-500">Loading Analytics...</div>;
@@ -131,14 +168,20 @@ const AdminDashboard = () => {
                   <span className="bg-red-100 text-red-600 text-[10px] font-bold px-2 py-0.5 rounded-full">SUPER ADMIN</span>
               </div>
               <nav className="p-4 space-y-2">
-                  {/* Updated Sidebar Menu to include 'broadcast' */}
-                  {['overview', 'users', 'events', 'broadcast'].map((tab) => (
+                  {/* Updated Sidebar Menu to include 'moderation' tab */}
+                  {['overview', 'users', 'events', 'broadcast', 'moderation'].map((tab) => (
                       <button 
                         key={tab}
                         onClick={() => setActiveTab(tab)} 
-                        className={`w-full text-left px-4 py-3 rounded-lg font-medium capitalize transition ${activeTab === tab ? "bg-blue-50 text-blue-700 shadow-sm" : "text-gray-600 hover:bg-gray-50"}`}
+                        className={`w-full text-left px-4 py-3 rounded-lg font-medium capitalize transition relative ${activeTab === tab ? "bg-blue-50 text-blue-700 shadow-sm" : "text-gray-600 hover:bg-gray-50"}`}
                       >
                           {tab}
+                          {/* NEW: Report Count Badge */}
+                          {tab === 'moderation' && reports.length > 0 && (
+                            <span className="absolute right-3 top-1/2 transform -translate-y-1/2 bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full animate-pulse">
+                                {reports.length}
+                            </span>
+                          )}
                       </button>
                   ))}
               </nav>
@@ -147,12 +190,12 @@ const AdminDashboard = () => {
           {/* CONTENT */}
           <div className="flex-1 p-8 overflow-y-auto h-full">
               
-              {/* === OVERVIEW TAB (UPDATED) === */}
+              {/* === OVERVIEW TAB === */}
               {activeTab === "overview" && (
                   <div className="max-w-6xl mx-auto animate-fadeIn">
                     <h2 className="text-2xl font-bold mb-6 text-gray-800">System Health</h2>
                     
-                    {/* STAT CARDS (UPDATED with Revenue Card) */}
+                    {/* STAT CARDS */}
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
                         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
                             <h3 className="text-gray-500 text-sm font-bold uppercase">Total Users</h3>
@@ -166,7 +209,7 @@ const AdminDashboard = () => {
                             <h3 className="text-gray-500 text-sm font-bold uppercase">Total RSVPs</h3>
                             <p className="text-4xl font-extrabold text-purple-600 mt-2">{stats.totalRSVPs}</p>
                         </div>
-                        {/* TOTAL REVENUE CARD (NEW) */}
+                        {/* TOTAL REVENUE CARD */}
                         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 relative overflow-hidden">
                             <div className="absolute right-0 top-0 w-24 h-24 bg-yellow-500 opacity-10 rounded-bl-full"></div>
                             <h3 className="text-gray-500 text-sm font-bold uppercase">Total Revenue</h3>
@@ -174,7 +217,7 @@ const AdminDashboard = () => {
                         </div>
                     </div>
 
-                    {/* CHARTS (UPDATED with Pie Chart) */}
+                    {/* CHARTS */}
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                         {/* Growth Analytics (Area Chart) */}
                         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 lg:col-span-2">
@@ -198,7 +241,7 @@ const AdminDashboard = () => {
                             </div>
                         </div>
 
-                        {/* Category Distribution (Pie Chart) (NEW) */}
+                        {/* Category Distribution (Pie Chart) */}
                         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
                             <h3 className="font-bold text-gray-700 mb-4">Event Categories</h3>
                             <div className="h-64">
@@ -313,7 +356,7 @@ const AdminDashboard = () => {
                   </div>
               )}
 
-              {/* === BROADCAST TAB (NEW) === */}
+              {/* === BROADCAST TAB === */}
               {activeTab === "broadcast" && (
                   <div className="max-w-2xl mx-auto animate-fadeIn mt-10">
                       <div className="bg-white p-8 rounded-xl shadow-lg border border-purple-100">
@@ -350,6 +393,49 @@ const AdminDashboard = () => {
                               </button>
                           </form>
                       </div>
+                  </div>
+              )}
+              
+              {/* === MODERATION TAB (NEW) === */}
+              {activeTab === "moderation" && (
+                  <div className="max-w-5xl mx-auto animate-fadeIn">
+                      <h2 className="text-2xl font-bold mb-6 text-gray-800 flex items-center gap-2">
+                          🚩 Moderation Queue 
+                          {/* Display the count of pending reports */}
+                          {reports.length > 0 && <span className="bg-red-500 text-white text-xs px-2 py-1 rounded-full">{reports.length}</span>}
+                      </h2>
+
+                      {reports.length === 0 ? (
+                          <div className="text-center py-10 bg-white rounded-xl shadow-sm border border-gray-100">
+                            <p className="text-gray-500">All clean! No pending reports.</p>
+                          </div>
+                      ) : (
+                          <div className="space-y-4">
+                              {reports.map(report => (
+                                  <div key={report._id} className="bg-white p-6 rounded-xl shadow-sm border border-red-100 flex flex-col md:flex-row justify-between items-start md:items-center">
+                                      <div className="mb-4 md:mb-0">
+                                          <p className="font-bold text-gray-800 text-lg">Report against: <span className="text-blue-600">{report.eventTitle}</span></p>
+                                          <p className="text-sm text-gray-600 mt-1">Reason: <span className="font-bold text-red-500">{report.reason}</span></p>
+                                          <p className="text-xs text-gray-400 mt-2">Reported by: {report.reporterName} • {new Date(report.createdAt).toLocaleDateString()}</p>
+                                      </div>
+                                      <div className="flex gap-3">
+                                          <button 
+                                              onClick={() => handleDismissReport(report._id)}
+                                              className="px-4 py-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 text-sm font-bold transition"
+                                          >
+                                              Dismiss
+                                          </button>
+                                          <button 
+                                              onClick={() => handleBanEvent(report)}
+                                              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm font-bold shadow-md transition"
+                                          >
+                                              Delete Event
+                                          </button>
+                                      </div>
+                                  </div>
+                              ))}
+                          </div>
+                      )}
                   </div>
               )}
 

@@ -16,7 +16,7 @@ import { useTranslation } from "react-i18next";
 // -----------------------------
 
 // --- STRIPE CONFIGURATION ---
-const stripePromise = loadStripe("pk_test_51SH0CJ7HwdZq8BC7oyKPjQxaAQ47C8IBRy0hzIgeUo4jdCSL6q6fTnI4Ut3JkRjgfvd0ys0cfWaiyVPqFSX3gKFd00ZEBHxmlC");
+const stripePromise = loadStripe("pk_test_51SH0CJ7HwdZq8BC7oyKPQxaAQ47C8IBRy0hzIgeUo4jdCSL6q6fTnI4Ut3JkRjgfvd0ys0cfWaiyVPqFSX3gKFd00ZEBHxmlC");
 
 // Swiper Imports (Carousel)
 import { Swiper, SwiperSlide } from 'swiper/react';
@@ -337,7 +337,7 @@ const Dashboard = ({ toggleTheme, theme }) => {
     } catch (err) { console.error(err); }
   };
   
-  // --- NEW RATING HANDLER ---
+  // --- RATING HANDLER ---
   const handleRateEvent = async (eventId, rating, text) => {
     try {
       const response = await axios.post(`http://localhost:5000/events/${eventId}/reviews`, 
@@ -353,7 +353,28 @@ const Dashboard = ({ toggleTheme, theme }) => {
       alert(err.response?.data?.message || "Error submitting review");
     }
   };
-  // --------------------------
+  
+  // --- NEW REPORT HANDLER (Phase 25) ---
+  const handleReport = async (event) => {
+    // Prompt allows user to specify a reason easily
+    const reason = prompt("Why are you reporting this event? (Spam, Scam, Inappropriate, Other)");
+    if (!reason || reason.trim() === "") return;
+
+    try {
+        await axios.post("http://localhost:5000/admin/report", {
+            reporterId: user._id,
+            reporterName: user.firstName,
+            targetEventId: event._id,
+            eventTitle: event.title,
+            reason: reason
+        }, { headers: { Authorization: `Bearer ${token}` } });
+        alert("Report submitted to Admins. Thank you for helping keep the community safe.");
+    } catch (err) {
+        console.error(err);
+        alert("Failed to submit report.");
+    }
+  };
+  // -------------------------------------
 
   const handleDelete = async (eventId) => {
     if (!window.confirm("Are you sure?")) return;
@@ -820,6 +841,11 @@ const Dashboard = ({ toggleTheme, theme }) => {
                             <button onClick={() => handleShare(event._id)} className="hover:text-blue-500 transition active:scale-90" title="Share">
                               🔗
                             </button>
+                            
+                            {/* NEW REPORT BUTTON (Phase 25) */}
+                            <button onClick={() => handleReport(event)} className="hover:text-red-500 transition active:scale-90" title="Report Event">
+                                🚩
+                            </button> 
                           </div>
 
                           <div className="flex gap-2">
