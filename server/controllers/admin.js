@@ -27,3 +27,14 @@ export const getAdminStats = async (req, res) => {
     res.status(404).json({ message: err.message });
   }
 };
+
+/* GET ALL EVENTS (ADMIN VIEW) */
+export const getAllEvents = async (req, res) => {
+  try {
+    // Retrieve all events, sorted newest first
+    const events = await Event.find().sort({ createdAt: -1 });
+    res.status(200).json(events);
+  } catch (err) {
+    res.status(404).json({ message: err.message });
+  }
+};

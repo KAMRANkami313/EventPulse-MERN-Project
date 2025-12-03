@@ -1,11 +1,13 @@
 import express from "express";
-import { getAdminStats } from "../controllers/admin.js";
+import { getAdminStats, getAllEvents } from "../controllers/admin.js"; // Import getAllEvents
 import { verifyToken } from "../middleware/auth.js";
 
 const router = express.Router();
 
-// Only logged in users can try, and we should ideally check for Admin role here too
-// For this project, verifyToken is enough, we handle UI hiding on frontend
+// Route to get overall statistics (Totals, Recents)
 router.get("/stats", verifyToken, getAdminStats);
+
+// NEW ROUTE: Route to get all events for the admin table
+router.get("/events", verifyToken, getAllEvents); 
 
 export default router;
