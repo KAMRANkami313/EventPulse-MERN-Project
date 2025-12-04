@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useState, useEffect } from "react";
+import { Toaster } from 'react-hot-toast'; // ✅ NEW IMPORT
 
 // --- ANIMATION LIBRARY IMPORT ---
 import AOS from "aos";
@@ -51,7 +52,9 @@ function App() {
 
   return (
     <BrowserRouter>
-      {/* ✅ ADD SCROLL TO TOP HERE (Inside Router, Outside Routes) */}
+      {/* Step 2: Add Toaster at the top level */}
+      <Toaster position="top-center" reverseOrder={false} />
+      
       <ScrollToTop /> 
 
       <Routes>

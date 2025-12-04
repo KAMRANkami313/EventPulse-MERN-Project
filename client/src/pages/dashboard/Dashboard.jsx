@@ -6,10 +6,11 @@ import 'leaflet/dist/leaflet.css';
 import ChatBox from "../../components/ChatBox";
 import SkeletonEvent from "../../components/SkeletonEvent"; 
 import { getImageUrl } from "../../utils/imageHelper"; 
-import { loadStripe } from "@stripe/stripe-js"; 
+import { loadStripe } from "@stripe/stripe-js"; // <-- CORRECT
 import StarRating from "../../components/StarRating"; 
 import { FaStar, FaStarHalfAlt, FaRegStar } from "react-icons/fa"; 
-import Recommendations from "../../components/Recommendations"; // <--- NEW IMPORT
+import Recommendations from "../../components/Recommendations"; 
+import toast from 'react-hot-toast'; // ✅ NEW IMPORT for Phase 28
 
 // --- i18n Imports (Phase 22) ---
 import { useTranslation } from "react-i18next"; 
@@ -249,6 +250,7 @@ const Dashboard = ({ toggleTheme, theme }) => {
     });
   };
 
+  // 1. CREATE EVENT
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
@@ -268,7 +270,9 @@ const Dashboard = ({ toggleTheme, theme }) => {
       });
 
       if (response.status === 201) {
-        alert("Event Created!");
+        // 🔔 TOAST REPLACEMENT
+        toast.success("Event Created Successfully! 🎉");
+        
         // After creating an event, trigger a reset fetch to show the new event on page 1
         fetchEvents(1, true); 
         setNewEvent({
@@ -279,9 +283,12 @@ const Dashboard = ({ toggleTheme, theme }) => {
       }
     } catch (err) {
       console.error("Error creating event", err);
+      // 🔔 TOAST ADDITION
+      toast.error("Error creating event. Check form details.");
     }
   };
 
+  // 2. JOIN EVENT (Free)
   const handleJoin = async (eventId) => {
     try {
       const response = await axios.patch(`http://localhost:5000/events/${eventId}/join`,
@@ -290,9 +297,17 @@ const Dashboard = ({ toggleTheme, theme }) => {
       );
       const updatedEvent = response.data;
       setEvents(events.map((e) => (e._id === eventId ? updatedEvent : e)));
-    } catch (err) { console.error(err); }
+
+      // 🔔 TOAST ADDITION (as per instructions)
+      toast.success("Ticket Booked! check your email 📧");
+
+    } catch (err) { 
+        console.error(err); 
+        toast.error(err.response?.data?.message || "Failed to book ticket.");
+    }
   };
 
+  // 3. PAYMENT (Paid events)
   const handlePayment = async (event) => {
     try {
         const response = await axios.post("http://localhost:5000/payment/create-checkout-session", {
@@ -306,12 +321,14 @@ const Dashboard = ({ toggleTheme, theme }) => {
             window.location.href = response.data.url;
         } else {
             console.error("No payment URL received");
-            alert("Payment Error: No URL received");
+            // 🔔 TOAST REPLACEMENT
+            toast.error("Payment Error: No secure payment link received.");
         }
 
     } catch (err) {
         console.error("Payment Error", err);
-        alert("Could not initiate payment.");
+        // 🔔 TOAST REPLACEMENT
+        toast.error("Could not initiate payment.");
     }
   };
 
@@ -337,7 +354,7 @@ const Dashboard = ({ toggleTheme, theme }) => {
     } catch (err) { console.error(err); }
   };
   
-  // --- RATING HANDLER ---
+  // 4. RATING HANDLER
   const handleRateEvent = async (eventId, rating, text) => {
     try {
       const response = await axios.post(`http://localhost:5000/events/${eventId}/reviews`, 
@@ -348,15 +365,18 @@ const Dashboard = ({ toggleTheme, theme }) => {
       const updatedEvent = response.data;
       setEvents(events.map((e) => (e._id === eventId ? updatedEvent : e)));
       setTempRating(5); // Reset temp rating for next use
-      alert("Review Submitted successfully!");
+      
+      // 🔔 TOAST REPLACEMENT
+      toast.success("Review Submitted successfully! Thank you.");
     } catch (err) {
-      alert(err.response?.data?.message || "Error submitting review");
+      // 🔔 TOAST REPLACEMENT
+      toast.error(err.response?.data?.message || "Error submitting review");
     }
   };
   
-  // --- NEW REPORT HANDLER (Phase 25) ---
+  // 5. REPORT HANDLER
   const handleReport = async (event) => {
-    // Prompt allows user to specify a reason easily
+    // Prompt allows user to specify a reason easily (this is a good use case for a prompt before a toast confirms the action)
     const reason = prompt("Why are you reporting this event? (Spam, Scam, Inappropriate, Other)");
     if (!reason || reason.trim() === "") return;
 
@@ -368,27 +388,37 @@ const Dashboard = ({ toggleTheme, theme }) => {
             eventTitle: event.title,
             reason: reason
         }, { headers: { Authorization: `Bearer ${token}` } });
-        alert("Report submitted to Admins. Thank you for helping keep the community safe.");
+
+        // 🔔 TOAST REPLACEMENT
+        toast.success("Report submitted to Admins. Thank you for helping keep the community safe.");
     } catch (err) {
         console.error(err);
-        alert("Failed to submit report.");
+        // 🔔 TOAST REPLACEMENT
+        toast.error("Failed to submit report.");
     }
   };
   // -------------------------------------
 
+  // 6. DELETE EVENT
   const handleDelete = async (eventId) => {
-    if (!window.confirm("Are you sure?")) return;
+    if (!window.confirm("Are you sure you want to delete this event? This action cannot be undone.")) return;
     try {
       await axios.delete(`http://localhost:5000/events/${eventId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setEvents(events.filter((e) => e._id !== eventId));
-    } catch (err) { alert("Could not delete event."); }
+      toast.success("Event deleted successfully.");
+    } catch (err) { 
+      // 🔔 TOAST REPLACEMENT
+      toast.error("Could not delete event."); 
+    }
   };
 
+  // 7. SHARE EVENT
   const handleShare = (eventId) => {
     navigator.clipboard.writeText(`Check out this event on EventPulse!`);
-    alert("Link copied to clipboard!");
+    // 🔔 TOAST REPLACEMENT
+    toast.success("Link copied to clipboard! Ready to share.");
   };
 
   const toggleComments = (eventId) => {
@@ -596,7 +626,7 @@ const Dashboard = ({ toggleTheme, theme }) => {
                       {event.picturePath ? (
                         <img 
                           src={getImageUrl(event.picturePath)} 
-                          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" 
+                          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
                           alt="featured" 
                         />
                       ) : (

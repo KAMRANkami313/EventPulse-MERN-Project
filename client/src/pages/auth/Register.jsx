@@ -1,11 +1,12 @@
 import { useState } from "react";
 import axios from "axios";
 import { useNavigate, Link } from "react-router-dom";
-import { GoogleLogin } from '@react-oauth/google'; // ✅ Import Google Button
+import { GoogleLogin } from '@react-oauth/google'; 
+import toast from 'react-hot-toast'; // ✅ NEW IMPORT
 
 const Register = () => {
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(false); // Added loading state for better UX
+  const [loading, setLoading] = useState(false); 
   
   // State to hold form data
   const [formData, setFormData] = useState({
@@ -29,12 +30,15 @@ const Register = () => {
       const response = await axios.post("http://localhost:5000/auth/register", formData);
       
       if (response.status === 201) {
-        alert("Registration Successful! Please login.");
+        // 🔔 TOAST REPLACEMENT
+        toast.success("Registration Successful! Please login.");
         navigate("/login"); 
       }
     } catch (error) {
       console.error("Error registering:", error);
-      alert("Registration Failed. Try again.");
+      // 🔔 TOAST REPLACEMENT
+      const errorMessage = error.response?.data?.message || "Registration Failed. Try again.";
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -53,11 +57,16 @@ const Register = () => {
             // Save token and redirect directly to Dashboard
             localStorage.setItem("token", response.data.token);
             localStorage.setItem("user", JSON.stringify(response.data.user));
+            
+            // 🔔 TOAST REPLACEMENT
+            toast.success("Account created and signed in!");
+            
             navigate("/dashboard");
         }
     } catch (error) {
         console.error("Google Auth Error", error);
-        alert("Google Sign-Up Failed");
+        // 🔔 TOAST REPLACEMENT
+        toast.error("Google Sign-Up Failed");
     } finally {
         setLoading(false);
     }
@@ -182,7 +191,8 @@ const Register = () => {
                     onSuccess={handleGoogleSuccess}
                     onError={() => {
                         console.log('Login Failed');
-                        alert("Google Sign Up Failed");
+                        // 🔔 TOAST REPLACEMENT
+                        toast.error("Google Sign Up Failed");
                     }}
                     theme="filled_blue"
                     size="large"

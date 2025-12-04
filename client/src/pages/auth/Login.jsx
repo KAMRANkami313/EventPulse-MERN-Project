@@ -2,6 +2,7 @@ import { useState } from "react";
 import axios from "axios";
 import { useNavigate, Link } from "react-router-dom";
 import { GoogleLogin } from '@react-oauth/google'; 
+import toast from 'react-hot-toast'; // ✅ NEW IMPORT
 
 const Login = () => {
   const navigate = useNavigate();
@@ -21,10 +22,20 @@ const Login = () => {
       if (response.status === 200) {
         localStorage.setItem("token", response.data.token);
         localStorage.setItem("user", JSON.stringify(response.data.user));
-        navigate("/dashboard");
+        
+        // 🔔 TOAST REPLACEMENT
+        toast.success("Welcome back!"); 
+
+        // Redirect based on role (assuming role is handled during user fetching or included in response.data.user)
+        if (response.data.user.role === 'admin') {
+            navigate("/admin");
+        } else {
+            navigate("/dashboard");
+        }
       }
     } catch (error) {
-      alert("Invalid Email or Password");
+      // 🔔 TOAST REPLACEMENT
+      toast.error(error.response?.data?.message || "Invalid Email or Password");
     } finally {
         setLoading(false);
     }
@@ -41,11 +52,21 @@ const Login = () => {
         if (response.status === 200) {
             localStorage.setItem("token", response.data.token);
             localStorage.setItem("user", JSON.stringify(response.data.user));
-            navigate("/dashboard");
+            
+            // 🔔 TOAST REPLACEMENT
+            toast.success("Welcome back via Google!"); 
+            
+            // Redirect logic
+            if (response.data.user.role === 'admin') {
+                navigate("/admin");
+            } else {
+                navigate("/dashboard");
+            }
         }
     } catch (error) {
         console.error("Google Login Error", error);
-        alert("Google Login Failed");
+        // 🔔 TOAST REPLACEMENT
+        toast.error("Google Login Failed");
     } finally {
         setLoading(false);
     }
@@ -130,6 +151,7 @@ const Login = () => {
                     onSuccess={handleGoogleSuccess}
                     onError={() => {
                         console.log('Login Failed');
+                        toast.error("Google Login failed or was cancelled."); // Optional error toast for Google failure
                     }}
                     useOneTap={false} // Important to fix console errors
                     theme="filled_blue"
