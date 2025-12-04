@@ -3,6 +3,7 @@ import Event from "../models/Event.js";
 import Notification from "../models/Notification.js";
 import Report from "../models/Report.js";
 import Log from "../models/Log.js"; // <--- NEW IMPORT for getSystemLogs
+import Transaction from "../models/Transaction.js"; // <--- NEW IMPORT (Phase 29)
 import { createLog } from "../utils/logger.js"; // <--- NEW UTILITY IMPORT
 
 /* GET ADMIN STATS (ENHANCED) */
@@ -135,6 +136,17 @@ export const getSystemLogs = async (req, res) => {
     try {
         const logs = await Log.find().sort({ createdAt: -1 }).limit(50); // Last 50 actions
         res.status(200).json(logs);
+    } catch (err) {
+        res.status(404).json({ message: err.message });
+    }
+};
+
+/* GET ALL TRANSACTIONS (NEW FUNCTION - Phase 29) */
+export const getTransactions = async (req, res) => {
+    try {
+        // Fetch all transactions, newest first
+        const transactions = await Transaction.find().sort({ createdAt: -1 }); 
+        res.status(200).json(transactions);
     } catch (err) {
         res.status(404).json({ message: err.message });
     }

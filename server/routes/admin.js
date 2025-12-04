@@ -1,5 +1,5 @@
 import express from "express";
-import { getAdminStats, getAllEvents, sendBroadcast, createReport, getReports, resolveReport, getSystemLogs } from "../controllers/admin.js"; // <-- ADDED getSystemLogs
+import { getAdminStats, getAllEvents, sendBroadcast, createReport, getReports, resolveReport, getSystemLogs, getTransactions } from "../controllers/admin.js"; // <-- ADDED getTransactions
 import { verifyToken } from "../middleware/auth.js";
 
 const router = express.Router();
@@ -14,7 +14,10 @@ router.post("/report", verifyToken, createReport);
 router.get("/reports", verifyToken, getReports);
 router.patch("/reports/:id", verifyToken, resolveReport);
 
-// NEW AUDIT LOG ROUTE (Phase 26)
+// Audit Logs
 router.get("/logs", verifyToken, getSystemLogs); 
+
+// NEW FINANCIAL ROUTE (Phase 29)
+router.get("/transactions", verifyToken, getTransactions); 
 
 export default router;

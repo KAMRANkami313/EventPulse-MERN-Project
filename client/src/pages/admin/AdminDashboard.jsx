@@ -20,12 +20,14 @@ const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState("overview"); 
   const [graphData, setGraphData] = useState([]);
 
+  // Admin Features States
   const [broadcast, setBroadcast] = useState({ title: "", message: "" });
   const [reports, setReports] = useState([]); 
-  
-  // --- NEW LOGS STATE (Phase 26) ---
   const [logs, setLogs] = useState([]);
-  // ---------------------------------
+  
+  // --- NEW TRANSACTIONS STATE (Phase 29) ---
+  const [transactions, setTransactions] = useState([]); 
+  // ------------------------------------------
 
   useEffect(() => {
     if (!user || user.role !== "admin") {
@@ -53,10 +55,14 @@ const AdminDashboard = () => {
       const reportsRes = await axios.get("http://localhost:5000/admin/reports", { headers: { Authorization: `Bearer ${token}` } });
       setReports(reportsRes.data);
       
-      // --- FETCH LOGS (Phase 26) ---
+      // Fetch logs
       const logsRes = await axios.get("http://localhost:5000/admin/logs", { headers: { Authorization: `Bearer ${token}` } });
       setLogs(logsRes.data);
-      // -----------------------------
+
+      // --- FETCH TRANSACTIONS (Phase 29) ---
+      const txnRes = await axios.get("http://localhost:5000/admin/transactions", { headers: { Authorization: `Bearer ${token}` } });
+      setTransactions(txnRes.data);
+      // -------------------------------------
       
       // PREPARE CHART DATA
       processChartData(usersRes.data, eventsRes.data);
@@ -85,17 +91,13 @@ const AdminDashboard = () => {
       setGraphData(chartArray);
   };
 
-  // LOGGING NOTE: The handleDeleteUser and handleDeleteEvent functions
-  // automatically create logs in their respective backend controllers (users.js/events.js), 
-  // so we don't need to change the frontend handler logic here, just the API calls.
-
   const handleDeleteUser = async (userId) => {
       if(userId === user._id) return alert("Cannot delete self.");
       if(!window.confirm("Ban this user?")) return;
       try {
           // Deletion triggers logging in server/controllers/users.js
           await axios.delete(`http://localhost:5000/users/${userId}`, { headers: { Authorization: `Bearer ${token}` } });
-          // Re-fetch logs and users after action
+          // Re-fetch all data after action (to update users and logs)
           fetchAllData();
       } catch (err) { alert("Failed to delete."); }
   };
@@ -105,7 +107,7 @@ const AdminDashboard = () => {
       try {
           // Deletion triggers logging in server/controllers/events.js
           await axios.delete(`http://localhost:5000/events/${eventId}`, { headers: { Authorization: `Bearer ${token}` } });
-          // Re-fetch logs and events after action
+          // Re-fetch all data after action (to update events and logs)
           fetchAllData();
       } catch (err) { alert("Failed to delete."); }
   };
@@ -179,8 +181,8 @@ const AdminDashboard = () => {
                   <span className="bg-red-100 text-red-600 text-[10px] font-bold px-2 py-0.5 rounded-full">SUPER ADMIN</span>
               </div>
               <nav className="p-4 space-y-2">
-                  {/* Added 'logs' tab */}
-                  {['overview', 'users', 'events', 'broadcast', 'moderation', 'logs'].map((tab) => (
+                  {/* Updated Sidebar Menu to include 'financials' tab */}
+                  {['overview', 'users', 'events', 'broadcast', 'moderation', 'logs', 'financials'].map((tab) => (
                       <button 
                         key={tab}
                         onClick={() => setActiveTab(tab)} 
@@ -411,6 +413,7 @@ const AdminDashboard = () => {
                   <div className="max-w-5xl mx-auto animate-fadeIn">
                       <h2 className="text-2xl font-bold mb-6 text-gray-800 flex items-center gap-2">
                           🚩 Moderation Queue 
+                          {/* Display the count of pending reports */}
                           {reports.length > 0 && <span className="bg-red-500 text-white text-xs px-2 py-1 rounded-full">{reports.length}</span>}
                       </h2>
 
@@ -448,7 +451,7 @@ const AdminDashboard = () => {
                   </div>
               )}
               
-              {/* === LOGS TAB (NEW) === */}
+              {/* === LOGS TAB === */}
               {activeTab === "logs" && (
                   <div className="max-w-6xl mx-auto animate-fadeIn">
                       <h2 className="text-2xl font-bold mb-6 text-gray-800">System Audit Logs</h2>
@@ -483,6 +486,57 @@ const AdminDashboard = () => {
                                           </td>
                                       </tr>
                                   ))}
+                              </tbody>
+                          </table>
+                      </div>
+                  </div>
+              )}
+
+              {/* === FINANCIALS TAB (NEW) === */}
+              {activeTab === "financials" && (
+                  <div className="max-w-6xl mx-auto animate-fadeIn">
+                      <h2 className="text-2xl font-bold mb-6 text-gray-800 flex items-center gap-2">
+                          💳 Transaction History
+                          <span className="bg-green-100 text-green-700 text-xs px-2 py-1 rounded-full font-bold">
+                              ${stats.totalRevenue ? stats.totalRevenue.toLocaleString() : '0'} Total
+                          </span>
+                      </h2>
+
+                      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                          <table className="w-full text-left">
+                              <thead className="bg-gray-50 border-b">
+                                  <tr>
+                                      <th className="p-4 text-xs font-bold text-gray-500 uppercase">User</th>
+                                      <th className="p-4 text-xs font-bold text-gray-500 uppercase">Event</th>
+                                      <th className="p-4 text-xs font-bold text-gray-500 uppercase">Amount</th>
+                                      <th className="p-4 text-xs font-bold text-gray-500 uppercase">Status</th>
+                                      <th className="p-4 text-xs font-bold text-gray-500 uppercase text-right">Date</th>
+                                  </tr>
+                              </thead>
+                              <tbody className="divide-y divide-gray-100">
+                                  {transactions.length === 0 ? (
+                                      <tr><td colSpan="5" className="p-8 text-center text-gray-400">No transactions recorded yet.</td></tr>
+                                  ) : (
+                                      transactions.map(txn => (
+                                          <tr key={txn._id} className="hover:bg-blue-50/50 transition">
+                                              <td className="p-4">
+                                                  <p className="font-bold text-gray-800 text-sm">{txn.userName}</p>
+                                                  <p className="text-xs text-gray-500">{txn.userEmail}</p>
+                                              </td>
+                                              <td className="p-4 text-sm text-gray-600">{txn.eventTitle}</td>
+                                              <td className="p-4 font-mono font-bold text-green-600">${txn.amount ? txn.amount.toFixed(2) : '0.00'}</td>
+                                              <td className="p-4">
+                                                  <span className="bg-green-100 text-green-700 text-[10px] uppercase font-bold px-2 py-1 rounded-full">
+                                                      {txn.status}
+                                                  </span>
+                                                  <p className="text-[10px] text-gray-400 mt-1">ID: {txn.stripePaymentId}</p>
+                                              </td>
+                                              <td className="p-4 text-right text-xs text-gray-500">
+                                                  {new Date(txn.createdAt).toLocaleString()}
+                                              </td>
+                                          </tr>
+                                      ))
+                                  )}
                               </tbody>
                           </table>
                       </div>
