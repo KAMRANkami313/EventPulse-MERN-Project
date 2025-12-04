@@ -1,5 +1,6 @@
 import User from "../models/User.js";
 import Event from "../models/Event.js";
+import { createLog } from "../utils/logger.js"; // <--- NEW UTILITY IMPORT
 
 /* READ */
 export const getUser = async (req, res) => {
@@ -27,16 +28,32 @@ export const getAllUsers = async (req, res) => {
   }
 };
 
-/* DELETE USER (The Ban Hammer) */
+/* DELETE USER (The Ban Hammer) - UPDATED with Logging */
 export const deleteUser = async (req, res) => {
   try {
     const { id } = req.params;
     
-    // 1. Delete the User
+    // 1. Find user before deleting to get their name for the log
+    const deletedUser = await User.findById(id);
+
+    if (!deletedUser) {
+        return res.status(404).json({ message: "User not found." });
+    }
+
+    // 2. Delete the User
     await User.findByIdAndDelete(id);
 
-    // 2. Delete all Events created by this User (Cleanup)
+    // 3. Delete all Events created by this User (Cleanup)
     await Event.deleteMany({ userId: id });
+
+    // 4. LOG IT
+    // req.user.id is the ID of the ADMIN performing the action (passed via verifyToken)
+    await createLog(
+        req.user.id, 
+        "DELETE_USER", 
+        `User: ${deletedUser.firstName} ${deletedUser.lastName}`, 
+        `Banned ID: ${id}`
+    );
 
     res.status(200).json({ message: "User and their events deleted successfully." });
   } catch (err) {

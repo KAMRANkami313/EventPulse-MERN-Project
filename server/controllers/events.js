@@ -2,6 +2,7 @@ import Event from "../models/Event.js";
 import User from "../models/User.js";
 import Notification from "../models/Notification.js";
 import { sendTicketEmail } from "../services/email.js"; 
+import { createLog } from "../utils/logger.js"; // <--- NEW UTILITY IMPORT
 
 /* CREATE - FIXED TO INCLUDE PRICE */
 export const createEvent = async (req, res) => {
@@ -231,10 +232,9 @@ export const likeEvent = async (req, res) => {
   }
 };
 
-/* DELETE */
+/* DELETE (UPDATED with Logging) */
 export const deleteEvent = async (req, res) => {
   try {
-// ... rest of deleteEvent function ...
     const { id } = req.params;
     // Note: Assuming 'verifyToken' middleware puts user info in req.user
     const userId = req.user.id; 
@@ -247,6 +247,17 @@ export const deleteEvent = async (req, res) => {
     if (event.userId !== userId && user.role !== "admin") {
       return res.status(403).json({ message: "You can only delete your own events." });
     }
+    
+    // --- Logging Logic ---
+    if (user.role === "admin") {
+        await createLog(
+            userId, 
+            "ADMIN_DELETE_EVENT", 
+            `Event: ${event.title}`, 
+            `Target ID: ${id}`
+        );
+    }
+    // ---------------------
 
     await Event.findByIdAndDelete(id);
     res.status(200).json({ message: "Event deleted successfully" });

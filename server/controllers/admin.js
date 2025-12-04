@@ -1,7 +1,9 @@
 import User from "../models/User.js";
 import Event from "../models/Event.js";
 import Notification from "../models/Notification.js";
-import Report from "../models/Report.js"; // <--- NEW IMPORT
+import Report from "../models/Report.js";
+import Log from "../models/Log.js"; // <--- NEW IMPORT for getSystemLogs
+import { createLog } from "../utils/logger.js"; // <--- NEW UTILITY IMPORT
 
 /* GET ADMIN STATS (ENHANCED) */
 export const getAdminStats = async (req, res) => {
@@ -61,7 +63,7 @@ export const getAllEvents = async (req, res) => {
 };
 
 
-/* SEND GLOBAL BROADCAST */
+/* SEND GLOBAL BROADCAST (UPDATED with Logging) */
 export const sendBroadcast = async (req, res) => {
     try {
         const { message, title } = req.body;
@@ -78,15 +80,18 @@ export const sendBroadcast = async (req, res) => {
 
         await Notification.insertMany(notifications);
 
+        // LOG IT
+        await createLog(req.user.id, "BROADCAST_SENT", "All Users", `Title: ${title}`);
+
         res.status(200).json({ message: "Broadcast sent successfully" });
     } catch (err) {
         res.status(500).json({ message: err.message });
     }
 };
 
-// --- NEW MODERATION FUNCTIONS ---
+// --- MODERATION FUNCTIONS ---
 
-/* CREATE REPORT (User Action) */
+/* CREATE REPORT (User Action) - No change here as it's not an admin action */
 export const createReport = async (req, res) => {
     try {
         const { reporterId, reporterName, targetEventId, eventTitle, reason } = req.body;
@@ -110,12 +115,26 @@ export const getReports = async (req, res) => {
     }
 };
 
-/* RESOLVE REPORT (Admin Action) */
+/* RESOLVE REPORT (Admin Action) - UPDATED with Logging */
 export const resolveReport = async (req, res) => {
     try {
         const { id } = req.params;
-        await Report.findByIdAndUpdate(id, { status: "resolved" });
+        const resolvedReport = await Report.findByIdAndUpdate(id, { status: "resolved" });
+
+        // LOG IT
+        await createLog(req.user.id, "REPORT_RESOLVED", `Report ID: ${id}`, `Resolved report for: ${resolvedReport.eventTitle}`);
+        
         res.status(200).json({ message: "Report resolved" });
+    } catch (err) {
+        res.status(404).json({ message: err.message });
+    }
+};
+
+/* GET AUDIT LOGS (NEW FUNCTION) */
+export const getSystemLogs = async (req, res) => {
+    try {
+        const logs = await Log.find().sort({ createdAt: -1 }).limit(50); // Last 50 actions
+        res.status(200).json(logs);
     } catch (err) {
         res.status(404).json({ message: err.message });
     }

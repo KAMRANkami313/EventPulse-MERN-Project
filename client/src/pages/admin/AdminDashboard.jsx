@@ -3,7 +3,7 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { 
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Legend,
-  PieChart, Pie, Cell // UPDATED IMPORT for Pie Chart
+  PieChart, Pie, Cell 
 } from 'recharts';
 
 // Pie Chart Colors
@@ -20,12 +20,12 @@ const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState("overview"); 
   const [graphData, setGraphData] = useState([]);
 
-  // --- BROADCAST STATE ---
   const [broadcast, setBroadcast] = useState({ title: "", message: "" });
-  
-  // --- NEW MODERATION STATE (Phase 25) ---
   const [reports, setReports] = useState([]); 
-  // ---------------------------------------
+  
+  // --- NEW LOGS STATE (Phase 26) ---
+  const [logs, setLogs] = useState([]);
+  // ---------------------------------
 
   useEffect(() => {
     if (!user || user.role !== "admin") {
@@ -49,10 +49,14 @@ const AdminDashboard = () => {
       const eventsRes = await axios.get("http://localhost:5000/admin/events", { headers: { Authorization: `Bearer ${token}` } });
       setAllEvents(eventsRes.data);
 
-      // --- FETCH REPORTS (Phase 25) ---
+      // Fetch reports
       const reportsRes = await axios.get("http://localhost:5000/admin/reports", { headers: { Authorization: `Bearer ${token}` } });
       setReports(reportsRes.data);
-      // --------------------------------
+      
+      // --- FETCH LOGS (Phase 26) ---
+      const logsRes = await axios.get("http://localhost:5000/admin/logs", { headers: { Authorization: `Bearer ${token}` } });
+      setLogs(logsRes.data);
+      // -----------------------------
       
       // PREPARE CHART DATA
       processChartData(usersRes.data, eventsRes.data);
@@ -63,8 +67,6 @@ const AdminDashboard = () => {
   // Helper to turn raw data into Graph Data
   const processChartData = (users, events) => {
       const dataMap = {};
-
-      // Helper to get "Jan", "Feb" string
       const getMonth = (dateStr) => new Date(dateStr).toLocaleString('default', { month: 'short' });
 
       users.forEach(u => {
@@ -79,25 +81,32 @@ const AdminDashboard = () => {
           dataMap[m].events += 1;
       });
 
-      // Convert Map to Array
       const chartArray = Object.values(dataMap);
       setGraphData(chartArray);
   };
+
+  // LOGGING NOTE: The handleDeleteUser and handleDeleteEvent functions
+  // automatically create logs in their respective backend controllers (users.js/events.js), 
+  // so we don't need to change the frontend handler logic here, just the API calls.
 
   const handleDeleteUser = async (userId) => {
       if(userId === user._id) return alert("Cannot delete self.");
       if(!window.confirm("Ban this user?")) return;
       try {
+          // Deletion triggers logging in server/controllers/users.js
           await axios.delete(`http://localhost:5000/users/${userId}`, { headers: { Authorization: `Bearer ${token}` } });
-          setAllUsers(allUsers.filter(u => u._id !== userId));
+          // Re-fetch logs and users after action
+          fetchAllData();
       } catch (err) { alert("Failed to delete."); }
   };
 
   const handleDeleteEvent = async (eventId) => {
       if(!window.confirm("Delete this event permanently?")) return;
       try {
+          // Deletion triggers logging in server/controllers/events.js
           await axios.delete(`http://localhost:5000/events/${eventId}`, { headers: { Authorization: `Bearer ${token}` } });
-          setAllEvents(allEvents.filter(e => e._id !== eventId));
+          // Re-fetch logs and events after action
+          fetchAllData();
       } catch (err) { alert("Failed to delete."); }
   };
 
@@ -105,34 +114,37 @@ const AdminDashboard = () => {
       e.preventDefault();
       if(!window.confirm("Send this message to ALL users?")) return;
       try {
+          // Broadcast triggers logging in server/controllers/admin.js
           await axios.post("http://localhost:5000/admin/broadcast", broadcast, {
               headers: { Authorization: `Bearer ${token}` }
           });
+          // Re-fetch logs after action
+          fetchAllData(); 
           alert("Broadcast Sent!");
           setBroadcast({ title: "", message: "" });
       } catch (err) { alert("Failed to send."); }
   };
   
-  // --- NEW MODERATION HANDLERS (Phase 25) ---
   const handleDismissReport = async (reportId) => {
     if(!window.confirm("Are you sure you want to dismiss this report?")) return;
+    // Resolution triggers logging in server/controllers/admin.js
     await axios.patch(`http://localhost:5000/admin/reports/${reportId}`, {}, { headers: { Authorization: `Bearer ${token}` } });
-    setReports(reports.filter(r => r._id !== reportId));
+    // Re-fetch reports and logs
+    fetchAllData();
     alert("Report dismissed.");
   };
 
   const handleBanEvent = async (report) => {
     if(!window.confirm(`Are you sure you want to DELETE the event "${report.eventTitle}" based on this report? This action is permanent.`)) return;
     try {
-        // 1. Delete Event
+        // 1. Delete Event (Logging happens in events.js)
         await axios.delete(`http://localhost:5000/events/${report.targetEventId}`, { headers: { Authorization: `Bearer ${token}` } });
         
-        // 2. Mark Report Resolved
+        // 2. Mark Report Resolved (Logging happens in admin.js)
         await axios.patch(`http://localhost:5000/admin/reports/${report._id}`, {}, { headers: { Authorization: `Bearer ${token}` } });
         
-        // 3. Update local state (remove event and report)
-        setAllEvents(allEvents.filter(e => e._id !== report.targetEventId));
-        setReports(reports.filter(r => r._id !== report._id));
+        // 3. Update all data
+        fetchAllData();
         
         alert("Event Deleted & Report Resolved");
     } catch (err) {
@@ -140,7 +152,6 @@ const AdminDashboard = () => {
         console.error(err);
     }
   };
-  // ------------------------------------------
 
 
   if (!stats) return <div className="p-10 text-center text-gray-500">Loading Analytics...</div>;
@@ -168,15 +179,14 @@ const AdminDashboard = () => {
                   <span className="bg-red-100 text-red-600 text-[10px] font-bold px-2 py-0.5 rounded-full">SUPER ADMIN</span>
               </div>
               <nav className="p-4 space-y-2">
-                  {/* Updated Sidebar Menu to include 'moderation' tab */}
-                  {['overview', 'users', 'events', 'broadcast', 'moderation'].map((tab) => (
+                  {/* Added 'logs' tab */}
+                  {['overview', 'users', 'events', 'broadcast', 'moderation', 'logs'].map((tab) => (
                       <button 
                         key={tab}
                         onClick={() => setActiveTab(tab)} 
                         className={`w-full text-left px-4 py-3 rounded-lg font-medium capitalize transition relative ${activeTab === tab ? "bg-blue-50 text-blue-700 shadow-sm" : "text-gray-600 hover:bg-gray-50"}`}
                       >
                           {tab}
-                          {/* NEW: Report Count Badge */}
                           {tab === 'moderation' && reports.length > 0 && (
                             <span className="absolute right-3 top-1/2 transform -translate-y-1/2 bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full animate-pulse">
                                 {reports.length}
@@ -396,12 +406,11 @@ const AdminDashboard = () => {
                   </div>
               )}
               
-              {/* === MODERATION TAB (NEW) === */}
+              {/* === MODERATION TAB === */}
               {activeTab === "moderation" && (
                   <div className="max-w-5xl mx-auto animate-fadeIn">
                       <h2 className="text-2xl font-bold mb-6 text-gray-800 flex items-center gap-2">
                           🚩 Moderation Queue 
-                          {/* Display the count of pending reports */}
                           {reports.length > 0 && <span className="bg-red-500 text-white text-xs px-2 py-1 rounded-full">{reports.length}</span>}
                       </h2>
 
@@ -438,6 +447,48 @@ const AdminDashboard = () => {
                       )}
                   </div>
               )}
+              
+              {/* === LOGS TAB (NEW) === */}
+              {activeTab === "logs" && (
+                  <div className="max-w-6xl mx-auto animate-fadeIn">
+                      <h2 className="text-2xl font-bold mb-6 text-gray-800">System Audit Logs</h2>
+                      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                          <table className="w-full text-left">
+                              <thead className="bg-gray-50 border-b">
+                                  <tr>
+                                      <th className="p-4 text-xs font-bold text-gray-500 uppercase">Admin</th>
+                                      <th className="p-4 text-xs font-bold text-gray-500 uppercase">Action</th>
+                                      <th className="p-4 text-xs font-bold text-gray-500 uppercase">Target</th>
+                                      <th className="p-4 text-xs font-bold text-gray-500 uppercase">Time</th>
+                                  </tr>
+                              </thead>
+                              <tbody className="divide-y divide-gray-100">
+                                  {logs.map(log => (
+                                      <tr key={log._id} className="hover:bg-blue-50/50">
+                                          <td className="p-4 text-sm font-bold text-gray-700">{log.adminName}</td>
+                                          <td className="p-4">
+                                              <span className={`text-[10px] font-bold px-2 py-1 rounded-full 
+                                                  ${log.action.includes("DELETE") || log.action.includes("BAN") ? "bg-red-100 text-red-700" : 
+                                                    log.action.includes("BROADCAST") ? "bg-purple-100 text-purple-700" : 
+                                                    log.action.includes("RESOLVED") ? "bg-green-100 text-green-700" :
+                                                    "bg-blue-100 text-blue-700"}`}>
+                                                  {log.action}
+                                              </span>
+                                          </td>
+                                          <td className="p-4 text-sm text-gray-600">
+                                              {log.target} <br/> <span className="text-xs text-gray-400">{log.details}</span>
+                                          </td>
+                                          <td className="p-4 text-xs text-gray-500">
+                                              {new Date(log.createdAt).toLocaleString()}
+                                          </td>
+                                      </tr>
+                                  ))}
+                              </tbody>
+                          </table>
+                      </div>
+                  </div>
+              )}
+
 
           </div>
       </div>
