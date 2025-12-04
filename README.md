@@ -1,104 +1,228 @@
 # 🎉 EventPulse — Commercial Grade Progressive Web Application (PWA)
 
-EventPulse is a high-performance, full-stack MERN platform built as a **Progressive Web Application (PWA)**.
-It features scalable infrastructure, advanced security, real-time engagement, intelligent recommendations, and a modern event management suite designed for commercial deployment.
+EventPulse is a high-performance, full-stack **MERN Progressive Web Application (PWA)** designed for real-world commercial deployment.
+It includes enterprise-grade analytics, security, monetization, event ticketing, real-time experiences, and a powerful new **Visual Admin Dashboard**.
 
 ---
 
-## 🌟 Key Features
+# 🌟 Key Features
 
 ---
 
-## 📈 Scalability, Performance & Infrastructure
+# 📈 Scalability, Performance & Infrastructure
 
 * **PWA Ready**
-  Fully installable on desktop and mobile (iOS/Android) with offline capabilities and native-like speed.
+  Fully installable on desktop & mobile (iOS/Android) with offline caching + native-like speed.
 
 * **Infinite Scroll Pagination**
-  Efficient server-side pagination loading **10 events at a time** (improved from static bulk loading). Prevents crashes when scaling to thousands of events.
+  Server-side pagination loading **10 events per batch** for high-scalability performance.
 
-* **Server-Side Filtering, Search & Sorting**
-  Advanced MongoDB-powered filtering by category, keyword, and event date.
+* **Advanced Server-Side Search, Filtering & Sorting**
+  Category, keyword, price, and date range filtering powered by MongoDB aggregation.
 
 * **Cloudinary CDN Storage**
-  Fast, persistent, secure media hosting.
+  Fast, persistent & secure media hosting with automatic transformations.
 
 * **Scroll Management**
-  Global Scroll-to-Top component for smooth navigation.
+  Global Scroll-to-Top for smooth navigation.
 
 * **Dockerized Deployment**
-  Fully containerized frontend + backend for consistent, environment-agnostic deployment.
+  Production-ready Docker setup for both frontend and backend.
 
 ---
 
-## 💳 Monetization & Business Logic
+# 💳 Monetization & Business Logic
 
-* **Stripe Payment Integration** via Stripe Checkout
-* **Secure Stripe Webhooks** for verifying successful payments before issuing tickets.
-* **Admin Data Export** (CSV/Excel) for business analytics.
+* **Stripe Payment Integration**
+  Safe ticket purchasing using Stripe Checkout.
+
+* **Stripe Webhooks (Verified Transactions Only)**
+  Ensures tickets are only issued after Stripe confirms the payment.
+
+* **Revenue Analytics (Admin Dashboard)**
+  Total platform earnings, monthly revenue charts, and transaction insights.
+
+* **Admin Export Tools**
+  Export Users / Events / Revenue to CSV or Excel.
 
 ---
 
-## 🤝 Social Proof, Smart Feed & User Retention
+# 🤝 Social Features, Feed Personalization & Engagement
 
 * **Follow System**
-  Personalized feed showing events from creators you follow.
+  Personalized event feed based on creators you follow.
 
 * **Event Ratings & Reviews**
-  5-star review system available only *after event participation*.
+  Only available to users who attended the event.
 
-* **AI-Lite “Smart Recommendations”**
-  Uses user activity + preferences to suggest relevant events instead of random feeds.
+* **AI-Lite Smart Recommendations**
+  Activity-based personalized event suggestions.
 
 * **Live Event Chat (Socket.io)**
+  Real-time messaging for participants.
 
-* **Real-Time Notifications** for joins, likes, follows, and more.
-
----
-
-## 🎟️ Ticketing & Event Management
-
-* **Full Event CRUD** including title, pricing, coordinates, media, etc.
-* **QR Ticket System** with automatic email delivery (Nodemailer).
-* **In-App QR Code Scanner** for organizers to validate tickets.
-* **Calendar Integration** with downloadable `.ics` event files.
+* **Real-Time Notifications**
+  Follows, likes, joins, messages, and admin broadcasts.
 
 ---
 
-## 🛡️ Security & Administration
+# 🎟️ Ticketing, Attendance & Event Tools
 
-* **JWT Authentication** with Bcrypt
+* **Full Event CRUD** (title, media, price, geolocation, categories, etc.)
+
+* **QR Ticket System**
+  Each ticket contains a unique QR code + secure validation for event organizers.
+
+* **Email Ticket Delivery (Nodemailer)**
+  Instant email confirmation with QR.
+
+* **PDF Ticket Generation (NEW)**
+  Users can download a professional PDF version of their ticket with event details + QR code.
+
+* **In-App QR Code Scanner**
+  Organizers can verify ticket authenticity from their phone.
+
+* **Calendar Sync (.ics)**
+  Add events directly to Google Calendar, Apple Calendar, etc.
+
+---
+
+# 🛡️ Security, Admin Tools & Moderation
+
+* **JWT Authentication**
+  With refresh tokens and secure password hashing (bcrypt).
 
 * **Google OAuth Login**
 
-* **Forgot Password w/ Secure Tokens**
+* **Forgot Password with Secure Token Flow**
 
-* **Admin Dashboard** for moderation, analytics, and user management
+* **API Rate Limiting**
+  Prevents brute-force, bot attacks, and excessive requests.
 
-* **Rate Limiting (Security Hardening)**
-  Protects the API from bot attacks, request flooding, and brute-force attempts.
-
-* **Custom 404 Page** for invalid routes
+* **Custom 404 Page & Error Handling**
 
 ---
 
-## 🛠️ Tech Stack
+# 🏢 Industrial-Grade Admin Dashboard (NEW)
 
-| Domain             | Technologies                                      | Details                             |
-| ------------------ | ------------------------------------------------- | ----------------------------------- |
-| **Frontend**       | React (Vite), Tailwind CSS, Vite-PWA, React Icons | PWA-ready, responsive, fast builds  |
-| **Backend**        | Node.js, Express.js, Socket.io, Nodemailer        | API + real-time communication       |
-| **Database**       | MongoDB Atlas + Mongoose                          | NoSQL, schema modeling              |
-| **Infrastructure** | Docker, Cloudinary CDN                            | Containerized deployment, media CDN |
-| **Third-Party**    | Stripe SDK, Leaflet                               | Payments, maps, and integrations    |
+EventPulse now includes a **professional, visual, analytics-rich Admin Dashboard** designed for real companies.
+
+---
+
+## 📊 1. Visual Analytics (Recharts Integration)
+
+* **User Growth Line Chart**
+* **Monthly Revenue Line / Bar Chart** (based on Stripe transactions)
+* **Category Distribution Pie Chart**
+  Shows which event categories (Music, Tech, Art, etc.) are trending.
+* **Event Growth Statistics**
+* **User Activity Metrics**
+
+---
+
+## 🗂️ 2. Event Management Table (Admin-Controlled)
+
+A centralized table where admins can:
+
+* Search events instantly
+* Sort by date, price, category, or popularity
+* Delete or unlist events
+* View event analytics (attendees, revenue, ratings)
+
+---
+
+## 📣 3. Global Broadcast System (Platform-Wide Notifications)
+
+Admins can send **universal announcements** visible to all users.
+Useful for:
+
+* Maintenance notices
+* Holiday promotions
+* Security updates
+* System-wide alerts
+
+Delivered through the real-time notification system.
+
+---
+
+## 🧾 4. Moderation Queue (Report System)
+
+Users can report events for:
+
+* Spam
+* Inappropriate content
+* Fraud
+* Wrong category
+
+Admins get a dedicated **"Reports" section** containing:
+
+* Report reason
+* The user who reported
+* Quick action buttons: *Delete Event*, *Warn Creator*, *Dismiss Report*
+
+---
+
+## 📝 5. Audit Logs (Security Compliance)
+
+Every admin action is recorded:
+
+* User bans
+* Event deletions
+* Revenue adjustments
+* Broadcast messages
+* Settings updates
+
+Audit logs include:
+
+* Admin name
+* Action description
+* Timestamp
+
+This ensures transparency and accountability.
+
+---
+
+## 💳 6. Transaction History (Financial Records)
+
+A full Stripe-powered purchase history table:
+
+* Buyer name
+* Event title
+* Amount paid
+* Stripe Transaction ID
+* Timestamp
+
+Perfect for accounting, refunds, or analytics.
+
+---
+
+## 🔔 7. Modern Toast Notifications (No More alert())
+
+All user feedback uses **non-blocking toast notifications**:
+
+* Success messages
+* Errors
+* Warnings
+* Info alerts
+
+Smooth, auto-dismiss, non-intrusive — professional UX.
+
+---
+
+# 🛠️ Tech Stack
+
+| Domain             | Technologies                               | Details                                  |
+| ------------------ | ------------------------------------------ | ---------------------------------------- |
+| **Frontend**       | React (Vite), Tailwind, Recharts, Vite-PWA | PWA-ready, visual analytics, fast builds |
+| **Backend**        | Node.js, Express.js, Socket.io, Nodemailer | API + real-time communication            |
+| **Database**       | MongoDB Atlas, Mongoose                    | Scalable NoSQL data modeling             |
+| **Infrastructure** | Docker, Cloudinary CDN                     | Deployment-ready + media CDN             |
+| **Payments**       | Stripe SDK, Stripe Webhooks                | Secure billing & transaction tracking    |
+| **Maps**           | Leaflet                                    | Interactive event location mapping       |
 
 ---
 
 # 🚀 How to Run Locally
-
-Follow these steps to run EventPulse on your machine.
-
----
 
 ## 1️⃣ Clone the Repository
 
@@ -111,39 +235,35 @@ cd EventPulse-MERN-Project
 
 ## 2️⃣ Backend Setup
 
-Navigate to the server directory and install dependencies:
-
 ```bash
 cd server
 npm install
 ```
 
-### ⚠️ Environment Variables
-
-Create a `.env` file inside the **server** folder:
+Create `.env`:
 
 ```env
 PORT=5000
 MONGO_URL=your_mongodb_connection_string
 JWT_SECRET=your_super_secret_key
 
-# Email Service (Nodemailer)
+# Email (Nodemailer)
 EMAIL_USER=your_email@gmail.com
 EMAIL_PASS=your_gmail_app_password
-GOOGLE_CLIENT_ID=your_google_cloud_client_id
+GOOGLE_CLIENT_ID=your_google_oauth_client_id
 
-# Cloudinary (CDN Storage)
+# Cloudinary CDN
 CLOUDINARY_CLOUD_NAME=...
 CLOUDINARY_API_KEY=...
 CLOUDINARY_API_SECRET=...
 
-# Stripe Payments
+# Stripe
 STRIPE_SECRET_KEY=sk_test_...
 STRIPE_WEBHOOK_SECRET=whsec_...
 STRIPE_PUBLIC_KEY=pk_test_...
 ```
 
-### Start the server:
+Start server:
 
 ```bash
 npm start
@@ -153,66 +273,46 @@ npm start
 
 ## 3️⃣ Frontend Setup
 
-Open a new terminal and run:
-
 ```bash
 cd client
 npm install
-```
-
-Start the development server:
-
-```bash
 npm run dev
 ```
 
----
-
-## 4️⃣ Access the App
-
-Open your browser:
+Open:
 
 👉 **[http://localhost:5173](http://localhost:5173)**
 
 ---
 
-# 🐳 Running With Docker (Optional)
-
-EventPulse includes full Docker support for production deployment.
-
-### Build & Run:
+# 🐳 Docker Deployment
 
 ```bash
 docker compose up --build
 ```
 
-Your app will be available at the configured ports for frontend & backend.
-
 ---
 
 # 👨‍💻 Admin Access
 
-1. Register a new user account.
-2. In MongoDB Atlas → navigate to the `users` collection.
-3. Update the user role:
+Register → Open MongoDB → Users Collection → Change:
 
 ```json
 "role": "user"
 ```
 
-➡️ Change to:
+to:
 
 ```json
 "role": "admin"
 ```
 
-4. Refresh the app — the **Admin Panel** will appear in the navbar.
+Refresh → Admin Dashboard appears.
 
 ---
 
-## 📄 License
+# 📄 License
 
-This project was developed by **KAMRANkami313**.
+Developed by **KAMRANkami313**.
 
 ---
-
