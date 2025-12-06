@@ -59,3 +59,21 @@ h1, h2, h3, h4, h5, h6 {
 .swiper-pagination-bullet-active {
   background-color: #2563eb !important; /* Blue-600 */
 }
+
+/* --- PHASE 3: TICKET CSS ART --- */
+
+/* Creates the serrated/perforated line visual */
+.ticket-edge {
+  position: relative;
+  background-image: radial-gradient(circle at 10px 10px, transparent 10px, #ffffff 11px);
+  background-size: 20px 40px;
+  background-position: -10px -10px;
+}
+
+/* Masks the container to create the bite marks on the side */
+.ticket-container {
+  mask-image: radial-gradient(circle at 10px 50%, transparent 10px, black 11px);
+  mask-position: -10px;
+  mask-size: 100% 100%;
+  mask-repeat: no-repeat;
+}
