@@ -5,7 +5,9 @@ import {
     deleteUser, 
     updateUser, 
     addRemoveFriend,
-    getUserRecommendations // <--- NEW IMPORT
+    getUserRecommendations,
+    toggleBookmark,      // <--- NEW IMPORT
+    getBookmarkedEvents  // <--- NEW IMPORT
 } from "../controllers/users.js";
 import { verifyToken } from "../middleware/auth.js";
 import multer from "multer";
@@ -21,7 +23,11 @@ router.get("/:id", verifyToken, getUser);
 router.get("/", verifyToken, getAllUsers);
 
 // NEW RECOMMENDATIONS ROUTE
-router.get("/:id/recommendations", verifyToken, getUserRecommendations); // <--- ADDED THIS
+router.get("/:id/recommendations", verifyToken, getUserRecommendations);
+
+/* NEW BOOKMARK ROUTES */
+router.get("/:id/bookmarks", verifyToken, getBookmarkedEvents); // Get saved events
+router.patch("/:id/bookmark/:eventId", verifyToken, toggleBookmark); // Toggle save/unsave
 
 /* DELETE ROUTE */
 router.delete("/:id", verifyToken, deleteUser);

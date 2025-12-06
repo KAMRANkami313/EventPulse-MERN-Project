@@ -406,3 +406,20 @@ export const addReview = async (req, res) => {
     res.status(404).json({ message: err.message });
   }
 };
+
+/* GET EVENT GUESTS (For Organizer) */
+export const getEventGuests = async (req, res) => {
+  try {
+    const { id } = req.params; // Event ID
+    const event = await Event.findById(id);
+    
+    if (!event) return res.status(404).json({ message: "Event not found" });
+
+    // Find all users whose ID is in the participants array
+    const guests = await User.find({ _id: { $in: event.participants } }).select("firstName lastName email location");
+    
+    res.status(200).json(guests);
+  } catch (err) {
+    res.status(404).json({ message: err.message });
+  }
+};

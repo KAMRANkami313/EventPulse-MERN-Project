@@ -15,16 +15,19 @@ const ProfilePage = () => {
   const [userProfile, setUserProfile] = useState(null);
   const [hostedEvents, setHostedEvents] = useState([]);
   const [attendingEvents, setAttendingEvents] = useState([]);
+  const [savedEvents, setSavedEvents] = useState([]); // <--- NEW STATE
   
   // UI States
   const [activeTab, setActiveTab] = useState("hosted");
   const [isEditing, setIsEditing] = useState(false);
-  const [isFollowing, setIsFollowing] = useState(false); // <--- NEW STATE
+  const [isFollowing, setIsFollowing] = useState(false); 
   
   // Edit Form State
   const [editFormData, setEditFormData] = useState({
       firstName: "", lastName: "", location: "", occupation: "", picture: null
   });
+
+  const isOwnProfile = loggedInUser._id === userId;
 
   useEffect(() => {
     const fetchData = async () => {
@@ -51,7 +54,15 @@ const ProfilePage = () => {
         });
         setAttendingEvents(attendingRes.data);
 
-        // <--- NEW: CHECK IF FOLLOWING
+        // <--- NEW: FETCH SAVED EVENTS (Only if own profile)
+        if (isOwnProfile) {
+            const savedRes = await axios.get(`http://localhost:5000/users/${userId}/bookmarks`, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            setSavedEvents(savedRes.data);
+        }
+
+        // CHECK IF FOLLOWING
         if (loggedInUser.friends && loggedInUser.friends.includes(userId)) {
             setIsFollowing(true);
         } else {
@@ -61,9 +72,9 @@ const ProfilePage = () => {
       } catch (err) { console.error(err); }
     };
     fetchData();
-  }, [userId]);
+  }, [userId, isOwnProfile, token]); // Added isOwnProfile and token to dependencies
 
-  // <--- NEW: FOLLOW HANDLER
+  // FOLLOW HANDLER
   const handleFollow = async () => {
     try {
         const response = await axios.patch(`http://localhost:5000/users/${loggedInUser._id}/${userId}`, {}, {
@@ -73,8 +84,7 @@ const ProfilePage = () => {
         // 1. Toggle UI state
         setIsFollowing(!isFollowing);
 
-        // 2. Update Local Storage so other pages (like Dashboard) know about the change immediately
-        // The API returns the list of friend objects, we just need IDs for the local storage 'friends' array
+        // 2. Update Local Storage
         const updatedFriendIds = response.data.map(f => f._id); 
         const updatedUser = { ...loggedInUser, friends: updatedFriendIds };
         localStorage.setItem("user", JSON.stringify(updatedUser));
@@ -103,10 +113,9 @@ const ProfilePage = () => {
           
           setUserProfile(res.data);
           // If editing own profile, update local storage
-          if(loggedInUser._id === userId) {
-              // Keep friends list intact when updating profile info
+          if(isOwnProfile) {
               const currentUserData = JSON.parse(localStorage.getItem("user"));
-              localStorage.setItem("user", JSON.stringify({ ...res.data, friends: currentUserData.friends, password: loggedInUser.password }));
+              localStorage.setItem("user", JSON.stringify({ ...res.data, friends: currentUserData.friends, bookmarks: currentUserData.bookmarks, password: loggedInUser.password }));
           }
           setIsEditing(false);
           alert("Profile Updated!");
@@ -115,7 +124,10 @@ const ProfilePage = () => {
 
   if (!userProfile) return <div className="p-10 text-center">Loading Profile...</div>;
 
-  const isOwnProfile = loggedInUser._id === userId;
+  // Helper to determine which events to show
+  const eventsDisplay = activeTab === "hosted" ? hostedEvents 
+                      : activeTab === "attending" ? attendingEvents 
+                      : savedEvents;
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
@@ -170,6 +182,13 @@ const ProfilePage = () => {
                       <p className="text-xl font-bold text-gray-800 dark:text-white">{attendingEvents.length}</p>
                       <p className="text-xs text-gray-500 uppercase tracking-wide">Attending</p>
                   </div>
+                  {/* Saved Stat (Only for Owner) */}
+                  {isOwnProfile && (
+                    <div>
+                        <p className="text-xl font-bold text-gray-800 dark:text-white">{savedEvents.length}</p>
+                        <p className="text-xs text-gray-500 uppercase tracking-wide">Saved</p>
+                    </div>
+                  )}
               </div>
 
               {/* ACTIONS (Edit OR Follow) */}
@@ -230,14 +249,25 @@ const ProfilePage = () => {
               >
                   ATTENDING
               </button>
+              
+              {/* NEW: SAVED TAB (Only for Owner) */}
+              {isOwnProfile && (
+                  <button 
+                    onClick={() => setActiveTab("saved")}
+                    className={`pb-3 px-2 font-bold text-sm ${activeTab === "saved" ? "text-blue-600 border-b-2 border-blue-600" : "text-gray-500 hover:text-gray-700 dark:text-gray-400"}`}
+                  >
+                      SAVED ({savedEvents.length})
+                  </button>
+              )}
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pb-12">
               {activeTab === "hosted" && hostedEvents.length === 0 && <p className="text-gray-500">No events hosted yet.</p>}
               {activeTab === "attending" && attendingEvents.length === 0 && <p className="text-gray-500">Not attending any events.</p>}
+              {activeTab === "saved" && savedEvents.length === 0 && <p className="text-gray-500">No saved events.</p>}
 
-              {(activeTab === "hosted" ? hostedEvents : attendingEvents).map((event) => (
-                  <div key={event._id} className="bg-white dark:bg-gray-800 rounded-xl shadow-md overflow-hidden hover:shadow-lg transition border border-gray-100 dark:border-gray-700">
+              {eventsDisplay.map((event) => (
+                  <div key={event._id} className="bg-white dark:bg-gray-800 rounded-xl shadow-md overflow-hidden hover:shadow-lg transition border border-gray-100 dark:border-gray-700 cursor-pointer" onClick={() => navigate(`/ticket/${event._id}`)}>
                       <div className="h-32 bg-gray-200 dark:bg-gray-700 relative">
                           {event.picturePath ? (
                               <img 
@@ -248,7 +278,7 @@ const ProfilePage = () => {
                           ) : (
                               <div className="w-full h-full flex items-center justify-center text-4xl">📅</div>
                           )}
-                          <div className="absolute top-2 right-2 bg-white px-2 py-1 rounded text-xs font-bold text-blue-600">
+                          <div className="absolute top-2 right-2 bg-white px-2 py-1 rounded text-xs font-bold text-blue-600 shadow-sm">
                               {new Date(event.date).toLocaleDateString()}
                           </div>
                       </div>
@@ -256,11 +286,18 @@ const ProfilePage = () => {
                           <h4 className="font-bold text-lg mb-1 truncate dark:text-white">{event.title}</h4>
                           <p className="text-gray-500 text-sm mb-3 truncate dark:text-gray-400">{event.location}</p>
                           <div className="flex justify-between items-center">
-                             <span className="text-xs bg-blue-50 text-blue-600 px-2 py-1 rounded">{event.category}</span>
+                             <span className="text-xs bg-blue-50 text-blue-600 px-2 py-1 rounded font-semibold">{event.category}</span>
+                             
+                             {/* Show different badge depending on tab */}
                              {activeTab === "attending" && (
-                                 <button onClick={() => navigate(`/ticket/${event._id}`)} className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded font-bold hover:bg-purple-200">
-                                     View Ticket
-                                 </button>
+                                 <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded font-bold">
+                                     Going
+                                 </span>
+                             )}
+                             {activeTab === "saved" && (
+                                 <span className="text-xs bg-yellow-100 text-yellow-700 px-2 py-1 rounded font-bold">
+                                     Saved
+                                 </span>
                              )}
                           </div>
                       </div>

@@ -97,6 +97,8 @@ const Dashboard = ({ toggleTheme, theme }) => {
   // REVIEW STATES (NEW in Phase 18)
   const [tempRating, setTempRating] = useState(5); 
 
+  // BOOKMARKS STATE (NEW in Phase 30)
+  const [bookmarks, setBookmarks] = useState(user?.bookmarks || []);
 
   // Create Event Form State
   const [newEvent, setNewEvent] = useState({
@@ -419,6 +421,51 @@ const Dashboard = ({ toggleTheme, theme }) => {
     navigator.clipboard.writeText(`Check out this event on EventPulse!`);
     // 🔔 TOAST REPLACEMENT
     toast.success("Link copied to clipboard! Ready to share.");
+  };
+
+  // 8. BOOKMARK EVENT (Phase 30)
+  const handleBookmark = async (eventId) => {
+    try {
+        const res = await axios.patch(`http://localhost:5000/users/${user._id}/bookmark/${eventId}`, {}, {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+        setBookmarks(res.data);
+        
+        // Update local storage so it persists on refresh
+        const updatedUser = { ...user, bookmarks: res.data };
+        localStorage.setItem("user", JSON.stringify(updatedUser));
+        
+        toast.success("Bookmarks updated! 🔖");
+    } catch (err) { 
+        console.error(err);
+        toast.error("Failed to update bookmark.");
+    }
+  };
+
+  // 9. DOWNLOAD GUEST LIST (Organizer Tool - Phase 30)
+  const downloadGuestList = async (eventId, eventTitle) => {
+    try {
+        const res = await axios.get(`http://localhost:5000/events/${eventId}/guests`, {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+        
+        const guests = res.data;
+        if(guests.length === 0) return toast.error("No guests yet!");
+
+        // Convert to CSV
+        const headers = "Name,Email,Location\n";
+        const rows = guests.map(g => `${g.firstName} ${g.lastName},${g.email},${g.location}`).join("\n");
+        const csvContent = "data:text/csv;charset=utf-8," + headers + rows;
+        
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", `${eventTitle}_GuestList.csv`);
+        document.body.appendChild(link);
+        link.click();
+        
+        toast.success("Guest list downloaded! 📋");
+    } catch (err) { console.error(err); }
   };
 
   const toggleComments = (eventId) => {
@@ -757,6 +804,7 @@ const Dashboard = ({ toggleTheme, theme }) => {
                     const isLiked = Boolean(event.likes && event.likes[user._id]);
                     const likeCount = event.likes ? Object.keys(event.likes).length : 0;
                     const userReview = event.reviews?.find(r => r.userId === user._id); // Check for user's existing review
+                    const isBookmarked = bookmarks.includes(event._id);
 
                     return (
                       <div 
@@ -764,6 +812,17 @@ const Dashboard = ({ toggleTheme, theme }) => {
                         data-aos="fade-up" 
                         className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 border border-gray-100 dark:border-gray-700 mb-8 relative overflow-hidden group"
                       >
+                        {/* BOOKMARK BUTTON (Absolute Top Right) */}
+                        <button 
+                            onClick={(e) => {
+                                e.stopPropagation(); // Prevent clicking the card
+                                handleBookmark(event._id);
+                            }}
+                            className="absolute top-4 right-4 z-10 bg-white/80 dark:bg-black/50 p-2 rounded-full shadow-md hover:scale-110 transition backdrop-blur-sm"
+                            title="Save Event"
+                        >
+                            {isBookmarked ? "🔖" : "🏷️"}
+                        </button>
 
                         <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-400 to-purple-500"></div>
 
@@ -879,6 +938,17 @@ const Dashboard = ({ toggleTheme, theme }) => {
                           </div>
 
                           <div className="flex gap-2">
+                            {/* ORGANIZER TOOLS */}
+                            {event.userId === user._id && (
+                                <button 
+                                    onClick={() => downloadGuestList(event._id, event.title)}
+                                    className="px-3 py-1.5 rounded-lg border border-blue-200 text-blue-600 hover:bg-blue-50 dark:border-gray-600 dark:text-blue-300 dark:hover:bg-gray-700 text-xs font-bold transition flex items-center gap-1"
+                                    title="Download Guest List"
+                                >
+                                    📋 CSV
+                                </button>
+                            )}
+
                             <button
                               onClick={() => toggleComments(event._id)}
                               className="text-gray-500 dark:text-gray-400 hover:text-blue-600 flex items-center gap-1 px-3 py-1.5 rounded-lg hover:bg-blue-50 dark:hover:bg-gray-700 transition active:scale-95"

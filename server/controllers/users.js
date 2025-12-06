@@ -187,3 +187,41 @@ export const getUserRecommendations = async (req, res) => {
     res.status(404).json({ message: err.message });
   }
 };
+
+/* TOGGLE BOOKMARK (Save/Unsave Event) */
+export const toggleBookmark = async (req, res) => {
+  try {
+    const { id, eventId } = req.params;
+    const user = await User.findById(id);
+
+    if (user.bookmarks.includes(eventId)) {
+      // Remove from bookmarks
+      user.bookmarks = user.bookmarks.filter((bid) => bid !== eventId);
+    } else {
+      // Add to bookmarks
+      user.bookmarks.push(eventId);
+    }
+
+    await user.save();
+    
+    // Return updated bookmarks list
+    res.status(200).json(user.bookmarks);
+  } catch (err) {
+    res.status(404).json({ message: err.message });
+  }
+};
+
+/* GET BOOKMARKED EVENTS (For Profile Page) */
+export const getBookmarkedEvents = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const user = await User.findById(id);
+        
+        // Find all events whose IDs are in the bookmarks array
+        const events = await Event.find({ _id: { $in: user.bookmarks } });
+        
+        res.status(200).json(events);
+    } catch (err) { 
+        res.status(404).json({ message: err.message }); 
+    }
+};
