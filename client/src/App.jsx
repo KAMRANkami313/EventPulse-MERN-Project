@@ -1,6 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useState, useEffect } from "react";
-import { Toaster } from 'react-hot-toast'; // ✅ NEW IMPORT
+import { Toaster } from 'react-hot-toast'; 
 
 // --- ANIMATION LIBRARY IMPORT ---
 import AOS from "aos";
@@ -17,8 +17,9 @@ import PaymentSuccess from "./pages/tickets/PaymentSuccess";
 import ForgotPassword from "./pages/auth/ForgotPassword";
 import ResetPassword from "./pages/auth/ResetPassword";
 import NotFound from "./pages/NotFound";
+// ⚙️ NEW IMPORT: Settings Page
+import SettingsPage from "./pages/settings/SettingsPage"; 
 
-// ✅ NEW: SCROLL COMPONENT IMPORT
 import ScrollToTop from "./components/ScrollToTop"; 
 
 function App() {
@@ -88,6 +89,12 @@ function App() {
               <Navigate to="/login" />
             )
           }
+        />
+        
+        {/* ⚙️ NEW ROUTE: Settings Page (Phase 34) */}
+        <Route 
+          path="/settings" 
+          element={isAuth ? <SettingsPage /> : <Navigate to="/login" />} 
         />
 
         {/* Ticket Page */}

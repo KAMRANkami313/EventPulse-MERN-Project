@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import { useParams, useNavigate } from "react-router-dom";
 import { getImageUrl } from "../../utils/imageHelper"; 
-import { getUserBadges } from "../../utils/badgeHelper"; // <--- NEW IMPORT
+import { getUserBadges } from "../../utils/badgeHelper"; 
 
 const ProfilePage = () => {
   const { userId } = useParams();
@@ -23,14 +23,14 @@ const ProfilePage = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [isFollowing, setIsFollowing] = useState(false); 
   
-  // Modal States (NEW)
-  const [showFollowers, setShowFollowers] = useState(false);
-  const [followersList, setFollowersList] = useState([]);
+  // Modal States (NEW Architecture: Generalized list modal)
+  const [modalType, setModalType] = useState(null); // 'followers', 'following', or null
+  const [modalList, setModalList] = useState([]);
 
   // Edit Form State
   const [editFormData, setEditFormData] = useState({
       firstName: "", lastName: "", location: "", occupation: "", picture: null,
-      twitter: "", linkedin: "", instagram: "" // <--- NEW FIELDS
+      twitter: "", linkedin: "", instagram: "" 
   });
 
   const isOwnProfile = loggedInUser._id === userId;
@@ -73,8 +73,8 @@ const ProfilePage = () => {
             setSavedEvents(savedRes.data);
         }
 
-        // CHECK IF FOLLOWING
-        if (loggedInUser.friends && loggedInUser.friends.includes(userId)) {
+        // CHECK IF FOLLOWING (Now checks if loggedInUser ID exists in target user's followers array)
+        if (userRes.data.followers.includes(loggedInUser._id)) {
             setIsFollowing(true);
         } else {
             setIsFollowing(false);
@@ -83,37 +83,57 @@ const ProfilePage = () => {
       } catch (err) { console.error(err); }
     };
     fetchData();
-  }, [userId, isOwnProfile, token]);
+  }, [userId, isOwnProfile, token, loggedInUser._id]);
 
-  // FOLLOW HANDLER
+  // FOLLOW/UNFOLLOW HANDLER (Now uses toggleFollow endpoint)
   const handleFollow = async () => {
     try {
-        const response = await axios.patch(`http://localhost:5000/users/${loggedInUser._id}/${userId}`, {}, {
-            headers: { Authorization: `Bearer ${token}` }
-        });
+        await axios.patch(
+            `http://localhost:5000/users/${loggedInUser._id}/follow/${userId}`, 
+            {}, 
+            { headers: { Authorization: `Bearer ${token}` } }
+        );
         
-        setIsFollowing(!isFollowing);
+        // Optimistically update the UI profile state
+        const newIsFollowing = !isFollowing;
+        setIsFollowing(newIsFollowing);
 
-        const updatedFriendIds = response.data.map(f => f._id); 
-        const updatedUser = { ...loggedInUser, friends: updatedFriendIds };
-        localStorage.setItem("user", JSON.stringify(updatedUser));
+        // Manually update the userProfile followers count/array
+        setUserProfile(prevProfile => {
+            let updatedFollowers;
+            if (newIsFollowing) {
+                // If now following, add loggedInUser._id to target's followers list
+                updatedFollowers = [...prevProfile.followers, loggedInUser._id];
+            } else {
+                // If now unfollowing, remove loggedInUser._id
+                updatedFollowers = prevProfile.followers.filter(id => id !== loggedInUser._id);
+            }
+            return { ...prevProfile, followers: updatedFollowers };
+        });
         
     } catch (err) { 
         console.error("Follow Error:", err); 
     }
   };
 
-  // NEW: FETCH & SHOW FOLLOWERS MODAL
-  const handleShowFollowers = async () => {
-      if (!userProfile.friends || userProfile.friends.length === 0) return;
+  // NEW: FETCH & SHOW FOLLOWERS/FOLLOWING MODAL (General handler)
+  const handleOpenList = async (type) => {
+      // type will be 'followers' or 'following'
+      const listIds = type === 'followers' ? userProfile.followers : userProfile.following;
+      
+      if (listIds.length === 0) {
+          setModalList([]);
+          setModalType(type);
+          return;
+      }
       
       try {
-          // Fetch full user details for every ID in the friends array
+          // Fetch full user details for every ID
           const list = await Promise.all(
-              userProfile.friends.map(id => axios.get(`http://localhost:5000/users/${id}`, { headers: { Authorization: `Bearer ${token}` } }))
+              listIds.map(id => axios.get(`http://localhost:5000/users/${id}`, { headers: { Authorization: `Bearer ${token}` } }))
           );
-          setFollowersList(list.map(res => res.data));
-          setShowFollowers(true);
+          setModalList(list.map(res => res.data));
+          setModalType(type);
       } catch(err) { console.error(err); }
   };
 
@@ -143,8 +163,14 @@ const ProfilePage = () => {
           setUserProfile(res.data);
           
           if(isOwnProfile) {
+              // Note: We retain the bookmarks/following arrays for consistency in local storage
               const currentUserData = JSON.parse(localStorage.getItem("user"));
-              localStorage.setItem("user", JSON.stringify({ ...res.data, friends: currentUserData.friends, bookmarks: currentUserData.bookmarks, password: loggedInUser.password }));
+              localStorage.setItem("user", JSON.stringify({ 
+                  ...res.data, 
+                  following: currentUserData.following, // Keep the correct following list
+                  bookmarks: currentUserData.bookmarks, 
+                  password: loggedInUser.password 
+              }));
           }
           setIsEditing(false);
           alert("Profile Updated!");
@@ -216,27 +242,32 @@ const ProfilePage = () => {
                   {/* SOCIAL LINKS (Display Only) */}
                   <div className="flex gap-4 text-2xl text-gray-500 mt-3 justify-center md:justify-start">
                       {userProfile.socials?.twitter && (
-                          <a href={userProfile.socials.twitter} target="_blank" rel="noreferrer" className="hover:text-blue-400 transition hover:scale-110">🐦</a>
+                          <a href={userProfile.socials.twitter} target="_blank" rel="noreferrer" className="hover:text-blue-400 transition hover:scale-110">𝕏</a>
                       )}
                       {userProfile.socials?.linkedin && (
-                          <a href={userProfile.socials.linkedin} target="_blank" rel="noreferrer" className="hover:text-blue-700 transition hover:scale-110">💼</a>
+                          <a href={userProfile.socials.linkedin} target="_blank" rel="noreferrer" className="hover:text-blue-700 transition hover:scale-110">🆔</a>
                       )}
                       {userProfile.socials?.instagram && (
-                          <a href={userProfile.socials.instagram} target="_blank" rel="noreferrer" className="hover:text-pink-500 transition hover:scale-110">📸</a>
+                          <a href={userProfile.socials.instagram} target="_blank" rel="noreferrer" className="hover:text-pink-500 transition hover:scale-110">🅾</a>
                       )}
                   </div>
               </div>
 
-              {/* Stats */}
+              {/* Stats (UPDATED: Followers and Following) */}
               <div className="flex gap-8 text-center mr-8">
                   <div>
                       <p className="text-xl font-bold text-gray-800 dark:text-white">{hostedEvents.length}</p>
                       <p className="text-xs text-gray-500 uppercase tracking-wide">Hosted</p>
                   </div>
-                  {/* CLICKABLE FOLLOWERS COUNT */}
-                  <div className="cursor-pointer hover:opacity-70 transition" onClick={handleShowFollowers} title="View Followers">
-                      <p className="text-xl font-bold text-gray-800 dark:text-white">{userProfile.friends.length}</p>
+                  {/* FOLLOWERS COUNT */}
+                  <div className="cursor-pointer hover:opacity-70 transition" onClick={() => handleOpenList('followers')} title="View Followers">
+                      <p className="text-xl font-bold text-gray-800 dark:text-white">{userProfile.followers.length}</p>
                       <p className="text-xs text-gray-500 uppercase tracking-wide">Followers</p>
+                  </div>
+                  {/* FOLLOWING COUNT */}
+                  <div className="cursor-pointer hover:opacity-70 transition" onClick={() => handleOpenList('following')} title="View Following">
+                      <p className="text-xl font-bold text-gray-800 dark:text-white">{userProfile.following.length}</p>
+                      <p className="text-xs text-gray-500 uppercase tracking-wide">Following</p>
                   </div>
                   <div className="opacity-50">
                       <p className="text-xl font-bold text-gray-800 dark:text-white">{attendingEvents.length}</p>
@@ -365,17 +396,24 @@ const ProfilePage = () => {
               ))}
           </div>
 
-          {/* FOLLOWERS MODAL (Phase 32) */}
-          {showFollowers && (
+          {/* GENERALIZED FOLLOW LIST MODAL (REPLACED old showFollowers modal) */}
+          {modalType && (
               <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 animate-fadeIn">
                   <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl w-full max-w-md shadow-2xl relative border border-gray-200 dark:border-gray-700">
-                      <button onClick={() => setShowFollowers(false)} className="absolute top-4 right-4 text-gray-500 hover:text-red-500 font-bold transition">✕</button>
-                      <h3 className="text-xl font-bold mb-4 dark:text-white">Followers</h3>
+                      <button onClick={() => setModalType(null)} className="absolute top-4 right-4 text-gray-500 hover:text-red-500 font-bold transition">✕</button>
+                      
+                      <h3 className="text-xl font-bold mb-4 dark:text-white">
+                          {modalType === 'followers' ? 'Followers' : 'Following'}
+                      </h3>
                       
                       <div className="max-h-60 overflow-y-auto space-y-3 custom-scrollbar">
-                          {followersList.length === 0 && <p className="text-gray-500 italic">No followers yet.</p>}
-                          {followersList.map(friend => (
-                              <div key={friend._id} className="flex items-center gap-3 p-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg cursor-pointer transition" onClick={() => { navigate(`/profile/${friend._id}`); setShowFollowers(false); }}>
+                          {modalList.length === 0 && (
+                              <p className="text-gray-500 italic">
+                                  {modalType === 'followers' ? 'No followers yet.' : 'Not following anyone yet.'}
+                              </p>
+                          )}
+                          {modalList.map(friend => (
+                              <div key={friend._id} className="flex items-center gap-3 p-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg cursor-pointer transition" onClick={() => { navigate(`/profile/${friend._id}`); setModalType(null); }}>
                                   <div className="w-10 h-10 rounded-full bg-gray-200 overflow-hidden border border-gray-300 dark:border-gray-600">
                                       {friend.picturePath ? (
                                         <img src={getImageUrl(friend.picturePath)} className="w-full h-full object-cover"/>

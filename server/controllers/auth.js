@@ -1,9 +1,9 @@
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { OAuth2Client } from "google-auth-library"; 
-import crypto from "crypto"; // <--- NEW IMPORT
+import crypto from "crypto"; 
 import User from "../models/User.js";
-import { sendWelcomeEmail, sendResetEmail } from "../services/email.js"; // <--- UPDATED IMPORT
+import { sendWelcomeEmail, sendResetEmail } from "../services/email.js"; 
 
 // Initialize Google Client
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
@@ -143,7 +143,7 @@ export const googleLogin = async (req, res) => {
   }
 };
 
-/* --- NEW: FORGOT PASSWORD (SEND EMAIL) --- */
+/* --- FORGOT PASSWORD (SEND EMAIL) --- */
 export const forgotPassword = async (req, res) => {
   try {
     const { email } = req.body;
@@ -174,7 +174,7 @@ export const forgotPassword = async (req, res) => {
   }
 };
 
-/* --- NEW: RESET PASSWORD (VERIFY & UPDATE) --- */
+/* --- RESET PASSWORD (VERIFY & UPDATE) --- */
 export const resetPassword = async (req, res) => {
   try {
     const { token } = req.params;
@@ -205,5 +205,27 @@ export const resetPassword = async (req, res) => {
 
   } catch (err) {
     res.status(500).json({ error: err.message });
+  }
+};
+
+/* --- NEW: CHANGE PASSWORD (FROM SETTINGS) --- */
+export const changePassword = async (req, res) => {
+  try {
+    const { userId, current, new: newPassword } = req.body;
+    const user = await User.findById(userId);
+
+    // 1. Verify Current Password
+    const isMatch = await bcrypt.compare(current, user.password);
+    if (!isMatch) return res.status(400).json({ message: "Incorrect current password" });
+
+    // 2. Hash New Password
+    const salt = await bcrypt.genSalt(10);
+    user.password = await bcrypt.hash(newPassword, salt);
+
+    await user.save();
+    res.status(200).json({ message: "Password updated successfully" });
+
+  } catch (err) {
+    res.status(500).json({ message: err.message });
   }
 };

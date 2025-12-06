@@ -1,6 +1,7 @@
 import User from "../models/User.js";
 import Event from "../models/Event.js";
-import { createLog } from "../utils/logger.js"; // <--- NEW UTILITY IMPORT
+import Notification from "../models/Notification.js"; // Needed for follow notifications
+import { createLog } from "../utils/logger.js"; 
 
 /* READ */
 export const getUser = async (req, res) => {
@@ -47,7 +48,6 @@ export const deleteUser = async (req, res) => {
     await Event.deleteMany({ userId: id });
 
     // 4. LOG IT
-    // req.user.id is the ID of the ADMIN performing the action (passed via verifyToken)
     await createLog(
         req.user.id, 
         "DELETE_USER", 
@@ -61,14 +61,12 @@ export const deleteUser = async (req, res) => {
   }
 };
 
-/* UPDATE USER (UPDATED for Socials) */
+/* UPDATE USER */
 export const updateUser = async (req, res) => {
   try {
     const { id } = req.params;
-    // Extract new fields including socials
     const { firstName, lastName, location, occupation, twitter, linkedin, instagram } = req.body;
     
-    // Get the full Cloudinary URL (.path) if a file is uploaded
     const picturePath = req.file ? req.file.path : undefined;
 
     const updateData = {
@@ -76,7 +74,6 @@ export const updateUser = async (req, res) => {
       lastName,
       location,
       occupation,
-      // Update Socials structure
       socials: {
           twitter: twitter || "",
           linkedin: linkedin || "",
@@ -84,12 +81,10 @@ export const updateUser = async (req, res) => {
       }
     };
     
-    // Only update picture if a new one was uploaded
     if (picturePath) updateData.picturePath = picturePath;
 
     const updatedUser = await User.findByIdAndUpdate(id, updateData, { new: true });
     
-    // Remove password before sending back
     const formattedUser = updatedUser.toObject();
     delete formattedUser.password;
 
@@ -99,44 +94,59 @@ export const updateUser = async (req, res) => {
   }
 };
 
-/* NEW: ADD / REMOVE FRIEND (FOLLOW SYSTEM) */
-export const addRemoveFriend = async (req, res) => {
+/* --- REPLACED LOGIC: TOGGLE FOLLOW (One-Way) --- */
+export const toggleFollow = async (req, res) => {
   try {
-    const { id, friendId } = req.params;
+    const { id, targetId } = req.params; // ID = Me, Target = Person I want to follow
     
-    // Prevent following yourself
-    if (id === friendId) return res.status(400).json({ message: "Cannot follow yourself" });
+    if (id === targetId) return res.status(400).json({ message: "Cannot follow yourself" });
 
-    const user = await User.findById(id);
-    const friend = await User.findById(friendId);
+    const user = await User.findById(id); // Me
+    const targetUser = await User.findById(targetId); // Them
 
-    if (user.friends.includes(friendId)) {
-      // Unfollow: Remove friendId from user's friends list
-      user.friends = user.friends.filter((fid) => fid !== friendId);
-      // Optional: If you want mutual following, uncomment below
-      // friend.friends = friend.friends.filter((fid) => fid !== id); 
+    if (!user || !targetUser) return res.status(404).json({ message: "User not found" });
+
+    if (user.following.includes(targetId)) {
+      // UNFOLLOW
+      user.following = user.following.filter((fid) => fid !== targetId);
+      targetUser.followers = targetUser.followers.filter((fid) => fid !== id);
     } else {
-      // Follow: Add friendId to user's friends list
-      user.friends.push(friendId);
-      // Optional: Mutual
-      // friend.friends.push(id); 
+      // FOLLOW
+      user.following.push(targetId);
+      targetUser.followers.push(id);
+      
+      // Send Notification to Target
+      try {
+          const newNotif = new Notification({
+            userId: targetId,     
+            fromUserId: id,       
+            fromUserName: `${user.firstName} ${user.lastName}`,
+            type: "follow", // Ensure your Notification model supports this or 'like'/'join' generic types
+            message: `started following you`,
+            eventId: null // Not related to an event
+          });
+          await newNotif.save();
+      } catch(e) {
+          // Ignore duplicate notifications
+      }
     }
     
     await user.save();
-    // await friend.save();
+    await targetUser.save();
 
-    // Send back the updated list of friends (formatted nicely)
-    const friends = await Promise.all(
-      user.friends.map((id) => User.findById(id))
+    // Return my new 'following' list so frontend updates
+    // We return full objects for the 'following' list to make frontend easy
+    const following = await Promise.all(
+        user.following.map((id) => User.findById(id))
     );
-    
-    const formattedFriends = friends.map(
-      ({ _id, firstName, lastName, occupation, location, picturePath }) => {
-        return { _id, firstName, lastName, occupation, location, picturePath };
-      }
+      
+    const formattedFollowing = following.map(
+        ({ _id, firstName, lastName, occupation, location, picturePath }) => {
+          return { _id, firstName, lastName, occupation, location, picturePath };
+        }
     );
 
-    res.status(200).json(formattedFriends);
+    res.status(200).json(formattedFollowing);
   } catch (err) {
     res.status(404).json({ message: err.message });
   }
@@ -148,17 +158,13 @@ export const getUserRecommendations = async (req, res) => {
   try {
     const { id } = req.params;
     const user = await User.findById(id);
-
-    // 1. Find all events the user participated in
     const historyEvents = await Event.find({ participants: id });
 
-    // 2. Calculate Favorite Category
     const categoryCounts = {};
     historyEvents.forEach((event) => {
       categoryCounts[event.category] = (categoryCounts[event.category] || 0) + 1;
     });
 
-    // Find the category with max count
     let favoriteCategory = "";
     let maxCount = 0;
     
@@ -169,23 +175,17 @@ export const getUserRecommendations = async (req, res) => {
       }
     });
 
-    // Default if no history or current user is null
     if (!favoriteCategory || !user) {
-        // Just return general trending events (most recent)
-        const trending = await Event.find({ date: { $gte: new Date() } }) // Future only
-            .sort({ createdAt: -1 }) 
-            .limit(3);
+        const trending = await Event.find({ date: { $gte: new Date() } }).sort({ createdAt: -1 }).limit(3);
         return res.status(200).json({ type: "trending", data: trending });
     }
     
-    // Collect IDs of events already seen/joined to exclude them
     const excludedIds = historyEvents.map(e => e._id);
 
-    // 3. Find Future Events in that Category
     const recommendations = await Event.find({
         category: favoriteCategory,
-        date: { $gte: new Date() }, // Future events only
-        _id: { $nin: excludedIds } // Exclude ones already joined/seen
+        date: { $gte: new Date() }, 
+        _id: { $nin: excludedIds }
     }).limit(3);
 
     res.status(200).json({ type: "based_on_history", category: favoriteCategory, data: recommendations });
@@ -195,38 +195,31 @@ export const getUserRecommendations = async (req, res) => {
   }
 };
 
-/* TOGGLE BOOKMARK (Save/Unsave Event) */
+/* TOGGLE BOOKMARK */
 export const toggleBookmark = async (req, res) => {
   try {
     const { id, eventId } = req.params;
     const user = await User.findById(id);
 
     if (user.bookmarks.includes(eventId)) {
-      // Remove from bookmarks
       user.bookmarks = user.bookmarks.filter((bid) => bid !== eventId);
     } else {
-      // Add to bookmarks
       user.bookmarks.push(eventId);
     }
 
     await user.save();
-    
-    // Return updated bookmarks list
     res.status(200).json(user.bookmarks);
   } catch (err) {
     res.status(404).json({ message: err.message });
   }
 };
 
-/* GET BOOKMARKED EVENTS (For Profile Page) */
+/* GET BOOKMARKED EVENTS */
 export const getBookmarkedEvents = async (req, res) => {
     try {
         const { id } = req.params;
         const user = await User.findById(id);
-        
-        // Find all events whose IDs are in the bookmarks array
         const events = await Event.find({ _id: { $in: user.bookmarks } });
-        
         res.status(200).json(events);
     } catch (err) { 
         res.status(404).json({ message: err.message }); 

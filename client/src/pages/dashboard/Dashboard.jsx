@@ -508,6 +508,7 @@ const Dashboard = ({ toggleTheme, theme }) => {
           >
             📷
           </Link>
+          <Link to="/settings" className="...">⚙️</Link>
 
           <div className="relative cursor-pointer hover:text-blue-200 transition hover:scale-110" onClick={handleMarkRead}>
             <span className="text-xl">🔔</span>

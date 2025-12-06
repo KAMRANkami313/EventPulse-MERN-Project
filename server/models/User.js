@@ -29,6 +29,20 @@ const UserSchema = new mongoose.Schema(
       type: String,
       default: "",
     },
+    
+    // --- ADVANCED SOCIAL GRAPH (Phase 33) ---
+    // Replaces 'friends' array with explicit directional graph
+    followers: { 
+        type: Array, 
+        default: [] 
+    }, // People who follow ME
+    
+    following: { 
+        type: Array, 
+        default: [] 
+    }, // People I follow
+
+    // Backward compatibility (Optional: keep until migration is done, but unused in logic now)
     friends: {
       type: Array,
       default: [],
@@ -48,6 +62,13 @@ const UserSchema = new mongoose.Schema(
         twitter: { type: String, default: "" },
         linkedin: { type: String, default: "" },
         instagram: { type: String, default: "" }
+    },
+
+    // SETTINGS PRIVACY
+    privacy: { 
+        type: String, 
+        enum: ["public", "private"], 
+        default: "public" 
     },
 
     viewedProfile: Number,

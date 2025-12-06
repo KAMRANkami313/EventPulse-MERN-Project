@@ -4,10 +4,10 @@ import {
     getAllUsers, 
     deleteUser, 
     updateUser, 
-    addRemoveFriend,
+    toggleFollow,       // <--- CHANGED FROM addRemoveFriend
     getUserRecommendations,
-    toggleBookmark,      // <--- NEW IMPORT
-    getBookmarkedEvents  // <--- NEW IMPORT
+    toggleBookmark,      
+    getBookmarkedEvents 
 } from "../controllers/users.js";
 import { verifyToken } from "../middleware/auth.js";
 import multer from "multer";
@@ -32,8 +32,11 @@ router.patch("/:id/bookmark/:eventId", verifyToken, toggleBookmark); // Toggle s
 /* DELETE ROUTE */
 router.delete("/:id", verifyToken, deleteUser);
 
-/* UPDATE ROUTE */
-router.patch("/:id/:friendId", verifyToken, addRemoveFriend);
+/* UPDATE ROUTES */
+
+// CHANGED: Follow Logic (One-way)
+router.patch("/:id/follow/:targetId", verifyToken, toggleFollow); 
+
 // ✅ 'upload.single' sends the profile picture to the cloud
 router.patch("/:id", verifyToken, upload.single("picture"), updateUser);
 
