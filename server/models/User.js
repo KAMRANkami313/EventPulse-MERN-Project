@@ -42,6 +42,14 @@ const UserSchema = new mongoose.Schema(
 
     location: String,
     occupation: String,
+    
+    // NEW: Social Media Links
+    socials: {
+        twitter: { type: String, default: "" },
+        linkedin: { type: String, default: "" },
+        instagram: { type: String, default: "" }
+    },
+
     viewedProfile: Number,
     impressions: Number,
     role: {

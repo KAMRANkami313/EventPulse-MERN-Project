@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import { useParams, useNavigate } from "react-router-dom";
 import { getImageUrl } from "../../utils/imageHelper"; 
+import { getUserBadges } from "../../utils/badgeHelper"; // <--- NEW IMPORT
 
 const ProfilePage = () => {
   const { userId } = useParams();
@@ -15,16 +16,21 @@ const ProfilePage = () => {
   const [userProfile, setUserProfile] = useState(null);
   const [hostedEvents, setHostedEvents] = useState([]);
   const [attendingEvents, setAttendingEvents] = useState([]);
-  const [savedEvents, setSavedEvents] = useState([]); // <--- NEW STATE
+  const [savedEvents, setSavedEvents] = useState([]);
   
   // UI States
   const [activeTab, setActiveTab] = useState("hosted");
   const [isEditing, setIsEditing] = useState(false);
   const [isFollowing, setIsFollowing] = useState(false); 
   
+  // Modal States (NEW)
+  const [showFollowers, setShowFollowers] = useState(false);
+  const [followersList, setFollowersList] = useState([]);
+
   // Edit Form State
   const [editFormData, setEditFormData] = useState({
-      firstName: "", lastName: "", location: "", occupation: "", picture: null
+      firstName: "", lastName: "", location: "", occupation: "", picture: null,
+      twitter: "", linkedin: "", instagram: "" // <--- NEW FIELDS
   });
 
   const isOwnProfile = loggedInUser._id === userId;
@@ -36,11 +42,16 @@ const ProfilePage = () => {
             headers: { Authorization: `Bearer ${token}` },
         });
         setUserProfile(userRes.data);
+        
+        // Load existing data + socials
         setEditFormData({
             firstName: userRes.data.firstName,
             lastName: userRes.data.lastName,
             location: userRes.data.location,
             occupation: userRes.data.occupation,
+            twitter: userRes.data.socials?.twitter || "",
+            linkedin: userRes.data.socials?.linkedin || "",
+            instagram: userRes.data.socials?.instagram || "",
             picture: null
         });
 
@@ -54,7 +65,7 @@ const ProfilePage = () => {
         });
         setAttendingEvents(attendingRes.data);
 
-        // <--- NEW: FETCH SAVED EVENTS (Only if own profile)
+        // Fetch Saved Events (Only if own profile)
         if (isOwnProfile) {
             const savedRes = await axios.get(`http://localhost:5000/users/${userId}/bookmarks`, {
                 headers: { Authorization: `Bearer ${token}` },
@@ -72,7 +83,7 @@ const ProfilePage = () => {
       } catch (err) { console.error(err); }
     };
     fetchData();
-  }, [userId, isOwnProfile, token]); // Added isOwnProfile and token to dependencies
+  }, [userId, isOwnProfile, token]);
 
   // FOLLOW HANDLER
   const handleFollow = async () => {
@@ -81,10 +92,8 @@ const ProfilePage = () => {
             headers: { Authorization: `Bearer ${token}` }
         });
         
-        // 1. Toggle UI state
         setIsFollowing(!isFollowing);
 
-        // 2. Update Local Storage
         const updatedFriendIds = response.data.map(f => f._id); 
         const updatedUser = { ...loggedInUser, friends: updatedFriendIds };
         localStorage.setItem("user", JSON.stringify(updatedUser));
@@ -92,6 +101,20 @@ const ProfilePage = () => {
     } catch (err) { 
         console.error("Follow Error:", err); 
     }
+  };
+
+  // NEW: FETCH & SHOW FOLLOWERS MODAL
+  const handleShowFollowers = async () => {
+      if (!userProfile.friends || userProfile.friends.length === 0) return;
+      
+      try {
+          // Fetch full user details for every ID in the friends array
+          const list = await Promise.all(
+              userProfile.friends.map(id => axios.get(`http://localhost:5000/users/${id}`, { headers: { Authorization: `Bearer ${token}` } }))
+          );
+          setFollowersList(list.map(res => res.data));
+          setShowFollowers(true);
+      } catch(err) { console.error(err); }
   };
 
   const handleEditChange = (e) => setEditFormData({ ...editFormData, [e.target.name]: e.target.value });
@@ -105,6 +128,12 @@ const ProfilePage = () => {
           formData.append("lastName", editFormData.lastName);
           formData.append("location", editFormData.location);
           formData.append("occupation", editFormData.occupation);
+          
+          // Append Socials
+          formData.append("twitter", editFormData.twitter);
+          formData.append("linkedin", editFormData.linkedin);
+          formData.append("instagram", editFormData.instagram);
+
           if(editFormData.picture) formData.append("picture", editFormData.picture);
 
           const res = await axios.patch(`http://localhost:5000/users/${userId}`, formData, {
@@ -112,7 +141,7 @@ const ProfilePage = () => {
           });
           
           setUserProfile(res.data);
-          // If editing own profile, update local storage
+          
           if(isOwnProfile) {
               const currentUserData = JSON.parse(localStorage.getItem("user"));
               localStorage.setItem("user", JSON.stringify({ ...res.data, friends: currentUserData.friends, bookmarks: currentUserData.bookmarks, password: loggedInUser.password }));
@@ -124,13 +153,16 @@ const ProfilePage = () => {
 
   if (!userProfile) return <div className="p-10 text-center">Loading Profile...</div>;
 
+  // CALCULATE BADGES
+  const badges = getUserBadges(userProfile, hostedEvents.length);
+
   // Helper to determine which events to show
   const eventsDisplay = activeTab === "hosted" ? hostedEvents 
                       : activeTab === "attending" ? attendingEvents 
                       : savedEvents;
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors relative">
       
       {/* 1. COVER BANNER */}
       <div className="h-60 w-full bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 relative">
@@ -166,10 +198,33 @@ const ProfilePage = () => {
                   <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white">
                       {userProfile.firstName} {userProfile.lastName}
                   </h1>
-                  <p className="text-blue-600 font-medium text-lg">{userProfile.occupation || "Community Member"}</p>
+                  
+                  {/* BADGES SECTION */}
+                  <div className="flex flex-wrap gap-2 mt-2 justify-center md:justify-start">
+                      {badges.map((b, i) => (
+                          <span key={i} className={`text-xs px-2 py-1 rounded-full font-bold flex items-center gap-1 shadow-sm border border-black/5 ${b.color}`}>
+                              {b.icon} {b.label}
+                          </span>
+                      ))}
+                  </div>
+
+                  <p className="text-blue-600 font-medium text-lg mt-2">{userProfile.occupation || "Community Member"}</p>
                   <p className="text-gray-500 dark:text-gray-400 flex items-center justify-center md:justify-start gap-1 mt-1">
                       📍 {userProfile.location || "Earth"}
                   </p>
+
+                  {/* SOCIAL LINKS (Display Only) */}
+                  <div className="flex gap-4 text-2xl text-gray-500 mt-3 justify-center md:justify-start">
+                      {userProfile.socials?.twitter && (
+                          <a href={userProfile.socials.twitter} target="_blank" rel="noreferrer" className="hover:text-blue-400 transition hover:scale-110">🐦</a>
+                      )}
+                      {userProfile.socials?.linkedin && (
+                          <a href={userProfile.socials.linkedin} target="_blank" rel="noreferrer" className="hover:text-blue-700 transition hover:scale-110">💼</a>
+                      )}
+                      {userProfile.socials?.instagram && (
+                          <a href={userProfile.socials.instagram} target="_blank" rel="noreferrer" className="hover:text-pink-500 transition hover:scale-110">📸</a>
+                      )}
+                  </div>
               </div>
 
               {/* Stats */}
@@ -178,17 +233,15 @@ const ProfilePage = () => {
                       <p className="text-xl font-bold text-gray-800 dark:text-white">{hostedEvents.length}</p>
                       <p className="text-xs text-gray-500 uppercase tracking-wide">Hosted</p>
                   </div>
-                  <div>
-                      <p className="text-xl font-bold text-gray-800 dark:text-white">{attendingEvents.length}</p>
-                      <p className="text-xs text-gray-500 uppercase tracking-wide">Attending</p>
+                  {/* CLICKABLE FOLLOWERS COUNT */}
+                  <div className="cursor-pointer hover:opacity-70 transition" onClick={handleShowFollowers} title="View Followers">
+                      <p className="text-xl font-bold text-gray-800 dark:text-white">{userProfile.friends.length}</p>
+                      <p className="text-xs text-gray-500 uppercase tracking-wide">Followers</p>
                   </div>
-                  {/* Saved Stat (Only for Owner) */}
-                  {isOwnProfile && (
-                    <div>
-                        <p className="text-xl font-bold text-gray-800 dark:text-white">{savedEvents.length}</p>
-                        <p className="text-xs text-gray-500 uppercase tracking-wide">Saved</p>
-                    </div>
-                  )}
+                  <div className="opacity-50">
+                      <p className="text-xl font-bold text-gray-800 dark:text-white">{attendingEvents.length}</p>
+                      <p className="text-xs text-gray-500 uppercase tracking-wide">Going</p>
+                  </div>
               </div>
 
               {/* ACTIONS (Edit OR Follow) */}
@@ -225,6 +278,13 @@ const ProfilePage = () => {
                       <input name="location" value={editFormData.location} onChange={handleEditChange} placeholder="Location" className="p-3 border rounded dark:bg-gray-700 dark:text-white" />
                       <input name="occupation" value={editFormData.occupation} onChange={handleEditChange} placeholder="Occupation" className="p-3 border rounded dark:bg-gray-700 dark:text-white" />
                       
+                      {/* SOCIAL INPUTS */}
+                      <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-2">
+                          <input name="twitter" value={editFormData.twitter} onChange={handleEditChange} placeholder="Twitter URL (https://...)" className="p-3 border rounded text-sm dark:bg-gray-700 dark:text-white" />
+                          <input name="linkedin" value={editFormData.linkedin} onChange={handleEditChange} placeholder="LinkedIn URL" className="p-3 border rounded text-sm dark:bg-gray-700 dark:text-white" />
+                          <input name="instagram" value={editFormData.instagram} onChange={handleEditChange} placeholder="Instagram URL" className="p-3 border rounded text-sm dark:bg-gray-700 dark:text-white" />
+                      </div>
+
                       <div className="md:col-span-2">
                           <label className="block text-sm mb-1 dark:text-gray-300">Profile Picture</label>
                           <input type="file" onChange={handleImageChange} className="w-full text-sm dark:text-gray-300" />
@@ -250,7 +310,7 @@ const ProfilePage = () => {
                   ATTENDING
               </button>
               
-              {/* NEW: SAVED TAB (Only for Owner) */}
+              {/* SAVED TAB (Only for Owner) */}
               {isOwnProfile && (
                   <button 
                     onClick={() => setActiveTab("saved")}
@@ -304,6 +364,35 @@ const ProfilePage = () => {
                   </div>
               ))}
           </div>
+
+          {/* FOLLOWERS MODAL (Phase 32) */}
+          {showFollowers && (
+              <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 animate-fadeIn">
+                  <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl w-full max-w-md shadow-2xl relative border border-gray-200 dark:border-gray-700">
+                      <button onClick={() => setShowFollowers(false)} className="absolute top-4 right-4 text-gray-500 hover:text-red-500 font-bold transition">✕</button>
+                      <h3 className="text-xl font-bold mb-4 dark:text-white">Followers</h3>
+                      
+                      <div className="max-h-60 overflow-y-auto space-y-3 custom-scrollbar">
+                          {followersList.length === 0 && <p className="text-gray-500 italic">No followers yet.</p>}
+                          {followersList.map(friend => (
+                              <div key={friend._id} className="flex items-center gap-3 p-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg cursor-pointer transition" onClick={() => { navigate(`/profile/${friend._id}`); setShowFollowers(false); }}>
+                                  <div className="w-10 h-10 rounded-full bg-gray-200 overflow-hidden border border-gray-300 dark:border-gray-600">
+                                      {friend.picturePath ? (
+                                        <img src={getImageUrl(friend.picturePath)} className="w-full h-full object-cover"/>
+                                      ) : (
+                                        <div className="w-full h-full flex items-center justify-center font-bold text-gray-400">{friend.firstName[0]}</div>
+                                      )}
+                                  </div>
+                                  <div>
+                                      <p className="font-bold text-sm dark:text-white">{friend.firstName} {friend.lastName}</p>
+                                      <p className="text-xs text-gray-500 dark:text-gray-400">{friend.occupation || "Member"}</p>
+                                  </div>
+                              </div>
+                          ))}
+                      </div>
+                  </div>
+              </div>
+          )}
 
       </div>
     </div>

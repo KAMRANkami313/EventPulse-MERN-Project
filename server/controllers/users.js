@@ -61,11 +61,12 @@ export const deleteUser = async (req, res) => {
   }
 };
 
-/* UPDATE USER */
+/* UPDATE USER (UPDATED for Socials) */
 export const updateUser = async (req, res) => {
   try {
     const { id } = req.params;
-    const { firstName, lastName, location, occupation } = req.body;
+    // Extract new fields including socials
+    const { firstName, lastName, location, occupation, twitter, linkedin, instagram } = req.body;
     
     // Get the full Cloudinary URL (.path) if a file is uploaded
     const picturePath = req.file ? req.file.path : undefined;
@@ -74,7 +75,13 @@ export const updateUser = async (req, res) => {
       firstName,
       lastName,
       location,
-      occupation
+      occupation,
+      // Update Socials structure
+      socials: {
+          twitter: twitter || "",
+          linkedin: linkedin || "",
+          instagram: instagram || ""
+      }
     };
     
     // Only update picture if a new one was uploaded
