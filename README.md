@@ -1,7 +1,7 @@
 # 🎉 EventPulse — Commercial Grade Progressive Web Application (PWA)
 
 EventPulse is a high-performance, full-stack **MERN Progressive Web Application (PWA)** designed for real-world commercial deployment.
-It includes enterprise-grade analytics, security, monetization, event ticketing, real-time experiences, and a powerful new **Visual Admin Dashboard**.
+It includes enterprise-grade analytics, security, monetization, event ticketing, real-time experiences, modern UI/UX animations, and a powerful new **Visual Admin Dashboard**.
 
 ---
 
@@ -12,219 +12,244 @@ It includes enterprise-grade analytics, security, monetization, event ticketing,
 # 📈 Scalability, Performance & Infrastructure
 
 * **PWA Ready**
-  Fully installable on desktop & mobile (iOS/Android) with offline caching + native-like speed.
+  Fully installable on desktop & mobile (iOS/Android) with offline caching and native-like speed.
 
 * **Infinite Scroll Pagination**
-  Server-side pagination loading **10 events per batch** for high-scalability performance.
+  Server-side pagination loading **10 events per batch** for performance at scale.
 
 * **Advanced Server-Side Search, Filtering & Sorting**
   Category, keyword, price, and date range filtering powered by MongoDB aggregation.
 
 * **Cloudinary CDN Storage**
-  Fast, persistent & secure media hosting with automatic transformations.
 
 * **Scroll Management**
   Global Scroll-to-Top for smooth navigation.
 
 * **Dockerized Deployment**
-  Production-ready Docker setup for both frontend and backend.
+  Docker setup for both frontend and backend.
 
 ---
 
 # 💳 Monetization & Business Logic
 
 * **Stripe Payment Integration**
-  Safe ticket purchasing using Stripe Checkout.
-
 * **Stripe Webhooks (Verified Transactions Only)**
-  Ensures tickets are only issued after Stripe confirms the payment.
-
-* **Revenue Analytics (Admin Dashboard)**
-  Total platform earnings, monthly revenue charts, and transaction insights.
-
+* **Revenue Analytics**
 * **Admin Export Tools**
   Export Users / Events / Revenue to CSV or Excel.
 
 ---
 
-# 🤝 Social Features, Feed Personalization & Engagement
+# 🤝 Social Features, Engagement & Personalization
 
-* **Follow System**
-  Personalized event feed based on creators you follow.
+## 🌐 Advanced Social Graph (Followers & Following)
 
-* **Event Ratings & Reviews**
-  Only available to users who attended the event.
+* One-way follow system (like Instagram/Twitter)
+* **Followers** — people who want to see your events
+* **Following** — people whose events you want to see
+* Fully scalable, replaces old “friends array”
 
-* **AI-Lite Smart Recommendations**
-  Activity-based personalized event suggestions.
+## 🔗 Social Identity Profiles
 
-* **Live Event Chat (Socket.io)**
-  Real-time messaging for participants.
+Users can link:
 
-* **Real-Time Notifications**
-  Follows, likes, joins, messages, and admin broadcasts.
+* Instagram
+* Twitter/X
+* LinkedIn
+* Personal website
+
+Displayed with clean **Lucide Icons**.
+
+## 🧑‍🤝‍🧑 Followers/Following Modal
+
+* Clicking “Followers” or “Following” opens a dedicated modal
+* Built using **Framer Motion** + Glassmorphism UI
+
+## 🔖 Bookmarks (Saved Events)
+
+* Users can save events privately without liking or joining
+* Saved events appear in a dedicated “Bookmarks” page
+
+## 🛡️ Privacy Controls
+
+* Hide profile from search
+* Restrict event visibility
+* Control who can follow
+* Control who can message
+* Toggle social link visibility
+
+All located inside a full **Settings Page**.
+
+## 🏆 Gamification System (Badges)
+
+Automatic badge awards:
+
+* **👑 Top Host**
+* **🔥 Early Adopter**
+* **🚀 Rising Creator**
+* **💬 Community Engaged**
+
+Displayed on profiles and events.
+
+## 💬 Additional Social Features
+
+* Event ratings & reviews
+* Activity-based smart recommendations
+* Live chat (Socket.io)
+* Real-time notifications
+* Personalized feed based on creators you follow
 
 ---
 
 # 🎟️ Ticketing, Attendance & Event Tools
 
-* **Full Event CRUD** (title, media, price, geolocation, categories, etc.)
+* Full Event CRUD
+* QR Ticket System
+* Email Ticket Delivery
+* PDF Ticket Generation
+* In-App QR Code Scanner
+* Calendar Sync (.ics)
 
-* **QR Ticket System**
-  Each ticket contains a unique QR code + secure validation for event organizers.
+### 📤 Organizer Tools — Guest List Export
 
-* **Email Ticket Delivery (Nodemailer)**
-  Instant email confirmation with QR.
+Event creators can download attendee lists as CSV:
 
-* **PDF Ticket Generation (NEW)**
-  Users can download a professional PDF version of their ticket with event details + QR code.
+* Name
+* Email
+* Ticket status
+* Check-in status
 
-* **In-App QR Code Scanner**
-  Organizers can verify ticket authenticity from their phone.
+---
 
-* **Calendar Sync (.ics)**
-  Add events directly to Google Calendar, Apple Calendar, etc.
+# ✨ Complete UI/UX Overhaul — Modern SaaS Design
+
+EventPulse adopts a premium app aesthetic inspired by Linear, Stripe, and Instagram.
+
+### New UI Technologies
+
+* **Framer Motion** — micro-interactions
+* **Glassmorphism** UI
+* **Vibrant gradients**
+* **Lucide Icons**
+* **Floating cards + animated modals**
+* Tailwind for styling
+
+### Pages Upgraded
+
+* Home Feed
+* Event Details
+* Create / Edit Event
+* Profile Page
+* Followers/Following Modal
+* Bookmarks Page
+* Notifications
+* Settings Page
+* Admin Dashboard
+* Login / Signup
 
 ---
 
 # 🛡️ Security, Admin Tools & Moderation
 
-* **JWT Authentication**
-  With refresh tokens and secure password hashing (bcrypt).
-
-* **Google OAuth Login**
-
-* **Forgot Password with Secure Token Flow**
-
-* **API Rate Limiting**
-  Prevents brute-force, bot attacks, and excessive requests.
-
-* **Custom 404 Page & Error Handling**
+* JWT Authentication
+* Google OAuth
+* Forgot Password Flow
+* API Rate Limiting
+* Custom 404 Page
+* Admin Moderation Tools
+* Report System
+* Full Audit Logs
+* Transaction History Table
 
 ---
 
-# 🏢 Industrial-Grade Admin Dashboard (NEW)
+# 🏢 Industrial-Grade Admin Dashboard
 
-EventPulse now includes a **professional, visual, analytics-rich Admin Dashboard** designed for real companies.
+## 📊 Visual Analytics (Recharts)
 
----
+* User growth line chart
+* Monthly revenue line/bar chart
+* Category distribution pie chart
+* Event growth stats
+* User activity metrics
 
-## 📊 1. Visual Analytics (Recharts Integration)
+## 🗂️ Event Management Table
 
-* **User Growth Line Chart**
-* **Monthly Revenue Line / Bar Chart** (based on Stripe transactions)
-* **Category Distribution Pie Chart**
-  Shows which event categories (Music, Tech, Art, etc.) are trending.
-* **Event Growth Statistics**
-* **User Activity Metrics**
-
----
-
-## 🗂️ 2. Event Management Table (Admin-Controlled)
-
-A centralized table where admins can:
-
-* Search events instantly
+* Search events
 * Sort by date, price, category, or popularity
 * Delete or unlist events
-* View event analytics (attendees, revenue, ratings)
+* View attendee & revenue statistics
 
----
+## 📣 Global Broadcast System
 
-## 📣 3. Global Broadcast System (Platform-Wide Notifications)
+Admins can send platform-wide messages:
 
-Admins can send **universal announcements** visible to all users.
-Useful for:
+* Notices
+* Promotions
+* Alerts
+* Announcements
 
-* Maintenance notices
-* Holiday promotions
-* Security updates
-* System-wide alerts
+Displayed via the real-time notification system.
 
-Delivered through the real-time notification system.
+## 🧾 Moderation Queue
 
----
-
-## 🧾 4. Moderation Queue (Report System)
-
-Users can report events for:
-
-* Spam
-* Inappropriate content
-* Fraud
-* Wrong category
-
-Admins get a dedicated **"Reports" section** containing:
+Contains all user-reported events with:
 
 * Report reason
-* The user who reported
-* Quick action buttons: *Delete Event*, *Warn Creator*, *Dismiss Report*
+* Reporter details
+* Quick actions
 
----
+  * Delete Event
+  * Warn Creator
+  * Dismiss Report
 
-## 📝 5. Audit Logs (Security Compliance)
+## 📝 Audit Logs
 
-Every admin action is recorded:
+Tracks:
 
 * User bans
 * Event deletions
 * Revenue adjustments
+* Admin actions
 * Broadcast messages
-* Settings updates
 
-Audit logs include:
+## 💳 Transaction History
 
-* Admin name
-* Action description
-* Timestamp
-
-This ensures transparency and accountability.
-
----
-
-## 💳 6. Transaction History (Financial Records)
-
-A full Stripe-powered purchase history table:
+Showing:
 
 * Buyer name
 * Event title
-* Amount paid
+* Amount
 * Stripe Transaction ID
 * Timestamp
 
-Perfect for accounting, refunds, or analytics.
+## 🔔 Modern Toast Notifications
 
----
+A complete toast system for:
 
-## 🔔 7. Modern Toast Notifications (No More alert())
-
-All user feedback uses **non-blocking toast notifications**:
-
-* Success messages
-* Errors
-* Warnings
-* Info alerts
-
-Smooth, auto-dismiss, non-intrusive — professional UX.
+* Success
+* Error
+* Warning
+* Info
 
 ---
 
 # 🛠️ Tech Stack
 
-| Domain             | Technologies                               | Details                                  |
-| ------------------ | ------------------------------------------ | ---------------------------------------- |
-| **Frontend**       | React (Vite), Tailwind, Recharts, Vite-PWA | PWA-ready, visual analytics, fast builds |
-| **Backend**        | Node.js, Express.js, Socket.io, Nodemailer | API + real-time communication            |
-| **Database**       | MongoDB Atlas, Mongoose                    | Scalable NoSQL data modeling             |
-| **Infrastructure** | Docker, Cloudinary CDN                     | Deployment-ready + media CDN             |
-| **Payments**       | Stripe SDK, Stripe Webhooks                | Secure billing & transaction tracking    |
-| **Maps**           | Leaflet                                    | Interactive event location mapping       |
+| Domain             | Technologies                                                      | Details                       |
+| ------------------ | ----------------------------------------------------------------- | ----------------------------- |
+| **Frontend**       | React (Vite), Tailwind, Framer Motion, Lucide, Recharts, Vite-PWA | Modern SaaS UI + animations   |
+| **Backend**        | Node.js, Express.js, Socket.io, Nodemailer                        | API + real-time communication |
+| **Database**       | MongoDB Atlas, Mongoose                                           | Scalable NoSQL                |
+| **Infrastructure** | Docker, Cloudinary CDN                                            | Deployment-ready              |
+| **Payments**       | Stripe SDK, Stripe Webhooks                                       | Secure billing                |
+| **Maps**           | Leaflet                                                           | Interactive event locations   |
 
 ---
 
 # 🚀 How to Run Locally
 
-## 1️⃣ Clone the Repository
+## 1️⃣ Clone Repository
 
 ```bash
 git clone https://github.com/KAMRANkami313/EventPulse-MERN-Project.git
@@ -281,7 +306,7 @@ npm run dev
 
 Open:
 
-👉 **[http://localhost:5173](http://localhost:5173)**
+👉 [http://localhost:5173](http://localhost:5173)
 
 ---
 
@@ -295,7 +320,7 @@ docker compose up --build
 
 # 👨‍💻 Admin Access
 
-Register → Open MongoDB → Users Collection → Change:
+In MongoDB → Users Collection → Change:
 
 ```json
 "role": "user"
@@ -316,3 +341,4 @@ Refresh → Admin Dashboard appears.
 Developed by **KAMRANkami313**.
 
 ---
+
