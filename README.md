@@ -30,6 +30,26 @@ It includes enterprise-grade analytics, security, monetization, event ticketing,
 
 ---
 
+# 🆕 NEW FEATURE — Rule-Based AI Chatbot (Local, Free, No API)
+
+EventPulse now includes a **Rule-Based AI Chatbot** that runs **100% locally** on your server — no API keys, no cloud costs.
+
+### 🔍 How It Works
+
+* Scans user messages for **keywords** (e.g., *"how to create"*, *"ticket"*, *"payment"*).
+* Matches them to a **predefined Knowledge Base**.
+* Responds instantly with AI-like smart answers.
+* Fully customizable behavior and knowledge rules.
+
+### ⚡ Benefits
+
+* Zero cost
+* No external dependencies
+* Fast local responses
+* Can automate support, FAQs, and onboarding
+
+---
+
 # 💳 Monetization & Business Logic
 
 * **Stripe Payment Integration**
