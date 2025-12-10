@@ -57,7 +57,7 @@ const Register = () => {
         localStorage.setItem("user", JSON.stringify(response.data.user));
 
         toast.success("Account created and signed in!");
-        navigate("/dashboard");
+       window.location.href = "/dashboard";
       }
     } catch (error) {
       console.error("Google signup error:", error);

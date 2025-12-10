@@ -18,7 +18,7 @@ import messageRoutes from "./routes/messages.js";
 import adminRoutes from "./routes/admin.js";
 import paymentRoutes from "./routes/payment.js";
 import Message from "./models/Message.js";  
-
+import aiRoutes from "./routes/ai.js";
 // Config
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -66,7 +66,7 @@ app.use("/notifications", notificationRoutes);
 app.use("/messages", messageRoutes);
 app.use("/admin", adminRoutes);
 app.use("/payment", paymentRoutes);
-
+app.use("/ai", aiRoutes);
 // --- DB CONNECTION ---
 const PORT = process.env.PORT || 5000;
 const MONGO_URL = process.env.MONGO_URL;

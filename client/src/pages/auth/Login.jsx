@@ -31,9 +31,9 @@ const Login = () => {
         toast.success("Welcome back!");
 
         if (response.data.user.role === "admin") {
-          navigate("/admin");
+          window.location.href = "/admin"; 
         } else {
-          navigate("/dashboard");
+          window.location.href = "/dashboard";
         }
       }
     } catch (error) {
@@ -59,9 +59,9 @@ const Login = () => {
         toast.success("Welcome back via Google!");
 
         if (response.data.user.role === "admin") {
-          navigate("/admin");
+           window.location.href = "/admin"; 
         } else {
-          navigate("/dashboard");
+          window.location.href = "/dashboard";
         }
       }
     } catch (error) {
