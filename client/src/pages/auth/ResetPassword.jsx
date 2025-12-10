@@ -2,6 +2,9 @@ import { useState } from "react";
 import axios from "axios";
 import { useParams, useNavigate } from "react-router-dom";
 
+// 🎯 IMPORT THE ENV VARIABLE FOR API URL
+const API_URL = import.meta.env.VITE_API_URL; 
+
 const ResetPassword = () => {
   const { token } = useParams();
   const navigate = useNavigate();
@@ -23,8 +26,9 @@ const ResetPassword = () => {
     }
 
     try {
+      // 🟢 DEPLOYMENT CHANGE: Using VITE_API_URL variable
       await axios.post(
-        `http://localhost:5000/auth/reset-password/${token}`,
+        `${API_URL}/auth/reset-password/${token}`,
         { password }
       );
       alert("Password Reset Successful! Please login with your new password.");

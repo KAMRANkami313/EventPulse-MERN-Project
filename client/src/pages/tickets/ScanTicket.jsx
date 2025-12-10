@@ -3,6 +3,9 @@ import { Scanner } from '@yudiel/react-qr-scanner';
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 
+// 🎯 IMPORT THE ENV VARIABLE FOR API URL
+const API_URL = import.meta.env.VITE_API_URL;
+
 const ScanTicket = () => {
   const navigate = useNavigate();
   const token = localStorage.getItem("token");
@@ -21,8 +24,9 @@ const ScanTicket = () => {
 
         setStatus("processing");
 
+        // 🟢 DEPLOYMENT CHANGE: Using VITE_API_URL variable
         const response = await axios.post(
-          "http://localhost:5000/events/verify",
+          `${API_URL}/events/verify`,
           { eventId: ticketData.eventId, userId: ticketData.userId },
           { headers: { Authorization: `Bearer ${token}` } }
         );

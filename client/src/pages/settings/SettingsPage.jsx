@@ -6,6 +6,9 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ArrowLeft, Lock, Shield, Trash } from "lucide-react";
 
+// 🎯 IMPORT THE ENV VARIABLE FOR API URL
+const API_URL = import.meta.env.VITE_API_URL;
+
 const SettingsPage = () => {
   const user = JSON.parse(localStorage.getItem("user"));
   const token = localStorage.getItem("token");
@@ -25,8 +28,9 @@ const SettingsPage = () => {
       return toast.error("Passwords do not match");
 
     try {
+      // 🟢 DEPLOYMENT CHANGE: Using VITE_API_URL variable
       await axios.patch(
-        `http://localhost:5000/auth/change-password`,
+        `${API_URL}/auth/change-password`,
         { userId: user._id, ...passwords },
         { headers: { Authorization: `Bearer ${token}` } }
       );

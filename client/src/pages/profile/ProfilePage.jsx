@@ -10,6 +10,9 @@ import {
 import { getImageUrl } from "../../utils/imageHelper";
 import { getUserBadges } from "../../utils/badgeHelper";
 
+// 🎯 IMPORT THE ENV VARIABLE FOR API URL
+const API_URL = import.meta.env.VITE_API_URL;
+
 const ProfilePage = () => {
     const { userId } = useParams();
     const navigate = useNavigate();
@@ -44,7 +47,8 @@ const ProfilePage = () => {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const userRes = await axios.get(`http://localhost:5000/users/${userId}`, {
+                // 🟢 DEPLOYMENT CHANGE 1/8: Fetch User Profile
+                const userRes = await axios.get(`${API_URL}/users/${userId}`, {
                     headers: { Authorization: `Bearer ${token}` },
                 });
                 setUserProfile(userRes.data);
@@ -61,19 +65,22 @@ const ProfilePage = () => {
                     picture: null
                 });
 
-                const hostedRes = await axios.get(`http://localhost:5000/events/user/${userId}`, {
+                // 🟢 DEPLOYMENT CHANGE 2/8: Fetch Hosted Events
+                const hostedRes = await axios.get(`${API_URL}/events/user/${userId}`, {
                     headers: { Authorization: `Bearer ${token}` },
                 });
                 setHostedEvents(hostedRes.data);
 
-                const attendingRes = await axios.get(`http://localhost:5000/events/attending/${userId}`, {
+                // 🟢 DEPLOYMENT CHANGE 3/8: Fetch Attending Events
+                const attendingRes = await axios.get(`${API_URL}/events/attending/${userId}`, {
                     headers: { Authorization: `Bearer ${token}` },
                 });
                 setAttendingEvents(attendingRes.data);
 
                 // Fetch Saved Events (Only if own profile)
                 if (isOwnProfile) {
-                    const savedRes = await axios.get(`http://localhost:5000/users/${userId}/bookmarks`, {
+                    // 🟢 DEPLOYMENT CHANGE 4/8: Fetch Bookmarks
+                    const savedRes = await axios.get(`${API_URL}/users/${userId}/bookmarks`, {
                         headers: { Authorization: `Bearer ${token}` },
                     });
                     setSavedEvents(savedRes.data);
@@ -95,8 +102,9 @@ const ProfilePage = () => {
     // FOLLOW/UNFOLLOW HANDLER (Now uses toggleFollow endpoint)
     const handleFollow = async () => {
         try {
+            // 🟢 DEPLOYMENT CHANGE 5/8: Follow/Unfollow User
             await axios.patch(
-                `http://localhost:5000/users/${loggedInUser._id}/follow/${userId}`,
+                `${API_URL}/users/${loggedInUser._id}/follow/${userId}`,
                 {},
                 { headers: { Authorization: `Bearer ${token}` } }
             );
@@ -137,7 +145,8 @@ const ProfilePage = () => {
         try {
             // Fetch full user details for every ID
             const list = await Promise.all(
-                listIds.map(id => axios.get(`http://localhost:5000/users/${id}`, { headers: { Authorization: `Bearer ${token}` } }))
+                // 🟢 DEPLOYMENT CHANGE 6/8: Fetch User details for modal list
+                listIds.map(id => axios.get(`${API_URL}/users/${id}`, { headers: { Authorization: `Bearer ${token}` } }))
             );
             setModalList(list.map(res => res.data));
             setModalType(type);
@@ -163,7 +172,8 @@ const ProfilePage = () => {
 
             if (editFormData.picture) formData.append("picture", editFormData.picture);
 
-            const res = await axios.patch(`http://localhost:5000/users/${userId}`, formData, {
+            // 🟢 DEPLOYMENT CHANGE 7/8: Update Profile
+            const res = await axios.patch(`${API_URL}/users/${userId}`, formData, {
                 headers: { Authorization: `Bearer ${token}`, "Content-Type": "multipart/form-data" }
             });
 
@@ -172,6 +182,7 @@ const ProfilePage = () => {
             if (isOwnProfile) {
                 // Note: We retain the bookmarks/following arrays for consistency in local storage
                 const currentUserData = JSON.parse(localStorage.getItem("user"));
+                // 🟢 DEPLOYMENT CHANGE 8/8: Get Image URL (Needed for local storage update, using helper now)
                 localStorage.setItem("user", JSON.stringify({
                     ...res.data,
                     following: currentUserData.following, // Keep the correct following list

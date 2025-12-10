@@ -4,6 +4,9 @@ import { useNavigate, Link } from "react-router-dom";
 import { GoogleLogin } from "@react-oauth/google";
 import toast from "react-hot-toast";
 
+// 🎯 IMPORT THE ENV VARIABLE FOR API URL
+const API_URL = import.meta.env.VITE_API_URL; 
+
 const Register = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
@@ -27,8 +30,9 @@ const Register = () => {
     e.preventDefault();
     setLoading(true);
     try {
+      // 🟢 DEPLOYMENT CHANGE 1/2: Standard Registration API call
       const response = await axios.post(
-        "http://localhost:5000/auth/register",
+        `${API_URL}/auth/register`,
         formData
       );
 
@@ -48,7 +52,8 @@ const Register = () => {
   const handleGoogleSuccess = async (credentialResponse) => {
     setLoading(true);
     try {
-      const response = await axios.post("http://localhost:5000/auth/google", {
+      // 🟢 DEPLOYMENT CHANGE 2/2: Google Signup/Login API call
+      const response = await axios.post(`${API_URL}/auth/google`, {
         credential: credentialResponse.credential,
       });
 

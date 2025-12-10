@@ -25,6 +25,9 @@ import {
 import Button from "../../components/ui/Button"; // Your new component
 import Card from "../../components/ui/Card";     // Your new component
 
+// 🎯 IMPORT THE ENV VARIABLE FOR API URL
+const API_URL = import.meta.env.VITE_API_URL;
+
 // --- STRIPE CONFIGURATION ---
 const stripePromise = loadStripe("pk_test_51SH0CJ7HwdZq8BC7oyKPQxaAQ47C8IBRy0hzIgeUo4jdCSL6q6fTnI4Ut3JkRjgfvd0ys0cfWaiyVPqFSX3gKFd00ZEBHxmlC");
 
@@ -296,7 +299,8 @@ const Dashboard = ({ toggleTheme, theme }) => {
     try {
       let url;
       if (feedType === "following") {
-        url = `http://localhost:5000/events/following/${user._id}`;
+        // 🟢 DEPLOYMENT CHANGE 1/14
+        url = `${API_URL}/events/following/${user._id}`;
         const response = await axios.get(url, { headers: { Authorization: `Bearer ${token}` } });
         setEvents(response.data);
         setHasMore(false);
@@ -309,7 +313,8 @@ const Dashboard = ({ toggleTheme, theme }) => {
           category: selectedCategory,
           sort: sortOption
         });
-        url = `http://localhost:5000/events?${params.toString()}`;
+        // 🟢 DEPLOYMENT CHANGE 2/14
+        url = `${API_URL}/events?${params.toString()}`;
         const response = await axios.get(url, { headers: { Authorization: `Bearer ${token}` } });
 
         if (reset) {
@@ -330,7 +335,8 @@ const Dashboard = ({ toggleTheme, theme }) => {
 
   const fetchNotifications = async () => {
     try {
-      const response = await axios.get(`http://localhost:5000/notifications/${user._id}`, {
+      // 🟢 DEPLOYMENT CHANGE 3/14
+      const response = await axios.get(`${API_URL}/notifications/${user._id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setNotifications(response.data);
@@ -358,7 +364,8 @@ const Dashboard = ({ toggleTheme, theme }) => {
   const handleMarkRead = async () => {
     if (unreadCount > 0) {
       try {
-        await axios.patch(`http://localhost:5000/notifications/${user._id}/read`, {}, {
+        // 🟢 DEPLOYMENT CHANGE 4/14
+        await axios.patch(`${API_URL}/notifications/${user._id}/read`, {}, {
           headers: { Authorization: `Bearer ${token}` }
         });
         setUnreadCount(0);
@@ -409,7 +416,8 @@ const Dashboard = ({ toggleTheme, theme }) => {
       formData.append("price", newEvent.price);
       if (newEvent.picture) formData.append("picture", newEvent.picture);
 
-      const response = await axios.post("http://localhost:5000/events", formData, {
+      // 🟢 DEPLOYMENT CHANGE 5/14
+      const response = await axios.post(`${API_URL}/events`, formData, {
         headers: { Authorization: `Bearer ${token}`, "Content-Type": "multipart/form-data" },
       });
 
@@ -433,7 +441,8 @@ const Dashboard = ({ toggleTheme, theme }) => {
   // 2. JOIN EVENT
   const handleJoin = async (eventId) => {
     try {
-      const response = await axios.patch(`http://localhost:5000/events/${eventId}/join`,
+      // 🟢 DEPLOYMENT CHANGE 6/14
+      const response = await axios.patch(`${API_URL}/events/${eventId}/join`,
         { userId: user._id },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -449,7 +458,8 @@ const Dashboard = ({ toggleTheme, theme }) => {
   // 3. PAYMENT
   const handlePayment = async (event) => {
     try {
-      const response = await axios.post("http://localhost:5000/payment/create-checkout-session", {
+      // 🟢 DEPLOYMENT CHANGE 7/14
+      const response = await axios.post(`${API_URL}/payment/create-checkout-session`, {
         eventId: event._id,
         eventTitle: event.title,
         price: event.price,
@@ -470,7 +480,8 @@ const Dashboard = ({ toggleTheme, theme }) => {
 
   const handleLike = async (eventId) => {
     try {
-      const response = await axios.patch(`http://localhost:5000/events/${eventId}/like`,
+      // 🟢 DEPLOYMENT CHANGE 8/14
+      const response = await axios.patch(`${API_URL}/events/${eventId}/like`,
         { userId: user._id },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -481,7 +492,8 @@ const Dashboard = ({ toggleTheme, theme }) => {
 
   const handleComment = async (eventId, text) => {
     try {
-      const response = await axios.post(`http://localhost:5000/events/${eventId}/comments`,
+      // 🟢 DEPLOYMENT CHANGE 9/14
+      const response = await axios.post(`${API_URL}/events/${eventId}/comments`,
         { userId: user._id, text },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -493,7 +505,8 @@ const Dashboard = ({ toggleTheme, theme }) => {
   // 4. RATING
   const handleRateEvent = async (eventId, rating, text) => {
     try {
-      const response = await axios.post(`http://localhost:5000/events/${eventId}/reviews`,
+      // 🟢 DEPLOYMENT CHANGE 10/14
+      const response = await axios.post(`${API_URL}/events/${eventId}/reviews`,
         { userId: user._id, rating, text },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -512,7 +525,8 @@ const Dashboard = ({ toggleTheme, theme }) => {
     if (!reason || reason.trim() === "") return;
 
     try {
-      await axios.post("http://localhost:5000/admin/report", {
+      // 🟢 DEPLOYMENT CHANGE 11/14
+      await axios.post(`${API_URL}/admin/report`, {
         reporterId: user._id,
         reporterName: user.firstName,
         targetEventId: event._id,
@@ -530,7 +544,8 @@ const Dashboard = ({ toggleTheme, theme }) => {
   const handleDelete = async (eventId) => {
     if (!window.confirm("Are you sure you want to delete this event? This action cannot be undone.")) return;
     try {
-      await axios.delete(`http://localhost:5000/events/${eventId}`, {
+      // 🟢 DEPLOYMENT CHANGE 12/14
+      await axios.delete(`${API_URL}/events/${eventId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setEvents(events.filter((e) => e._id !== eventId));
@@ -549,7 +564,8 @@ const Dashboard = ({ toggleTheme, theme }) => {
   // 8. BOOKMARK
   const handleBookmark = async (eventId) => {
     try {
-      const res = await axios.patch(`http://localhost:5000/users/${user._id}/bookmark/${eventId}`, {}, {
+      // 🟢 DEPLOYMENT CHANGE 13/14
+      const res = await axios.patch(`${API_URL}/users/${user._id}/bookmark/${eventId}`, {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setBookmarks(res.data);
@@ -565,7 +581,8 @@ const Dashboard = ({ toggleTheme, theme }) => {
   // 9. DOWNLOAD GUEST LIST
   const downloadGuestList = async (eventId, eventTitle) => {
     try {
-      const res = await axios.get(`http://localhost:5000/events/${eventId}/guests`, {
+      // 🟢 DEPLOYMENT CHANGE 14/14
+      const res = await axios.get(`${API_URL}/events/${eventId}/guests`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       const guests = res.data;
@@ -781,7 +798,7 @@ const Dashboard = ({ toggleTheme, theme }) => {
                         {event.picturePath ? (
                           <img
                             src={getImageUrl(event.picturePath)}
-                            className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110"
+                            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                             alt="featured"
                           />
                         ) : (

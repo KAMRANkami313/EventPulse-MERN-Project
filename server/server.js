@@ -49,12 +49,36 @@ app.use(
 
 app.use(morgan("common"));
 
-// --- 2. SIMPLIFIED CORS (FIXES NETWORK ERRORS) ---
-app.use(cors({
-    origin: ["http://localhost:5173", "http://127.0.0.1:5173"],
-    methods: ["GET", "POST", "PATCH", "DELETE", "PUT"],
-    credentials: true
-}));
+// ------------------------------------------------------------------
+// --- START OF REQUIRED DEPLOYMENT CHANGES: DYNAMIC CORS SETUP ---
+// ------------------------------------------------------------------
+
+// Allow Localhost AND Production URL (We will set CLIENT_URL in Render later)
+const allowedOrigins = [
+  "http://localhost:5173",
+  "http://127.0.0.1:5173",
+  process.env.CLIENT_URL, // This will be your Vercel URL
+];
+
+// --- 2. DYNAMIC CORS ---
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      // Allow requests with no origin (like mobile apps or curl requests)
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
+    credentials: true,
+  })
+);
+
+// ------------------------------------------------------------------
+// --- END OF REQUIRED DEPLOYMENT CHANGES ---
+// ------------------------------------------------------------------
+
 
 app.use("/assets", express.static(path.join(__dirname, "public/assets")));
 
@@ -67,6 +91,7 @@ app.use("/messages", messageRoutes);
 app.use("/admin", adminRoutes);
 app.use("/payment", paymentRoutes);
 app.use("/ai", aiRoutes);
+
 // --- DB CONNECTION ---
 const PORT = process.env.PORT || 5000;
 const MONGO_URL = process.env.MONGO_URL;
@@ -77,9 +102,11 @@ mongoose.connect(MONGO_URL)
 
 // --- SOCKET.IO SETUP ---
 const httpServer = createServer(app);
+
+// Update Socket.io to use the dynamic allowedOrigins array
 const io = new Server(httpServer, {
   cors: {
-    origin: ["http://localhost:5173", "http://127.0.0.1:5173"],
+    origin: allowedOrigins, // Use the dynamic array
     methods: ["GET", "POST"],
     credentials: true
   }

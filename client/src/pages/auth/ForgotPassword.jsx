@@ -2,6 +2,9 @@ import { useState } from "react";
 import axios from "axios";
 import { Link } from "react-router-dom";
 
+// 🎯 IMPORT THE ENV VARIABLE FOR API URL
+const API_URL = import.meta.env.VITE_API_URL; 
+
 const ForgotPassword = () => {
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState("idle"); // idle, loading, success, error
@@ -11,7 +14,8 @@ const ForgotPassword = () => {
     setStatus("loading");
 
     try {
-      await axios.post("http://localhost:5000/auth/forgot-password", { email });
+      // 🟢 DEPLOYMENT CHANGE: Using VITE_API_URL variable
+      await axios.post(`${API_URL}/auth/forgot-password`, { email });
       setStatus("success");
     } catch (err) {
       setStatus("error");

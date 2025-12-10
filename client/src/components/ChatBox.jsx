@@ -2,7 +2,11 @@ import React, { useEffect, useState, useRef } from "react";
 import io from "socket.io-client";
 import axios from "axios";
 
-const socket = io.connect("http://localhost:5000");
+// 🎯 IMPORT THE ENV VARIABLE FOR API URL
+const API_URL = import.meta.env.VITE_API_URL; 
+
+// 🟢 DEPLOYMENT CHANGE: Connect socket to the environment variable
+const socket = io.connect(API_URL);
 
 const ChatBox = ({ eventId, eventTitle, user, onClose }) => {
   const [currentMessage, setCurrentMessage] = useState("");
@@ -14,7 +18,8 @@ const ChatBox = ({ eventId, eventTitle, user, onClose }) => {
   useEffect(() => {
     const fetchHistory = async () => {
         try {
-            const response = await axios.get(`http://localhost:5000/messages/${eventId}`, {
+            // 🟢 DEPLOYMENT CHANGE: Using VITE_API_URL variable for API call
+            const response = await axios.get(`${API_URL}/messages/${eventId}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             // Map DB format to UI format if needed, or keep consistent

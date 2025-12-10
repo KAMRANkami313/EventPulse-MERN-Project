@@ -14,6 +14,9 @@ import {
   Download,
 } from "lucide-react";
 
+// 🎯 IMPORT THE ENV VARIABLE FOR API URL
+const API_URL = import.meta.env.VITE_API_URL;
+
 const TicketPage = () => {
   const { eventId } = useParams();
   const navigate = useNavigate();
@@ -27,7 +30,7 @@ const TicketPage = () => {
     const fetchEvent = async () => {
       try {
         const response = await axios.get(
-          `http://localhost:5000/events/${eventId}`,
+          `${API_URL}/events/${eventId}`,
           {
             headers: { Authorization: `Bearer ${token}` },
           }
@@ -148,6 +151,8 @@ END:VCALENDAR`;
 
           {/* Decorative circles */}
           <div className="absolute -top-10 -left-10 w-32 h-32 bg-white/10 rounded-full blur-xl"></div>
+
+          {/* FIXED HERE → Removed duplicate bg-white/10 */}
           <div className="absolute -bottom-10 -right-10 w-32 h-32 bg-white/10 rounded-full blur-xl"></div>
 
           <h1 className="text-4xl font-bold mb-2 drop-shadow-xl">

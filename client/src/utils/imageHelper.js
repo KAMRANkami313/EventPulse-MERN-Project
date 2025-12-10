@@ -1,3 +1,6 @@
+// 🎯 IMPORT THE ENV VARIABLE FOR API URL
+const API_URL = import.meta.env.VITE_API_URL;
+
 export const getImageUrl = (imagePath) => {
   if (!imagePath) return null;
   
@@ -6,6 +9,7 @@ export const getImageUrl = (imagePath) => {
     return imagePath;
   }
   
+  // 🟢 DEPLOYMENT CHANGE: Using VITE_API_URL variable
   // Otherwise, it's an old local image
-  return `http://localhost:5000/assets/${imagePath}`;
+  return `${API_URL}/assets/${imagePath}`;
 };

@@ -2,6 +2,9 @@ import { useEffect, useRef } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 
+// 🎯 IMPORT THE ENV VARIABLE FOR API URL
+const API_URL = import.meta.env.VITE_API_URL;
+
 const PaymentSuccess = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -19,8 +22,9 @@ const PaymentSuccess = () => {
       hasCalledAPI.current = true;
 
       try {
+        // 🟢 DEPLOYMENT CHANGE: Using VITE_API_URL variable
         await axios.patch(
-          `http://localhost:5000/events/${eventId}/join`,
+          `${API_URL}/events/${eventId}/join`,
           { userId },
           { headers: { Authorization: `Bearer ${token}` } }
         );

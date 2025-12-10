@@ -11,6 +11,9 @@ import {
     LogOut, Flag, FileText, AlertTriangle, CheckCircle, Ban, XCircle 
 } from "lucide-react";
 
+// 🎯 IMPORT THE ENV VARIABLE FOR API URL
+const API_URL = import.meta.env.VITE_API_URL; 
+
 // Pie Chart Colors
 const COLORS = ['#8b5cf6', '#10b981', '#f59e0b', '#ef4444', '#3b82f6', '#ec4899'];
 
@@ -45,27 +48,33 @@ const AdminDashboard = () => {
     const fetchAllData = async () => {
         try {
             // Fetch core stats
-            const statsRes = await axios.get("http://localhost:5000/admin/stats", { headers: { Authorization: `Bearer ${token}` } });
+            // 🟢 DEPLOYMENT CHANGE 1/12
+            const statsRes = await axios.get(`${API_URL}/admin/stats`, { headers: { Authorization: `Bearer ${token}` } });
             setStats(statsRes.data);
 
             // Fetch user data
-            const usersRes = await axios.get("http://localhost:5000/users", { headers: { Authorization: `Bearer ${token}` } });
+            // 🟢 DEPLOYMENT CHANGE 2/12
+            const usersRes = await axios.get(`${API_URL}/users`, { headers: { Authorization: `Bearer ${token}` } });
             setAllUsers(usersRes.data);
 
             // Fetch event data
-            const eventsRes = await axios.get("http://localhost:5000/admin/events", { headers: { Authorization: `Bearer ${token}` } });
+            // 🟢 DEPLOYMENT CHANGE 3/12
+            const eventsRes = await axios.get(`${API_URL}/admin/events`, { headers: { Authorization: `Bearer ${token}` } });
             setAllEvents(eventsRes.data);
 
             // Fetch reports
-            const reportsRes = await axios.get("http://localhost:5000/admin/reports", { headers: { Authorization: `Bearer ${token}` } });
+            // 🟢 DEPLOYMENT CHANGE 4/12
+            const reportsRes = await axios.get(`${API_URL}/admin/reports`, { headers: { Authorization: `Bearer ${token}` } });
             setReports(reportsRes.data);
 
             // Fetch logs
-            const logsRes = await axios.get("http://localhost:5000/admin/logs", { headers: { Authorization: `Bearer ${token}` } });
+            // 🟢 DEPLOYMENT CHANGE 5/12
+            const logsRes = await axios.get(`${API_URL}/admin/logs`, { headers: { Authorization: `Bearer ${token}` } });
             setLogs(logsRes.data);
 
             // --- FETCH TRANSACTIONS (Phase 29) ---
-            const txnRes = await axios.get("http://localhost:5000/admin/transactions", { headers: { Authorization: `Bearer ${token}` } });
+            // 🟢 DEPLOYMENT CHANGE 6/12
+            const txnRes = await axios.get(`${API_URL}/admin/transactions`, { headers: { Authorization: `Bearer ${token}` } });
             setTransactions(txnRes.data);
             // -------------------------------------
 
@@ -101,7 +110,8 @@ const AdminDashboard = () => {
         if (!window.confirm("Ban this user?")) return;
         try {
             // Deletion triggers logging in server/controllers/users.js
-            await axios.delete(`http://localhost:5000/users/${userId}`, { headers: { Authorization: `Bearer ${token}` } });
+            // 🟢 DEPLOYMENT CHANGE 7/12
+            await axios.delete(`${API_URL}/users/${userId}`, { headers: { Authorization: `Bearer ${token}` } });
             // Re-fetch all data after action (to update users and logs)
             fetchAllData();
         } catch (err) { alert("Failed to delete."); }
@@ -111,7 +121,8 @@ const AdminDashboard = () => {
         if (!window.confirm("Delete this event permanently?")) return;
         try {
             // Deletion triggers logging in server/controllers/events.js
-            await axios.delete(`http://localhost:5000/events/${eventId}`, { headers: { Authorization: `Bearer ${token}` } });
+            // 🟢 DEPLOYMENT CHANGE 8/12
+            await axios.delete(`${API_URL}/events/${eventId}`, { headers: { Authorization: `Bearer ${token}` } });
             // Re-fetch all data after action (to update events and logs)
             fetchAllData();
         } catch (err) { alert("Failed to delete."); }
@@ -122,7 +133,8 @@ const AdminDashboard = () => {
         if (!window.confirm("Send this message to ALL users?")) return;
         try {
             // Broadcast triggers logging in server/controllers/admin.js
-            await axios.post("http://localhost:5000/admin/broadcast", broadcast, {
+            // 🟢 DEPLOYMENT CHANGE 9/12
+            await axios.post(`${API_URL}/admin/broadcast`, broadcast, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             // Re-fetch logs after action
@@ -135,7 +147,8 @@ const AdminDashboard = () => {
     const handleDismissReport = async (reportId) => {
         if (!window.confirm("Are you sure you want to dismiss this report?")) return;
         // Resolution triggers logging in server/controllers/admin.js
-        await axios.patch(`http://localhost:5000/admin/reports/${reportId}`, {}, { headers: { Authorization: `Bearer ${token}` } });
+        // 🟢 DEPLOYMENT CHANGE 10/12
+        await axios.patch(`${API_URL}/admin/reports/${reportId}`, {}, { headers: { Authorization: `Bearer ${token}` } });
         // Re-fetch reports and logs
         fetchAllData();
         alert("Report dismissed.");
@@ -145,10 +158,12 @@ const AdminDashboard = () => {
         if (!window.confirm(`Are you sure you want to DELETE the event "${report.eventTitle}" based on this report? This action is permanent.`)) return;
         try {
             // 1. Delete Event (Logging happens in events.js)
-            await axios.delete(`http://localhost:5000/events/${report.targetEventId}`, { headers: { Authorization: `Bearer ${token}` } });
+            // 🟢 DEPLOYMENT CHANGE 11/12
+            await axios.delete(`${API_URL}/events/${report.targetEventId}`, { headers: { Authorization: `Bearer ${token}` } });
 
             // 2. Mark Report Resolved (Logging happens in admin.js)
-            await axios.patch(`http://localhost:5000/admin/reports/${report._id}`, {}, { headers: { Authorization: `Bearer ${token}` } });
+            // 🟢 DEPLOYMENT CHANGE 12/12
+            await axios.patch(`${API_URL}/admin/reports/${report._id}`, {}, { headers: { Authorization: `Bearer ${token}` } });
 
             // 3. Update all data
             fetchAllData();

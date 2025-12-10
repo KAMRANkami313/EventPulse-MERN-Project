@@ -6,6 +6,10 @@ import toast from "react-hot-toast";
 import { motion } from "framer-motion";
 import { Mail, Lock } from "lucide-react";
 
+// 🎯 IMPORT THE ENV VARIABLE FOR API URL
+const API_URL = import.meta.env.VITE_API_URL; 
+console.log("Loaded API URL:", API_URL); // <-- ADD THIS LINE
+
 const Login = () => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({ email: "", password: "" });
@@ -20,8 +24,9 @@ const Login = () => {
     e.preventDefault();
     setLoading(true);
     try {
+      // 🟢 DEPLOYMENT CHANGE 1/2: Standard Login API call
       const response = await axios.post(
-        "http://localhost:5000/auth/login",
+        `${API_URL}/auth/login`,
         formData
       );
       if (response.status === 200) {
@@ -47,8 +52,9 @@ const Login = () => {
   const handleGoogleSuccess = async (credentialResponse) => {
     setLoading(true);
     try {
+      // 🟢 DEPLOYMENT CHANGE 2/2: Google Auth API call
       const response = await axios.post(
-        "http://localhost:5000/auth/google",
+        `${API_URL}/auth/google`,
         { credential: credentialResponse.credential }
       );
 

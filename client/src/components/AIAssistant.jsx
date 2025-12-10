@@ -4,6 +4,9 @@ import { Sparkles, Send, X, Bot, User, Minus } from "lucide-react";
 import axios from "axios";
 import { getImageUrl } from "../utils/imageHelper"; 
 
+// 🎯 IMPORT THE ENV VARIABLE FOR API URL
+const API_URL = import.meta.env.VITE_API_URL; 
+
 const AIAssistant = ({ token, user }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
@@ -43,7 +46,8 @@ const AIAssistant = ({ token, user }) => {
 
     try {
       const history = messages.slice(-6); 
-      const res = await axios.post("http://localhost:5000/ai/chat", 
+      // 🟢 DEPLOYMENT CHANGE: Using VITE_API_URL variable
+      const res = await axios.post(`${API_URL}/ai/chat`, 
         { message: userMsg.content, history },
         { headers: { Authorization: `Bearer ${token}` } }
       );
