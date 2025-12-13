@@ -189,9 +189,9 @@ const Login = () => {
               useOneTap={false}
               theme="filled_blue"
               size="large"
-              width="350"
+              width="300"
               text="signin_with"
-              shape="rectangular"
+              shape="pill"
             />
           </div>
 

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import axios from "axios";
 import { Link } from "react-router-dom";
+import { Mail, ArrowLeft } from "lucide-react"; // Added icons for better UI
 
 // 🎯 IMPORT THE ENV VARIABLE FOR API URL
 const API_URL = import.meta.env.VITE_API_URL; 
@@ -23,95 +24,95 @@ const ForgotPassword = () => {
   };
 
   return (
-    <div className="min-h-screen flex w-full bg-white">
+    <div className="min-h-screen flex w-full bg-gradient-to-br from-white via-blue-50 to-indigo-50">
 
-      {/* LEFT SIDE – DECORATIVE GRADIENT */}
-      <div className="hidden lg:flex w-5/12 relative overflow-hidden bg-gradient-to-br from-blue-50 to-blue-100 p-12 text-gray-800">
-
+      {/* LEFT SIDE – DECORATIVE GRADIENT (Hidden on Mobile) */}
+      <div className="hidden lg:flex w-1/2 relative overflow-hidden items-center justify-center">
         <div className="absolute top-10 left-10 w-48 h-48 bg-blue-300/30 rounded-full blur-3xl"></div>
         <div className="absolute bottom-10 right-10 w-64 h-64 bg-indigo-300/20 rounded-full blur-2xl"></div>
 
-        <div className="relative z-10 flex flex-col justify-between h-full">
-          <h1 className="text-4xl font-extrabold tracking-tight text-blue-700">
+        <div className="relative z-10 text-center px-10">
+          <h1 className="text-5xl font-extrabold mb-4 tracking-tight text-slate-900">
             EventPulse.
           </h1>
-
-          <div className="mb-10">
-            <h2 className="text-3xl font-bold mb-3">Forgot Your Password?</h2>
-            <p className="text-lg text-gray-600">
-              Don't worry. We’ll help you recover access to your account.
-            </p>
-          </div>
+          <p className="text-lg text-slate-600">
+             We’ll help you recover access to your account in no time.
+          </p>
         </div>
       </div>
 
       {/* RIGHT SIDE – FORM */}
-      <div className="w-full lg:w-7/12 flex items-center justify-center p-10">
-        <div className="w-full max-w-md">
-          <h2 className="text-3xl font-bold text-gray-900 text-center mb-6">
-            Reset Password
-          </h2>
-
-          <div className="bg-white/70 backdrop-blur-md p-8 rounded-2xl shadow-xl border border-gray-200">
-            
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-6">
+        <div className="w-full max-w-md bg-white/70 backdrop-blur-xl border border-white/80 rounded-3xl shadow-xl p-8">
+          
             {/* SUCCESS STATE */}
             {status === "success" ? (
-              <div className="text-center">
-                <p className="text-green-600 font-semibold mb-4">
-                  ✅ Reset link sent! Check your email inbox.
+              <div className="text-center py-8">
+                <div className="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">
+                    ✅
+                </div>
+                <h2 className="text-2xl font-bold text-slate-900 mb-2">Check your Inbox</h2>
+                <p className="text-slate-600 mb-6">
+                  We have sent a password reset link to <span className="font-bold text-slate-800">{email}</span>.
                 </p>
                 <Link
                   to="/login"
-                  className="text-blue-600 font-bold underline hover:text-blue-800"
+                  className="inline-block w-full bg-slate-900 text-white font-bold py-3 rounded-xl hover:bg-slate-800 transition"
                 >
                   Back to Login
                 </Link>
               </div>
             ) : (
-              <form onSubmit={handleSubmit} className="space-y-5">
-
-                <p className="text-gray-600 text-sm text-center">
-                  Enter your email and we’ll send you a password reset link.
-                </p>
+              <form onSubmit={handleSubmit} className="space-y-6">
+                <div className="text-center lg:text-left mb-8">
+                    <h2 className="text-3xl font-bold text-slate-900">Reset Password</h2>
+                    <p className="text-slate-500 mt-2">
+                    Enter your email address and we'll send you a link to reset your password.
+                    </p>
+                </div>
 
                 <div>
-                  <label className="text-sm text-gray-700 font-medium">
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
                     Email Address
                   </label>
-                  <input
-                    type="email"
-                    placeholder="Enter your email"
-                    className="w-full px-4 py-3 rounded-xl border border-gray-300 bg-white/70 backdrop-blur-sm focus:ring-2 focus:ring-blue-400 outline-none transition"
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                  />
+                  <div className="relative">
+                    <span className="absolute inset-y-0 left-3 flex items-center">
+                        <Mail className="w-4 h-4 text-slate-400" />
+                    </span>
+                    <input
+                        type="email"
+                        placeholder="name@company.com"
+                        className="w-full pl-10 pr-4 py-3 rounded-xl bg-white border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition"
+                        onChange={(e) => setEmail(e.target.value)}
+                        required
+                    />
+                  </div>
                 </div>
 
                 {status === "error" && (
-                  <p className="text-red-500 text-sm text-center">
+                  <div className="p-3 bg-red-50 border border-red-100 rounded-xl text-red-600 text-sm text-center font-medium">
                     User not found or an error occurred.
-                  </p>
+                  </div>
                 )}
 
                 <button
                   type="submit"
                   disabled={status === "loading"}
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl shadow-md transition"
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl shadow-lg shadow-blue-500/30 transition transform hover:-translate-y-0.5 disabled:opacity-70 disabled:cursor-not-allowed"
                 >
                   {status === "loading" ? "Sending..." : "Send Reset Link"}
                 </button>
 
-                <div className="mt-4 text-center">
+                <div className="mt-6 text-center">
                   <Link
                     to="/login"
-                    className="text-sm text-gray-500 hover:text-gray-800"
+                    className="text-sm text-slate-500 hover:text-slate-800 font-medium flex items-center justify-center gap-2"
                   >
-                    ← Back to Login
+                    <ArrowLeft className="w-4 h-4" /> Back to Login
                   </Link>
                 </div>
               </form>
             )}
-          </div>
         </div>
       </div>
     </div>

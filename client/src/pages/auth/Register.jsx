@@ -3,6 +3,7 @@ import axios from "axios";
 import { useNavigate, Link } from "react-router-dom";
 import { GoogleLogin } from "@react-oauth/google";
 import toast from "react-hot-toast";
+import { Mail, Lock, User, MapPin, Briefcase } from "lucide-react";
 
 // 🎯 IMPORT THE ENV VARIABLE FOR API URL
 const API_URL = import.meta.env.VITE_API_URL; 
@@ -25,9 +26,33 @@ const Register = () => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
+  /* 🔒 PASSWORD VALIDATION LOGIC */
+  const validateForm = () => {
+    const { password } = formData;
+    
+    // Check length
+    if (password.length < 8) {
+        toast.error("Password must be at least 8 characters long.");
+        return false;
+    }
+
+    // Check for special symbol
+    const symbolRegex = /[!@#$%^&*(),.?":{}|<>]/;
+    if (!symbolRegex.test(password)) {
+        toast.error("Password must contain at least one special symbol (!@#$...).");
+        return false;
+    }
+
+    return true;
+  };
+
   /* STANDARD REGISTRATION */
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Run Validation
+    if (!validateForm()) return;
+
     setLoading(true);
     try {
       // 🟢 DEPLOYMENT CHANGE 1/2: Standard Registration API call
@@ -62,7 +87,11 @@ const Register = () => {
         localStorage.setItem("user", JSON.stringify(response.data.user));
 
         toast.success("Account created and signed in!");
-       window.location.href = "/dashboard";
+        if (response.data.user.role === "admin") {
+           window.location.href = "/admin"; 
+        } else {
+           window.location.href = "/dashboard";
+        }
       }
     } catch (error) {
       console.error("Google signup error:", error);
@@ -73,126 +102,132 @@ const Register = () => {
   };
 
   return (
-    <div className="min-h-screen flex w-full bg-white">
+    <div className="min-h-screen flex w-full bg-gradient-to-br from-white via-blue-50 to-indigo-50">
 
-      {/* LEFT PANEL — LIGHT GRADIENT + ABSTRACT SHAPES */}
-      <div className="hidden lg:flex w-5/12 relative overflow-hidden bg-gradient-to-br from-blue-50 to-blue-100 p-12 text-gray-800">
-
-        {/* Decorative blurred shapes */}
+      {/* LEFT PANEL — LIGHT GRADIENT + ABSTRACT SHAPES (Hidden on Mobile) */}
+      <div className="hidden lg:flex w-5/12 relative overflow-hidden items-center justify-center">
         <div className="absolute top-10 left-10 w-48 h-48 bg-blue-300/30 rounded-full blur-3xl"></div>
         <div className="absolute bottom-10 right-10 w-64 h-64 bg-indigo-300/20 rounded-full blur-2xl"></div>
 
-        <div className="relative z-10 flex flex-col justify-between h-full">
-          <div>
-            <h1 className="text-4xl font-extrabold tracking-tight text-blue-700">
+        <div className="relative z-10 text-center px-10">
+            <h1 className="text-5xl font-extrabold mb-4 tracking-tight text-slate-900">
               EventPulse.
             </h1>
-          </div>
-
-          <div className="mb-10">
-            <h2 className="text-3xl font-bold mb-4">Join the Community</h2>
-            <p className="text-lg text-gray-600">
-              Discover events, connect with people, and create unforgettable
-              experiences.
+            <p className="text-lg text-slate-600">
+              Discover events, connect with people, and create unforgettable experiences.
             </p>
-          </div>
         </div>
       </div>
 
       {/* RIGHT SIDE — FORM */}
-      <div className="w-full lg:w-7/12 flex items-center justify-center p-10">
-        <div className="w-full max-w-md">
+      <div className="w-full lg:w-7/12 flex items-center justify-center p-4 md:p-10">
+        <div className="w-full max-w-lg bg-white/70 backdrop-blur-xl border border-white/80 rounded-3xl shadow-xl p-6 md:p-8">
 
-          <div className="mb-8">
-            <h2 className="text-3xl font-bold text-gray-900">Create Account</h2>
-            <p className="text-gray-600 mt-1">
+          <div className="mb-6 text-center lg:text-left">
+            <h2 className="text-3xl font-bold text-slate-900">Create Account</h2>
+            <p className="text-slate-500 mt-2">
               Enter your details to get started.
             </p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <form onSubmit={handleSubmit} className="space-y-4">
 
             {/* NAME ROW */}
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="text-sm text-gray-700 font-medium">
-                  First Name
-                </label>
-                <input
-                  type="text"
-                  name="firstName"
-                  onChange={handleChange}
-                  className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white/70 backdrop-blur-sm focus:ring-2 focus:ring-blue-400 outline-none transition"
-                  required
-                />
+                <label className="text-xs font-bold text-slate-500 uppercase mb-1 block">First Name</label>
+                <div className="relative">
+                    <span className="absolute inset-y-0 left-3 flex items-center"><User className="w-4 h-4 text-slate-400"/></span>
+                    <input
+                    type="text"
+                    name="firstName"
+                    onChange={handleChange}
+                    className="w-full pl-9 pr-3 py-3 rounded-xl bg-white border border-slate-200 focus:border-blue-500 outline-none transition"
+                    placeholder="John"
+                    required
+                    />
+                </div>
               </div>
 
               <div>
-                <label className="text-sm text-gray-700 font-medium">
-                  Last Name
-                </label>
-                <input
-                  type="text"
-                  name="lastName"
-                  onChange={handleChange}
-                  className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white/70 backdrop-blur-sm focus:ring-2 focus:ring-blue-400 outline-none transition"
-                  required
-                />
+                <label className="text-xs font-bold text-slate-500 uppercase mb-1 block">Last Name</label>
+                <div className="relative">
+                    <span className="absolute inset-y-0 left-3 flex items-center"><User className="w-4 h-4 text-slate-400"/></span>
+                    <input
+                    type="text"
+                    name="lastName"
+                    onChange={handleChange}
+                    className="w-full pl-9 pr-3 py-3 rounded-xl bg-white border border-slate-200 focus:border-blue-500 outline-none transition"
+                    placeholder="Doe"
+                    required
+                    />
+                </div>
               </div>
             </div>
 
             {/* EMAIL */}
             <div>
-              <label className="text-sm text-gray-700 font-medium">
-                Email Address
-              </label>
-              <input
-                type="email"
-                name="email"
-                onChange={handleChange}
-                className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white/70 backdrop-blur-sm focus:ring-2 focus:ring-blue-400 outline-none transition"
-                required
-              />
+              <label className="text-xs font-bold text-slate-500 uppercase mb-1 block">Email</label>
+              <div className="relative">
+                  <span className="absolute inset-y-0 left-3 flex items-center"><Mail className="w-4 h-4 text-slate-400"/></span>
+                  <input
+                    type="email"
+                    name="email"
+                    onChange={handleChange}
+                    className="w-full pl-9 pr-3 py-3 rounded-xl bg-white border border-slate-200 focus:border-blue-500 outline-none transition"
+                    placeholder="name@company.com"
+                    required
+                  />
+              </div>
             </div>
 
             {/* PASSWORD */}
             <div>
-              <label className="text-sm text-gray-700 font-medium">
-                Password
-              </label>
-              <input
-                type="password"
-                name="password"
-                onChange={handleChange}
-                className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white/70 backdrop-blur-sm focus:ring-2 focus:ring-blue-400 outline-none transition"
-                required
-              />
+              <div className="flex justify-between items-center mb-1">
+                 <label className="text-xs font-bold text-slate-500 uppercase block">Password</label>
+                 <span className="text-[10px] text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">Min 8 chars + Symbol</span>
+              </div>
+              <div className="relative">
+                  <span className="absolute inset-y-0 left-3 flex items-center"><Lock className="w-4 h-4 text-slate-400"/></span>
+                  <input
+                    type="password"
+                    name="password"
+                    onChange={handleChange}
+                    className="w-full pl-9 pr-3 py-3 rounded-xl bg-white border border-slate-200 focus:border-blue-500 outline-none transition"
+                    placeholder="••••••••"
+                    required
+                  />
+              </div>
             </div>
 
             {/* LOCATION / OCCUPATION */}
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="text-sm text-gray-700 font-medium">
-                  Location
-                </label>
-                <input
-                  type="text"
-                  name="location"
-                  onChange={handleChange}
-                  className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white/70 backdrop-blur-sm focus:ring-2 focus:ring-blue-400 outline-none transition"
-                />
+                <label className="text-xs font-bold text-slate-500 uppercase mb-1 block">Location</label>
+                <div className="relative">
+                    <span className="absolute inset-y-0 left-3 flex items-center"><MapPin className="w-4 h-4 text-slate-400"/></span>
+                    <input
+                    type="text"
+                    name="location"
+                    onChange={handleChange}
+                    className="w-full pl-9 pr-3 py-3 rounded-xl bg-white border border-slate-200 focus:border-blue-500 outline-none transition"
+                    placeholder="City"
+                    />
+                </div>
               </div>
 
               <div>
-                <label className="text-sm text-gray-700 font-medium">
-                  Occupation
-                </label>
-                <input
-                  type="text"
-                  name="occupation"
-                  onChange={handleChange}
-                  className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white/70 backdrop-blur-sm focus:ring-2 focus:ring-blue-400 outline-none transition"
-                />
+                <label className="text-xs font-bold text-slate-500 uppercase mb-1 block">Occupation</label>
+                <div className="relative">
+                    <span className="absolute inset-y-0 left-3 flex items-center"><Briefcase className="w-4 h-4 text-slate-400"/></span>
+                    <input
+                    type="text"
+                    name="occupation"
+                    onChange={handleChange}
+                    className="w-full pl-9 pr-3 py-3 rounded-xl bg-white border border-slate-200 focus:border-blue-500 outline-none transition"
+                    placeholder="Student/Dev"
+                    />
+                </div>
               </div>
             </div>
 
@@ -200,7 +235,7 @@ const Register = () => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl shadow-lg shadow-blue-500/20 transition"
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl shadow-lg shadow-blue-500/20 transition transform hover:-translate-y-0.5 mt-2"
             >
               {loading ? "Creating Account..." : "Sign Up"}
             </button>
@@ -208,29 +243,30 @@ const Register = () => {
 
           {/* DIVIDER */}
           <div className="flex items-center my-6">
-            <div className="flex-1 border-t border-gray-300"></div>
-            <p className="mx-4 text-gray-500 text-sm">OR</p>
-            <div className="flex-1 border-t border-gray-300"></div>
+            <div className="flex-1 border-t border-slate-200"></div>
+            <p className="mx-4 text-slate-400 text-sm font-medium">OR</p>
+            <div className="flex-1 border-t border-slate-200"></div>
           </div>
 
-          {/* GOOGLE LOGIN */}
-          <div className="flex justify-center">
+          {/* GOOGLE LOGIN - MOBILE RESPONSIVE WRAPPER */}
+          <div className="flex justify-center w-full overflow-hidden">
             <GoogleLogin
               onSuccess={handleGoogleSuccess}
               onError={() => toast.error("Google Sign Up Failed")}
               theme="filled_blue"
               size="large"
-              width="350"
+              width="300"
               text="signup_with"
+              shape="pill"
             />
           </div>
 
           {/* SWITCH TO LOGIN */}
-          <p className="mt-8 text-center text-gray-600">
+          <p className="mt-8 text-center text-slate-600 text-sm">
             Already have an account?
             <Link
               to="/login"
-              className="text-blue-600 font-semibold hover:underline ml-1"
+              className="text-blue-600 font-bold hover:underline ml-1"
             >
               Log in
             </Link>

@@ -8,7 +8,8 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { 
     Users, Calendar, DollarSign, Activity, Megaphone, Trash2, Shield, 
-    LogOut, Flag, FileText, AlertTriangle, CheckCircle, Ban, XCircle 
+    LogOut, Flag, FileText, AlertTriangle, CheckCircle, Ban, XCircle,
+    Menu, X 
 } from "lucide-react";
 
 // 🎯 IMPORT THE ENV VARIABLE FOR API URL
@@ -27,7 +28,8 @@ const AdminDashboard = () => {
     const [allEvents, setAllEvents] = useState([]);
     const [activeTab, setActiveTab] = useState("overview");
     const [graphData, setGraphData] = useState([]);
-
+    // ADD THIS STATE FOR MOBILE SIDEBAR
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     // Admin Features States
     const [broadcast, setBroadcast] = useState({ title: "", message: "" });
     const [reports, setReports] = useState([]);
@@ -199,18 +201,37 @@ const AdminDashboard = () => {
         </button>
     );
 
-    return (
-        <div className="min-h-screen bg-slate-50 dark:bg-slate-950 font-sans flex text-slate-800 dark:text-slate-100 transition-colors">
+return (
+        <div className="min-h-screen bg-slate-50 dark:bg-slate-950 font-sans flex text-slate-800 dark:text-slate-100 transition-colors relative">
 
-            {/* SIDEBAR */}
-            <div className="w-72 bg-slate-100 dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 p-6 flex flex-col h-screen fixed left-0 top-0 z-50">
-                <div className="flex items-center gap-3 mb-8 px-2">
-                    <div className="w-10 h-10 bg-gradient-to-tr from-violet-600 to-indigo-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-indigo-500/20">
-                        <Shield className="w-6 h-6" />
+            {/* 1. MOBILE OVERLAY (Click to close sidebar) */}
+            {isSidebarOpen && (
+                <div 
+                    className="fixed inset-0 bg-black/50 z-40 md:hidden backdrop-blur-sm"
+                    onClick={() => setIsSidebarOpen(false)}
+                ></div>
+            )}
+
+            {/* 2. SIDEBAR (Responsive: Fixed on Desktop, Slide-in on Mobile) */}
+            <div className={`
+                fixed inset-y-0 left-0 z-50 w-72 bg-slate-100 dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 p-6 flex flex-col h-screen 
+                transform transition-transform duration-300 ease-in-out
+                md:translate-x-0 
+                ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"}
+            `}>
+                <div className="flex items-center justify-between mb-8 px-2">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-gradient-to-tr from-violet-600 to-indigo-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-indigo-500/20">
+                            <Shield className="w-6 h-6" />
+                        </div>
+                        <div>
+                            <h1 className="font-extrabold text-lg leading-tight tracking-tight dark:text-white">Admin<br />Console</h1>
+                        </div>
                     </div>
-                    <div>
-                        <h1 className="font-extrabold text-lg leading-tight tracking-tight dark:text-white">Admin<br />Console</h1>
-                    </div>
+                    {/* CLOSE BUTTON (Mobile Only) */}
+                    <button onClick={() => setIsSidebarOpen(false)} className="md:hidden text-slate-500 hover:text-red-500 transition">
+                        <X className="w-6 h-6" />
+                    </button>
                 </div>
 
                 <div className="mb-6 px-4 py-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex items-center gap-3">
@@ -243,20 +264,34 @@ const AdminDashboard = () => {
                 </button>
             </div>
 
-            {/* MAIN CONTENT */}
-            <div className="flex-1 ml-72 p-8 overflow-y-auto h-screen">
-                <header className="mb-8 flex justify-between items-center animate-fadeIn">
-                    <div>
-                        <h2 className="text-3xl font-bold dark:text-white capitalize">{activeTab}</h2>
-                        <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">Manage platform activity and settings.</p>
+            {/* 3. MAIN CONTENT (Adjusted margins) */}
+            <div className="flex-1 md:ml-72 p-4 md:p-8 overflow-y-auto h-screen w-full transition-all duration-300">
+                <header className="mb-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 animate-fadeIn">
+                    <div className="flex items-center gap-3">
+                        {/* MOBILE HAMBURGER BUTTON */}
+                        <button 
+                            onClick={() => setIsSidebarOpen(true)}
+                            className="md:hidden p-2 bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-white"
+                        >
+                            <Menu className="w-6 h-6" />
+                        </button>
+                        
+                        <div>
+                            <h2 className="text-2xl md:text-3xl font-bold dark:text-white capitalize">{activeTab}</h2>
+                            <p className="text-slate-500 dark:text-slate-400 text-xs md:text-sm mt-1">Manage platform activity and settings.</p>
+                        </div>
                     </div>
-                    <div className="flex items-center gap-3 bg-white dark:bg-slate-900 p-2 pl-4 pr-2 rounded-full shadow-sm border border-slate-200 dark:border-slate-800">
+
+                    <div className="flex items-center gap-3 bg-white dark:bg-slate-900 p-2 pl-4 pr-2 rounded-full shadow-sm border border-slate-200 dark:border-slate-800 self-end md:self-auto">
                         <span className="text-xs font-bold text-slate-600 dark:text-slate-300">System Online</span>
                         <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_10px_rgba(16,185,129,0.5)]"></div>
                     </div>
                 </header>
 
                 <AnimatePresence mode="wait">
+                    {/* ... (Keep all your existing Tabs content: Overview, Users, Events, etc. exactly the same) ... */}
+                    {/* Just paste the content from your previous file inside here starting from {activeTab === "overview" && ...} */}
+                    
                     {/* === OVERVIEW TAB === */}
                     {activeTab === "overview" && (
                         <motion.div 
@@ -265,7 +300,7 @@ const AdminDashboard = () => {
                             className="space-y-6"
                         >
                             {/* STAT CARDS */}
-                            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
                                 {[
                                     { label: "Total Users", val: stats.totalUsers, icon: Users, col: "text-blue-500", bg: "bg-blue-50 dark:bg-blue-900/20" },
                                     { label: "Total Events", val: stats.totalEvents, icon: Calendar, col: "text-emerald-500", bg: "bg-emerald-50 dark:bg-emerald-900/20" },
@@ -276,7 +311,7 @@ const AdminDashboard = () => {
                                         <div className="flex justify-between items-start">
                                             <div>
                                                 <p className="text-xs text-slate-500 uppercase font-bold tracking-wider">{s.label}</p>
-                                                <h3 className={`text-3xl font-extrabold mt-2 ${s.col}`}>{s.val}</h3>
+                                                <h3 className={`text-2xl md:text-3xl font-extrabold mt-2 ${s.col}`}>{s.val}</h3>
                                             </div>
                                             <div className={`p-3 rounded-2xl ${s.bg} ${s.col}`}>
                                                 <s.icon className="w-6 h-6" />
@@ -288,7 +323,7 @@ const AdminDashboard = () => {
 
                             {/* CHARTS */}
                             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800 h-96">
+                                <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800 h-80 md:h-96">
                                     <h3 className="font-bold text-lg mb-6 dark:text-white flex items-center gap-2"><Activity className="w-5 h-5 text-violet-500"/> Growth Trend</h3>
                                     <ResponsiveContainer>
                                         <AreaChart data={graphData}>
@@ -306,11 +341,11 @@ const AdminDashboard = () => {
                                         </AreaChart>
                                     </ResponsiveContainer>
                                 </div>
-                                <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800 h-96">
+                                <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800 h-80 md:h-96">
                                     <h3 className="font-bold text-lg mb-6 dark:text-white flex items-center gap-2"><Calendar className="w-5 h-5 text-emerald-500"/> Event Categories</h3>
                                     <ResponsiveContainer>
                                         <PieChart>
-                                            <Pie data={stats.categoryData} innerRadius={80} outerRadius={110} paddingAngle={5} dataKey="value">
+                                            <Pie data={stats.categoryData} innerRadius={60} outerRadius={90} paddingAngle={5} dataKey="value">
                                                 {stats.categoryData?.map((entry, index) => (<Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} stroke="none" />))}
                                             </Pie>
                                             <Tooltip contentStyle={{backgroundColor: '#1e293b', border: 'none', borderRadius: '12px', color: '#fff'}} />
@@ -324,8 +359,8 @@ const AdminDashboard = () => {
 
                     {/* === USERS TAB === */}
                     {activeTab === "users" && (
-                        <motion.div key="users" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-white dark:bg-slate-900 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800 overflow-hidden">
-                            <table className="w-full text-left">
+                        <motion.div key="users" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-white dark:bg-slate-900 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800 overflow-x-auto">
+                            <table className="w-full text-left min-w-[800px]"> 
                                 <thead className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-700">
                                     <tr>
                                         <th className="p-5 text-xs font-bold text-slate-500 uppercase">User</th>
@@ -368,8 +403,8 @@ const AdminDashboard = () => {
 
                     {/* === EVENTS TAB === */}
                     {activeTab === "events" && (
-                        <motion.div key="events" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-white dark:bg-slate-900 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800 overflow-hidden">
-                            <table className="w-full text-left">
+                        <motion.div key="events" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-white dark:bg-slate-900 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800 overflow-x-auto">
+                            <table className="w-full text-left min-w-[800px]">
                                 <thead className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-700">
                                     <tr>
                                         <th className="p-5 text-xs font-bold text-slate-500 uppercase">Event Name</th>
@@ -402,8 +437,8 @@ const AdminDashboard = () => {
 
                     {/* === BROADCAST TAB === */}
                     {activeTab === "broadcast" && (
-                        <motion.div key="broadcast" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="max-w-2xl mx-auto mt-10">
-                            <div className="bg-white dark:bg-slate-900 p-8 rounded-3xl shadow-lg border border-slate-100 dark:border-slate-800 relative overflow-hidden">
+                        <motion.div key="broadcast" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="max-w-2xl mx-auto mt-4 md:mt-10">
+                            <div className="bg-white dark:bg-slate-900 p-6 md:p-8 rounded-3xl shadow-lg border border-slate-100 dark:border-slate-800 relative overflow-hidden">
                                 <div className="absolute top-0 right-0 p-10 -mr-10 -mt-10 bg-violet-500/10 rounded-full w-40 h-40 blur-2xl pointer-events-none"></div>
                                 <h3 className="text-2xl font-bold mb-2 dark:text-white flex items-center gap-2"><Megaphone className="w-6 h-6 text-violet-600"/> System Broadcast</h3>
                                 <p className="text-slate-500 dark:text-slate-400 text-sm mb-8">Send notifications to all registered users immediately.</p>
@@ -481,8 +516,8 @@ const AdminDashboard = () => {
 
                     {/* === LOGS TAB === */}
                     {activeTab === "logs" && (
-                        <motion.div key="logs" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-white dark:bg-slate-900 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800 overflow-hidden">
-                            <table className="w-full text-left">
+                        <motion.div key="logs" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-white dark:bg-slate-900 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800 overflow-x-auto">
+                            <table className="w-full text-left min-w-[800px]">
                                 <thead className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-700">
                                     <tr>
                                         <th className="p-5 text-xs font-bold text-slate-500 uppercase">Admin</th>
@@ -519,14 +554,14 @@ const AdminDashboard = () => {
 
                     {/* === FINANCIALS TAB === */}
                     {activeTab === "financials" && (
-                        <motion.div key="financials" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-white dark:bg-slate-900 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800 overflow-hidden">
-                             <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
+                        <motion.div key="financials" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-white dark:bg-slate-900 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800 overflow-x-auto">
+                             <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center min-w-[600px]">
                                 <h3 className="font-bold text-lg dark:text-white">Transaction History</h3>
                                 <span className="bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 px-3 py-1 rounded-full text-xs font-bold">
                                     Total Revenue: ${stats.totalRevenue ? stats.totalRevenue.toLocaleString() : '0'}
                                 </span>
                              </div>
-                             <table className="w-full text-left">
+                             <table className="w-full text-left min-w-[800px]">
                                 <thead className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-700">
                                     <tr>
                                         <th className="p-5 text-xs font-bold text-slate-500 uppercase">User</th>

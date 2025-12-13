@@ -22,10 +22,23 @@ const SettingsPage = () => {
 
   const [privacy, setPrivacy] = useState(user?.privacy || "public");
 
-  const handlePasswordChange = async (e) => {
+const handlePasswordChange = async (e) => {
     e.preventDefault();
+
+    // 1. Check Matching
     if (passwords.new !== passwords.confirm)
       return toast.error("Passwords do not match");
+
+    // 2. Check Length
+    if (passwords.new.length < 8) {
+        return toast.error("New password must be at least 8 characters");
+    }
+
+    // 3. Check Symbol
+    const symbolRegex = /[!@#$%^&*(),.?":{}|<>]/;
+    if (!symbolRegex.test(passwords.new)) {
+        return toast.error("New password must contain at least one special symbol (!@#$...)");
+    }
 
     try {
       // 🟢 DEPLOYMENT CHANGE: Using VITE_API_URL variable
@@ -35,20 +48,22 @@ const SettingsPage = () => {
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      toast.success("Password Updated");
+      toast.success("Password Updated Successfully");
       setPasswords({ current: "", new: "", confirm: "" });
+      // Clear inputs manually in UI if needed, though state reset handles it
+      e.target.reset(); 
     } catch (err) {
       toast.error(err.response?.data?.message || "Error updating password");
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-white to-blue-50 p-10 flex justify-center relative">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 p-4 md:p-10 flex justify-center relative transition-colors">
 
-      {/* Back Button */}
+      {/* Back Button - Responsive Positioning */}
       <button
         onClick={() => navigate("/dashboard")}
-        className="absolute top-6 left-6 flex items-center gap-2 text-gray-700 hover:text-gray-900 transition font-medium"
+        className="absolute top-4 left-4 md:top-8 md:left-8 flex items-center gap-2 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition font-bold z-10 bg-white/50 dark:bg-black/20 p-2 rounded-xl backdrop-blur-sm"
       >
         <ArrowLeft size={20} />
         Back
@@ -58,39 +73,39 @@ const SettingsPage = () => {
         initial={{ opacity: 0, y: 40, scale: 0.97 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ duration: 0.45, ease: "easeOut" }}
-        className="w-full max-w-2xl p-10 rounded-3xl backdrop-blur-xl bg-white/60 border border-white/80 shadow-xl"
+        className="w-full max-w-2xl mt-12 md:mt-0 p-6 md:p-10 rounded-3xl backdrop-blur-xl bg-white/80 dark:bg-slate-900/80 border border-white/20 dark:border-slate-800 shadow-2xl"
       >
-        <h1 className="text-3xl font-bold text-gray-800 mb-8">
+        <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-8">
           Account Settings
         </h1>
 
         {/* PRIVACY SECTION */}
-        <div className="mb-10 bg-white/70 p-6 rounded-2xl shadow-sm border border-gray-200">
+        <div className="mb-8 bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700">
           <div className="flex items-center gap-2 mb-3">
-            <Shield className="text-blue-600" size={22} />
-            <h3 className="text-gray-800 font-semibold text-lg">Privacy</h3>
+            <Shield className="text-violet-600 dark:text-violet-400" size={22} />
+            <h3 className="text-slate-900 dark:text-white font-semibold text-lg">Privacy</h3>
           </div>
 
-          <label className="flex items-center gap-3 cursor-pointer text-gray-700">
+          <label className="flex items-center gap-3 cursor-pointer text-slate-700 dark:text-slate-300">
             <input
               type="checkbox"
               checked={privacy === "private"}
               onChange={() =>
                 setPrivacy((prev) => (prev === "public" ? "private" : "public"))
               }
-              className="accent-blue-600 w-5 h-5"
+              className="accent-violet-600 w-5 h-5 rounded"
             />
-            <span className="text-sm">
+            <span className="text-sm font-medium">
               Make Profile Private (Only followers can see posts)
             </span>
           </label>
         </div>
 
         {/* PASSWORD SECTION */}
-        <div className="mb-10 bg-white/70 p-6 rounded-2xl shadow-sm border border-gray-200">
+        <div className="mb-8 bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700">
           <div className="flex items-center gap-2 mb-4">
-            <Lock className="text-purple-600" size={22} />
-            <h3 className="text-gray-800 font-semibold text-lg">
+            <Lock className="text-purple-600 dark:text-purple-400" size={22} />
+            <h3 className="text-slate-900 dark:text-white font-semibold text-lg">
               Change Password
             </h3>
           </div>
@@ -99,7 +114,7 @@ const SettingsPage = () => {
             <input
               type="password"
               placeholder="Current Password"
-              className="w-full p-3 rounded-lg bg-white border border-gray-300 text-gray-700 focus:outline-none focus:border-purple-500"
+              className="w-full p-3 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 transition"
               onChange={(e) =>
                 setPasswords({ ...passwords, current: e.target.value })
               }
@@ -107,7 +122,7 @@ const SettingsPage = () => {
             <input
               type="password"
               placeholder="New Password"
-              className="w-full p-3 rounded-lg bg-white border border-gray-300 text-gray-700 focus:outline-none focus:border-purple-500"
+              className="w-full p-3 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 transition"
               onChange={(e) =>
                 setPasswords({ ...passwords, new: e.target.value })
               }
@@ -115,26 +130,26 @@ const SettingsPage = () => {
             <input
               type="password"
               placeholder="Confirm New Password"
-              className="w-full p-3 rounded-lg bg-white border border-gray-300 text-gray-700 focus:outline-none focus:border-purple-500"
+              className="w-full p-3 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 transition"
               onChange={(e) =>
                 setPasswords({ ...passwords, confirm: e.target.value })
               }
             />
 
-            <button className="w-full bg-purple-600 hover:bg-purple-700 text-white px-4 py-3 rounded-lg font-bold shadow-md transition">
+            <button className="w-full bg-violet-600 hover:bg-violet-700 text-white px-4 py-3 rounded-xl font-bold shadow-lg shadow-violet-500/30 transition transform active:scale-95">
               Update Password
             </button>
           </form>
         </div>
 
         {/* DANGER ZONE */}
-        <div className="pt-6 border-t border-red-300">
+        <div className="pt-6 border-t border-slate-200 dark:border-slate-700">
           <div className="flex items-center gap-2 mb-3">
-            <Trash className="text-red-600" size={22} />
-            <h3 className="font-bold text-red-600 text-lg">Danger Zone</h3>
+            <Trash className="text-red-500" size={22} />
+            <h3 className="font-bold text-red-600 dark:text-red-400 text-lg">Danger Zone</h3>
           </div>
 
-          <button className="w-full bg-red-100 text-red-600 border border-red-300 px-4 py-3 rounded-lg font-bold hover:bg-red-200 transition">
+          <button className="w-full bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-900 px-4 py-3 rounded-xl font-bold hover:bg-red-100 dark:hover:bg-red-900/30 transition">
             Delete Account
           </button>
         </div>

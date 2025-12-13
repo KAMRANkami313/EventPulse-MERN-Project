@@ -32,8 +32,8 @@ const ProfilePage = () => {
     const [isEditing, setIsEditing] = useState(false);
     const [isFollowing, setIsFollowing] = useState(false);
 
-    // Modal States (NEW Architecture: Generalized list modal)
-    const [modalType, setModalType] = useState(null); // 'followers', 'following', or null
+    // Modal States
+    const [modalType, setModalType] = useState(null); 
     const [modalList, setModalList] = useState([]);
 
     // Edit Form State
@@ -86,7 +86,7 @@ const ProfilePage = () => {
                     setSavedEvents(savedRes.data);
                 }
 
-                // CHECK IF FOLLOWING (Now checks if loggedInUser ID exists in target user's followers array)
+                // CHECK IF FOLLOWING
                 if (userRes.data.followers.includes(loggedInUser._id)) {
                     setIsFollowing(true);
                 } else {
@@ -99,7 +99,7 @@ const ProfilePage = () => {
 
     }, [userId, isOwnProfile, token, loggedInUser._id]);
 
-    // FOLLOW/UNFOLLOW HANDLER (Now uses toggleFollow endpoint)
+    // FOLLOW/UNFOLLOW HANDLER
     const handleFollow = async () => {
         try {
             // 🟢 DEPLOYMENT CHANGE 5/8: Follow/Unfollow User
@@ -109,18 +109,14 @@ const ProfilePage = () => {
                 { headers: { Authorization: `Bearer ${token}` } }
             );
 
-            // Optimistically update the UI profile state
             const newIsFollowing = !isFollowing;
             setIsFollowing(newIsFollowing);
 
-            // Manually update the userProfile followers count/array
             setUserProfile(prevProfile => {
                 let updatedFollowers;
                 if (newIsFollowing) {
-                    // If now following, add loggedInUser._id to target's followers list
                     updatedFollowers = [...prevProfile.followers, loggedInUser._id];
                 } else {
-                    // If now unfollowing, remove loggedInUser._id
                     updatedFollowers = prevProfile.followers.filter(id => id !== loggedInUser._id);
                 }
                 return { ...prevProfile, followers: updatedFollowers };
@@ -131,9 +127,8 @@ const ProfilePage = () => {
         }
     };
 
-    // NEW: FETCH & SHOW FOLLOWERS/FOLLOWING MODAL (General handler)
+    // NEW: FETCH & SHOW FOLLOWERS/FOLLOWING MODAL
     const handleOpenList = async (type) => {
-        // type will be 'followers' or 'following'
         const listIds = type === 'followers' ? userProfile.followers : userProfile.following;
 
         if (listIds.length === 0) {
@@ -143,7 +138,6 @@ const ProfilePage = () => {
         }
 
         try {
-            // Fetch full user details for every ID
             const list = await Promise.all(
                 // 🟢 DEPLOYMENT CHANGE 6/8: Fetch User details for modal list
                 listIds.map(id => axios.get(`${API_URL}/users/${id}`, { headers: { Authorization: `Bearer ${token}` } }))
@@ -165,7 +159,6 @@ const ProfilePage = () => {
             formData.append("location", editFormData.location);
             formData.append("occupation", editFormData.occupation);
 
-            // Append Socials
             formData.append("twitter", editFormData.twitter);
             formData.append("linkedin", editFormData.linkedin);
             formData.append("instagram", editFormData.instagram);
@@ -180,12 +173,11 @@ const ProfilePage = () => {
             setUserProfile(res.data);
 
             if (isOwnProfile) {
-                // Note: We retain the bookmarks/following arrays for consistency in local storage
                 const currentUserData = JSON.parse(localStorage.getItem("user"));
-                // 🟢 DEPLOYMENT CHANGE 8/8: Get Image URL (Needed for local storage update, using helper now)
+                // 🟢 DEPLOYMENT CHANGE 8/8: Get Image URL
                 localStorage.setItem("user", JSON.stringify({
                     ...res.data,
-                    following: currentUserData.following, // Keep the correct following list
+                    following: currentUserData.following,
                     bookmarks: currentUserData.bookmarks,
                     password: loggedInUser.password
                 }));
@@ -197,10 +189,8 @@ const ProfilePage = () => {
 
     if (!userProfile) return <div className="min-h-screen flex items-center justify-center dark:bg-slate-900"><div className="w-8 h-8 border-4 border-violet-500 border-t-transparent rounded-full animate-spin"></div></div>;
 
-    // CALCULATE BADGES
     const badges = getUserBadges(userProfile, hostedEvents.length);
 
-    // Helper to determine which events to show
     const eventsDisplay = activeTab === "hosted" ? hostedEvents
         : activeTab === "attending" ? attendingEvents
             : savedEvents;
@@ -208,25 +198,25 @@ const ProfilePage = () => {
     return (
         <div className="min-h-screen bg-slate-50 dark:bg-slate-950 font-sans transition-colors relative">
 
-            {/* 1. COVER BANNER */}
-            <div className="h-72 w-full bg-gradient-to-r from-violet-600 via-fuchsia-600 to-indigo-600 relative overflow-hidden">
+            {/* 1. COVER BANNER (Responsive Height) */}
+            <div className="h-48 md:h-72 w-full bg-gradient-to-r from-violet-600 via-fuchsia-600 to-indigo-600 relative overflow-hidden">
                 <div className="absolute inset-0 bg-black/10"></div>
-                <button onClick={() => navigate("/dashboard")} className="absolute top-6 left-6 bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-full backdrop-blur-md transition text-sm font-bold flex items-center gap-2">
+                <button onClick={() => navigate("/dashboard")} className="absolute top-4 left-4 md:top-6 md:left-6 bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-full backdrop-blur-md transition text-xs md:text-sm font-bold flex items-center gap-2">
                     <ArrowLeft className="w-4 h-4" /> Back to Feed
                 </button>
             </div>
 
-            <div className="max-w-6xl mx-auto px-6 relative z-10">
+            <div className="max-w-6xl mx-auto px-4 md:px-6 relative z-10">
 
                 {/* 2. PROFILE HEADER CARD */}
                 <motion.div
                     initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
-                    className="relative -mt-24 mb-8 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-3xl shadow-2xl p-8 border border-white/20 dark:border-slate-700 flex flex-col md:flex-row items-center md:items-end gap-8"
+                    className="relative -mt-16 md:-mt-24 mb-8 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-3xl shadow-2xl p-6 md:p-8 border border-white/20 dark:border-slate-700 flex flex-col md:flex-row items-center md:items-end gap-6 md:gap-8"
                 >
 
-                    {/* Avatar */}
+                    {/* Avatar (Responsive Size) */}
                     <div className="relative group">
-                        <div className="w-44 h-44 rounded-full border-4 border-white dark:border-slate-800 shadow-2xl overflow-hidden bg-slate-200">
+                        <div className="w-32 h-32 md:w-44 md:h-44 rounded-full border-4 border-white dark:border-slate-800 shadow-2xl overflow-hidden bg-slate-200">
                             {userProfile.picturePath ? (
                                 <img
                                     src={getImageUrl(userProfile.picturePath)}
@@ -234,30 +224,30 @@ const ProfilePage = () => {
                                     className="w-full h-full object-cover transition transform group-hover:scale-110"
                                 />
                             ) : (
-                                <div className="w-full h-full flex items-center justify-center text-6xl font-bold text-slate-400">
+                                <div className="w-full h-full flex items-center justify-center text-4xl md:text-6xl font-bold text-slate-400">
                                     {userProfile.firstName[0]}
                                 </div>
                             )}
                         </div>
-                        {isOwnProfile && <div className="absolute bottom-2 right-2 bg-violet-600 text-white p-2 rounded-full cursor-pointer shadow-lg hover:scale-110 transition" onClick={() => setIsEditing(true)}><Camera className="w-5 h-5" /></div>}
+                        {isOwnProfile && <div className="absolute bottom-2 right-2 bg-violet-600 text-white p-2 rounded-full cursor-pointer shadow-lg hover:scale-110 transition" onClick={() => setIsEditing(true)}><Camera className="w-4 h-4 md:w-5 md:h-5" /></div>}
                     </div>
 
                     {/* Info */}
                     <div className="flex-1 text-center md:text-left mb-2 space-y-2">
-                        <h1 className="text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+                        <h1 className="text-3xl md:text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight">
                             {userProfile.firstName} {userProfile.lastName}
                         </h1>
 
                         {/* BADGES SECTION */}
                         <div className="flex flex-wrap gap-2 mt-3 justify-center md:justify-start">
                             {badges.map((b, i) => (
-                                <span key={i} className={`text-xs px-3 py-1 rounded-full font-bold flex items-center gap-1 shadow-sm ${b.color}`}>
+                                <span key={i} className={`text-[10px] md:text-xs px-3 py-1 rounded-full font-bold flex items-center gap-1 shadow-sm ${b.color}`}>
                                     {b.icon} {b.label}
                                 </span>
                             ))}
                         </div>
 
-                        <p className="text-violet-600 dark:text-violet-400 font-medium text-lg flex items-center justify-center md:justify-start gap-2">
+                        <p className="text-violet-600 dark:text-violet-400 font-medium text-base md:text-lg flex items-center justify-center md:justify-start gap-2">
                             <Briefcase className="w-4 h-4" /> {userProfile.occupation || "Community Member"}
                         </p>
                         <p className="text-slate-500 dark:text-slate-400 flex items-center justify-center md:justify-start gap-2 text-sm">
@@ -279,26 +269,26 @@ const ProfilePage = () => {
                     </div>
 
                     {/* Stats (Followers/Following) */}
-                    <div className="flex flex-col items-center md:items-end gap-6">
-                        <div className="flex gap-8 text-center">
+                    <div className="flex flex-col items-center md:items-end gap-6 w-full md:w-auto">
+                        <div className="flex gap-6 md:gap-8 text-center justify-center w-full">
                             <div>
-                                <p className="text-2xl font-black text-slate-800 dark:text-white">{hostedEvents.length}</p>
+                                <p className="text-xl md:text-2xl font-black text-slate-800 dark:text-white">{hostedEvents.length}</p>
                                 <p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">Hosted</p>
                             </div>
                             {/* FOLLOWERS COUNT */}
                             <div className="cursor-pointer hover:scale-110 transition" onClick={() => handleOpenList('followers')} title="View Followers">
-                                <p className="text-2xl font-black text-slate-800 dark:text-white">{userProfile.followers.length}</p>
+                                <p className="text-xl md:text-2xl font-black text-slate-800 dark:text-white">{userProfile.followers.length}</p>
                                 <p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">Followers</p>
                             </div>
                             {/* FOLLOWING COUNT */}
                             <div className="cursor-pointer hover:scale-110 transition" onClick={() => handleOpenList('following')} title="View Following">
-                                <p className="text-2xl font-black text-slate-800 dark:text-white">{userProfile.following.length}</p>
+                                <p className="text-xl md:text-2xl font-black text-slate-800 dark:text-white">{userProfile.following.length}</p>
                                 <p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">Following</p>
                             </div>
                         </div>
 
                         {/* ACTIONS (Edit OR Follow) */}
-                        <div className="flex gap-3">
+                        <div className="flex gap-3 w-full md:w-auto justify-center">
                             {isOwnProfile ? (
                                 <button
                                     onClick={() => setIsEditing(true)}
@@ -321,8 +311,8 @@ const ProfilePage = () => {
                     </div>
                 </motion.div>
 
-                {/* 3. TABS & CONTENT */}
-                <div className="flex gap-8 border-b border-slate-200 dark:border-slate-700 mb-8">
+                {/* 3. TABS & CONTENT - Scrollable on mobile */}
+                <div className="flex gap-8 border-b border-slate-200 dark:border-slate-700 mb-8 overflow-x-auto whitespace-nowrap scrollbar-hide">
                     <button
                         onClick={() => setActiveTab("hosted")}
                         className={`pb-4 px-2 font-bold text-sm uppercase tracking-wide transition-all relative ${activeTab === "hosted" ? "text-violet-600 dark:text-violet-400" : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"}`}
@@ -338,7 +328,6 @@ const ProfilePage = () => {
                         {activeTab === "attending" && <motion.div layoutId="underline" className="absolute bottom-0 left-0 w-full h-1 bg-violet-600 rounded-full" />}
                     </button>
 
-                    {/* SAVED TAB (Only for Owner) */}
                     {isOwnProfile && (
                         <button
                             onClick={() => setActiveTab("saved")}
@@ -403,21 +392,21 @@ const ProfilePage = () => {
                 <AnimatePresence>
                     {isEditing && (
                         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[2000] p-4">
-                            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} className="bg-white dark:bg-slate-900 w-full max-w-2xl rounded-3xl shadow-2xl p-8 overflow-y-auto max-h-[90vh]">
+                            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} className="bg-white dark:bg-slate-900 w-full max-w-2xl rounded-3xl shadow-2xl p-6 md:p-8 overflow-y-auto max-h-[90vh]">
                                 <div className="flex justify-between items-center mb-6">
                                     <h3 className="text-2xl font-bold dark:text-white">Edit Profile</h3>
                                     <button onClick={() => setIsEditing(false)} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full"><X className="w-5 h-5 dark:text-white" /></button>
                                 </div>
                                 <form onSubmit={handleUpdateProfile} className="space-y-4">
-                                    <div className="grid grid-cols-2 gap-4">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <input name="firstName" value={editFormData.firstName} onChange={handleEditChange} placeholder="First Name" className="p-3 border rounded-xl dark:bg-slate-800 dark:border-slate-700 dark:text-white outline-none focus:ring-2 focus:ring-violet-500" required />
                                         <input name="lastName" value={editFormData.lastName} onChange={handleEditChange} placeholder="Last Name" className="p-3 border rounded-xl dark:bg-slate-800 dark:border-slate-700 dark:text-white outline-none focus:ring-2 focus:ring-violet-500" required />
                                     </div>
                                     <input name="location" value={editFormData.location} onChange={handleEditChange} placeholder="Location" className="w-full p-3 border rounded-xl dark:bg-slate-800 dark:border-slate-700 dark:text-white outline-none focus:ring-2 focus:ring-violet-500" />
                                     <input name="occupation" value={editFormData.occupation} onChange={handleEditChange} placeholder="Occupation" className="w-full p-3 border rounded-xl dark:bg-slate-800 dark:border-slate-700 dark:text-white outline-none focus:ring-2 focus:ring-violet-500" />
 
-                                    {/* SOCIAL INPUTS */}
-                                    <div className="grid grid-cols-3 gap-3">
+                                    {/* SOCIAL INPUTS (Stacked on mobile) */}
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                                         <input name="twitter" value={editFormData.twitter} onChange={handleEditChange} placeholder="Twitter Link" className="p-3 border rounded-xl dark:bg-slate-800 dark:border-slate-700 dark:text-white outline-none focus:ring-2 focus:ring-violet-500 text-sm" />
                                         <input name="linkedin" value={editFormData.linkedin} onChange={handleEditChange} placeholder="LinkedIn Link" className="p-3 border rounded-xl dark:bg-slate-800 dark:border-slate-700 dark:text-white outline-none focus:ring-2 focus:ring-violet-500 text-sm" />
                                         <input name="instagram" value={editFormData.instagram} onChange={handleEditChange} placeholder="Instagram Link" className="p-3 border rounded-xl dark:bg-slate-800 dark:border-slate-700 dark:text-white outline-none focus:ring-2 focus:ring-violet-500 text-sm" />

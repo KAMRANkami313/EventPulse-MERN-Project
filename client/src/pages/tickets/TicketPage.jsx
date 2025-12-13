@@ -4,7 +4,6 @@ import axios from "axios";
 import QRCode from "react-qr-code";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
-
 import { motion } from "framer-motion";
 import {
   ArrowLeft,
@@ -12,6 +11,8 @@ import {
   MapPin,
   User,
   Download,
+  Clock,
+  Ticket
 } from "lucide-react";
 
 // 🎯 IMPORT THE ENV VARIABLE FOR API URL
@@ -109,7 +110,12 @@ END:VCALENDAR`;
 
   if (!event)
     return (
-      <div className="p-10 text-center text-white">Loading Ticket...</div>
+      <div className="min-h-screen flex items-center justify-center bg-slate-950 text-white">
+        <div className="animate-pulse flex flex-col items-center">
+            <Ticket className="w-12 h-12 text-violet-500 mb-4" />
+            <p className="text-xl font-bold">Generating Ticket...</p>
+        </div>
+      </div>
     );
 
   const ticketData = JSON.stringify({
@@ -120,19 +126,20 @@ END:VCALENDAR`;
   });
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-800 flex flex-col items-center justify-center p-6">
-      {/* Header Buttons */}
-      <div className="w-full max-w-4xl flex justify-between mb-6">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 transition-colors flex flex-col items-center justify-center p-4 md:p-6">
+      
+      {/* Header Buttons (Responsive) */}
+      <div className="w-full max-w-4xl flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
         <button
           onClick={() => navigate("/dashboard")}
-          className="flex items-center gap-2 text-white hover:text-gray-300 transition"
+          className="flex items-center gap-2 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition font-medium"
         >
           <ArrowLeft size={20} /> Back to Dashboard
         </button>
 
         <button
           onClick={handleDownloadPDF}
-          className="flex items-center gap-2 px-4 py-2 bg-green-500/90 hover:bg-green-600 text-white rounded-xl shadow-lg transition"
+          className="w-full md:w-auto flex items-center justify-center gap-2 px-6 py-3 bg-violet-600 hover:bg-violet-700 text-white rounded-xl shadow-lg shadow-violet-500/20 transition font-bold"
         >
           <Download size={18} /> Download PDF
         </button>
@@ -144,85 +151,97 @@ END:VCALENDAR`;
         initial={{ opacity: 0, y: 40, scale: 0.97 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ duration: 0.45, ease: "easeOut" }}
-        className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-3xl shadow-2xl max-w-4xl w-full overflow-hidden flex flex-col md:flex-row"
+        className="relative bg-white dark:bg-slate-900 rounded-3xl shadow-2xl max-w-4xl w-full overflow-hidden flex flex-col md:flex-row border border-slate-200 dark:border-slate-800"
       >
-        {/* LEFT: Info */}
-        <div className="md:w-2/3 p-10 text-white relative bg-gradient-to-br from-blue-700/60 to-purple-700/60 backdrop-blur-xl">
+        {/* LEFT: Info Section */}
+        <div className="md:w-2/3 p-8 md:p-10 relative bg-gradient-to-br from-violet-600 to-indigo-700 text-white">
+          
+          {/* Background Pattern */}
+          <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl -mr-10 -mt-10"></div>
+          <div className="absolute bottom-0 left-0 w-40 h-40 bg-black/10 rounded-full blur-2xl -ml-10 -mb-10"></div>
 
-          {/* Decorative circles */}
-          <div className="absolute -top-10 -left-10 w-32 h-32 bg-white/10 rounded-full blur-xl"></div>
+          <div className="relative z-10">
+            <span className="inline-block px-3 py-1 bg-white/20 backdrop-blur rounded-lg text-[10px] font-bold uppercase tracking-widest mb-4 border border-white/10">
+                {event.category} Event
+            </span>
 
-          {/* FIXED HERE → Removed duplicate bg-white/10 */}
-          <div className="absolute -bottom-10 -right-10 w-32 h-32 bg-white/10 rounded-full blur-xl"></div>
+            <h1 className="text-3xl md:text-4xl font-black mb-6 leading-tight drop-shadow-lg">
+                {event.title}
+            </h1>
 
-          <h1 className="text-4xl font-bold mb-2 drop-shadow-xl">
-            {event.title}
-          </h1>
-          <p className="uppercase text-sm tracking-wider opacity-80 mb-8">
-            {event.category} Event
-          </p>
+            <div className="space-y-6">
+                {/* Date */}
+                <div className="flex items-start gap-4">
+                    <div className="bg-white/20 p-2.5 rounded-xl backdrop-blur-sm">
+                        <Calendar className="text-white w-6 h-6" />
+                    </div>
+                    <div>
+                        <p className="text-[10px] uppercase font-bold opacity-70 mb-0.5">Date</p>
+                        <p className="text-lg font-bold">{new Date(event.date).toDateString()}</p>
+                    </div>
+                </div>
 
-          <div className="space-y-7">
-            {/* Date */}
-            <div className="flex items-center gap-4">
-              <Calendar className="text-white" size={28} />
-              <div>
-                <p className="text-xs uppercase opacity-60">Date</p>
-                <p className="text-xl font-semibold">
-                  {new Date(event.date).toDateString()}
-                </p>
-              </div>
+                {/* Location */}
+                <div className="flex items-start gap-4">
+                    <div className="bg-white/20 p-2.5 rounded-xl backdrop-blur-sm">
+                        <MapPin className="text-white w-6 h-6" />
+                    </div>
+                    <div>
+                        <p className="text-[10px] uppercase font-bold opacity-70 mb-0.5">Location</p>
+                        <p className="text-lg font-bold">{event.location}</p>
+                    </div>
+                </div>
+
+                {/* Attendee */}
+                <div className="flex items-start gap-4">
+                    <div className="bg-white/20 p-2.5 rounded-xl backdrop-blur-sm">
+                        <User className="text-white w-6 h-6" />
+                    </div>
+                    <div>
+                        <p className="text-[10px] uppercase font-bold opacity-70 mb-0.5">Attendee</p>
+                        <p className="text-lg font-bold">{user.firstName} {user.lastName}</p>
+                    </div>
+                </div>
             </div>
 
-            {/* Location */}
-            <div className="flex items-center gap-4">
-              <MapPin className="text-white" size={28} />
-              <div>
-                <p className="text-xs uppercase opacity-60">Location</p>
-                <p className="text-xl font-semibold">{event.location}</p>
-              </div>
+            <div className="mt-10 pt-6 border-t border-white/20 flex flex-wrap gap-4 justify-between items-center">
+                <button
+                onClick={handleAddToCalendar}
+                className="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg transition text-xs font-bold uppercase tracking-wide border border-white/20"
+                >
+                <Clock size={16} /> Add to Calendar
+                </button>
+                <p className="text-[10px] opacity-60 font-mono">ID: {event._id.slice(-8).toUpperCase()}</p>
             </div>
-
-            {/* Attendee */}
-            <div className="flex items-center gap-4">
-              <User className="text-white" size={28} />
-              <div>
-                <p className="text-xs uppercase opacity-60">Attendee</p>
-                <p className="text-xl font-semibold">
-                  {user.firstName} {user.lastName}
-                </p>
-              </div>
-            </div>
-
-            {/* Add to Calendar */}
-            <button
-              onClick={handleAddToCalendar}
-              className="mt-3 flex items-center gap-2 px-4 py-2 border border-white/30 rounded-lg bg-white/10 hover:bg-white/20 transition"
-            >
-              <Calendar size={18} /> Add to Calendar
-            </button>
           </div>
 
-          <p className="mt-8 text-xs opacity-50">
-            EventPulse ID: {event._id}
-          </p>
+          {/* Perforation Circles (Desktop) */}
+          <div className="hidden md:block absolute right-0 top-1/2 -mt-4 w-8 h-8 bg-slate-50 dark:bg-slate-950 rounded-full translate-x-1/2"></div>
         </div>
 
-        {/* RIGHT: QR Code */}
-        <div className="md:w-1/3 bg-white p-10 flex flex-col items-center justify-center relative">
-          <h3 className="text-gray-500 font-bold uppercase tracking-widest mb-6 text-sm">
-            Admit One
+        {/* RIGHT: QR Code Section */}
+        <div className="md:w-1/3 bg-white dark:bg-slate-800 p-8 flex flex-col items-center justify-center relative border-l-2 border-dashed border-slate-200 dark:border-slate-700">
+          
+          {/* Perforation Circles (Mobile) */}
+          <div className="md:hidden absolute top-0 left-1/2 -ml-4 w-8 h-8 bg-slate-50 dark:bg-slate-950 rounded-full -translate-y-1/2"></div>
+          <div className="md:hidden absolute bottom-0 left-1/2 -ml-4 w-8 h-8 bg-slate-50 dark:bg-slate-950 rounded-full translate-y-1/2"></div>
+
+          <h3 className="text-slate-400 font-bold uppercase tracking-[0.2em] mb-8 text-xs">
+            Scan for Entry
           </h3>
 
-          <div className="bg-white p-2 border-4 border-black rounded-xl shadow-xl">
+          <div className="bg-white p-3 rounded-2xl shadow-xl border border-slate-100">
             <QRCode
-              size={150}
+              size={160}
               value={ticketData}
-              style={{ width: "150px", height: "150px" }}
+              style={{ height: "auto", maxWidth: "100%", width: "100%" }}
             />
           </div>
 
-          <p className="text-xs text-gray-500 mt-6">Scan at entrance</p>
+          <div className="mt-8 text-center space-y-1">
+            <p className="text-xs font-bold text-slate-800 dark:text-white uppercase">Valid Ticket</p>
+            <p className="text-[10px] text-slate-400">Please show this at the entrance</p>
+          </div>
         </div>
       </motion.div>
     </div>

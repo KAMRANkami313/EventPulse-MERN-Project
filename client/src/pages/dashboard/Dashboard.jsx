@@ -20,7 +20,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Search, Map as MapIcon, List, Bell, LogOut, Sun, Moon,
   Plus, Filter, Heart, MessageCircle, Share2, Flag,
-  Bookmark, Download, Trash2, Calendar, MapPin, DollarSign, User, X, Settings
+  Bookmark, Download, Trash2, Calendar, MapPin, DollarSign, User, X, Settings, Menu
 } from "lucide-react";
 import Button from "../../components/ui/Button"; // Your new component
 import Card from "../../components/ui/Card";     // Your new component
@@ -239,7 +239,9 @@ const Dashboard = ({ toggleTheme, theme }) => {
 
   const user = JSON.parse(localStorage.getItem("user"));
   const token = localStorage.getItem("token");
-
+  // --- MOBILE RESPONSIVE STATES ---
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
   // --- STATES (ALL ORIGINAL STATES KEPT) ---
   const [loading, setLoading] = useState(true);
 
@@ -622,37 +624,29 @@ const Dashboard = ({ toggleTheme, theme }) => {
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 transition-colors duration-500 font-sans selection:bg-violet-200 dark:selection:bg-violet-900">
 
-      {/* 1. GLASSMORPHISM NAVBAR */}
+      {/* 1. GLASSMORPHISM NAVBAR - MOBILE RESPONSIVE */}
       <motion.nav
         initial={{ y: -100 }}
         animate={{ y: 0 }}
-        className="fixed top-4 left-4 right-4 z-[1000] bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl border border-white/20 dark:border-slate-800 rounded-2xl shadow-xl p-3 px-6 flex flex-wrap md:flex-nowrap justify-between items-center gap-4"
+        className="fixed top-4 left-4 right-4 z-[1000] bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border border-white/20 dark:border-slate-800 rounded-2xl shadow-xl p-3 px-6 flex justify-between items-center"
       >
+        {/* LOGO */}
         <div className="flex items-center gap-2">
-          {/* LOGO AREA */}
           <div className="w-10 h-10 bg-gradient-to-br from-violet-600 to-fuchsia-600 rounded-xl flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-violet-500/30">E</div>
           <h1 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-violet-600 to-fuchsia-600 hidden md:block tracking-tighter">EventPulse</h1>
         </div>
 
-        <div className="flex items-center gap-4 overflow-x-auto md:overflow-visible w-full md:w-auto pb-1 md:pb-0 scrollbar-hide">
+        {/* DESKTOP NAV ITEMS (Hidden on Mobile) */}
+        <div className="hidden md:flex items-center gap-4">
 
-          {/* LANGUAGE SWITCHER (FIXED) */}
-          <div className="flex gap-1 p-1 bg-slate-100 dark:bg-slate-800 rounded-xl z-50 items-center border border-slate-200 dark:border-slate-700">
+          {/* LANGUAGE SWITCHER (FIXED - NO CSS CONFLICT) */}
+          {/* Changed 'flex ... hidden md:flex' to just 'hidden md:flex' */}
+          <div className="hidden md:flex gap-1 p-1 bg-slate-100 dark:bg-slate-800 rounded-xl items-center border border-slate-200 dark:border-slate-700">
             {['en', 'es', 'fr', 'ur', 'tr', 'ar'].map((lang) => (
               <button
                 key={lang}
-                onClick={(e) => {
-                  e.preventDefault(); // Prevent link clicks
-                  e.stopPropagation(); // Stop bubbling
-                  i18n.changeLanguage(lang); // Change language
-                }}
-                className={`
-                                    w-7 h-7 flex items-center justify-center rounded-lg text-lg transition-all duration-200
-                                    ${i18n.language === lang
-                    ? 'bg-white dark:bg-slate-700 shadow-sm scale-110 opacity-100 ring-1 ring-black/5 dark:ring-white/10'
-                    : 'opacity-50 hover:opacity-100 hover:bg-slate-200 dark:hover:bg-slate-700'
-                  }
-                                `}
+                onClick={() => i18n.changeLanguage(lang)}
+                className={`w-7 h-7 flex items-center justify-center rounded-lg text-lg transition-all ${i18n.language === lang ? 'bg-white dark:bg-slate-700 shadow-sm scale-110 opacity-100' : 'opacity-50 hover:opacity-100'}`}
                 title={lang.toUpperCase()}
               >
                 {lang === 'en' ? '🇬🇧' :
@@ -664,105 +658,157 @@ const Dashboard = ({ toggleTheme, theme }) => {
             ))}
           </div>
 
-          <button onClick={toggleTheme} className="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-800 transition shrink-0">
+          {/* Note: I also updated the Mobile Menu list below in the next block to include these */}
+
+          <button onClick={toggleTheme} className="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-800 transition">
             {theme === "dark" ? <Sun className="w-5 h-5 text-yellow-400" /> : <Moon className="w-5 h-5 text-slate-600" />}
           </button>
 
-          {/* SETTINGS LINK ADDED AS REQUESTED */}
-          <Link to="/settings" className="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-800 transition shrink-0" title={t('settings')}>
-            <Settings className="w-5 h-5 text-slate-600 dark:text-slate-300" />
-          </Link>
-
-          <Link to="/scan" className="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-800 transition shrink-0" title="Scan Tickets">
-            <List className="w-5 h-5 text-slate-600 dark:text-slate-300" />
-          </Link>
+          <Link to="/settings" className="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-800 transition"><Settings className="w-5 h-5 text-slate-600 dark:text-slate-300" /></Link>
+          <Link to="/scan" className="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-800 transition"><List className="w-5 h-5 text-slate-600 dark:text-slate-300" /></Link>
 
           {/* NOTIFICATION BELL */}
-          <div className="relative cursor-pointer p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-800 transition shrink-0" onClick={handleMarkRead}>
+          <div className="relative cursor-pointer p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-800 transition" onClick={handleMarkRead}>
             <Bell className="w-5 h-5 text-slate-600 dark:text-slate-300" />
             {unreadCount > 0 && (
-              <span className="absolute top-1 right-1 bg-red-500 text-[10px] text-white rounded-full h-4 w-4 flex items-center justify-center animate-pulse border-2 border-white dark:border-slate-900">
+              <span className="absolute top-1 right-1 bg-red-500 text-[10px] text-white rounded-full h-4 w-4 flex items-center justify-center animate-pulse">
                 {unreadCount}
               </span>
             )}
           </div>
 
-          {/* NOTIFICATION DROPDOWN */}
-          <AnimatePresence>
-            {showNotifications && (
-              <motion.div
-                initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                className="absolute top-16 right-4 w-80 bg-white dark:bg-slate-800 shadow-2xl rounded-2xl overflow-hidden border border-slate-100 dark:border-slate-700 z-[1001]"
-              >
-                <div className="p-3 font-bold border-b border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-slate-700 dark:text-slate-200">
-                  {t('notifications')}
-                </div>
-                <div className="max-h-64 overflow-y-auto">
-                  {notifications.length === 0 ? (
-                    <p className="p-4 text-sm text-slate-400 text-center">{t('no_notifications_yet')}</p>
-                  ) : (
-                    notifications.map(n => (
-                      <div key={n._id} className={`p-3 border-b border-slate-100 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-sm transition ${!n.isRead ? 'bg-violet-50 dark:bg-slate-700/50 border-l-4 border-violet-500' : ''}`}>
-                        <span className="font-bold text-violet-600 dark:text-violet-400">{n.fromUserName}</span> <span className="dark:text-slate-300">{n.message}</span>
-                        <div className="text-xs text-slate-400 mt-1">{new Date(n.createdAt).toDateString()}</div>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          {/* USER PROFILE & LOGOUT */}
-          <div className="flex items-center gap-3 pl-4 border-l border-slate-200 dark:border-slate-700 shrink-0">
+          {/* USER PROFILE */}
+          <div className="flex items-center gap-3 pl-4 border-l border-slate-200 dark:border-slate-700">
             <Link to={`/profile/${user._id}`} className="flex items-center gap-3 group">
-              {/* Profile Image Circle */}
               <div className="w-10 h-10 rounded-full bg-violet-200 dark:bg-slate-700 flex items-center justify-center overflow-hidden border-2 border-transparent group-hover:border-violet-500 transition-all">
-                {user.picturePath ? (
-                  <img
-                    src={getImageUrl(user.picturePath)}
-                    alt={user.firstName}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <User className="w-5 h-5 text-violet-600 dark:text-violet-400" />
-                )}
+                {user.picturePath ? <img src={getImageUrl(user.picturePath)} className="w-full h-full object-cover" /> : <User className="w-5 h-5 text-violet-600" />}
               </div>
-              <div className="hidden md:flex flex-col items-start leading-tight">
-                <span className="text-sm font-bold dark:text-white group-hover:text-violet-500 transition-colors">
-                  {user?.firstName}
-                </span>
-                <span className="text-[10px] text-slate-500 uppercase tracking-wide font-semibold">
-                  {user.role === "admin" ? "Admin" : "Member"}
-                </span>
+              <div className="flex flex-col items-start leading-tight">
+                <span className="text-sm font-bold dark:text-white">{user?.firstName}</span>
+                <span className="text-[10px] text-slate-500 uppercase tracking-wide font-semibold">{user.role === "admin" ? "Admin" : "Member"}</span>
               </div>
             </Link>
-
-            {/* Admin Badge */}
             {user.role === "admin" && (
-              <Link to="/admin" className="hidden md:block bg-red-100 text-red-600 text-[10px] uppercase px-2 py-0.5 rounded-full font-bold ml-1 transition hover:bg-red-200" title={t('admin_panel')}>Panel</Link>
+              <Link to="/admin" className="bg-red-100 text-red-600 text-[10px] uppercase px-2 py-0.5 rounded-full font-bold ml-1 transition hover:bg-red-200">Panel</Link>
             )}
-
-            <Button variant="ghost" onClick={handleLogout} className="p-2" title={t('logout')}>
-              <LogOut className="w-5 h-5 text-slate-500 hover:text-red-500 transition" />
-            </Button>
+            <Button variant="ghost" onClick={handleLogout} className="p-2"><LogOut className="w-5 h-5 text-slate-500 hover:text-red-500 transition" /></Button>
           </div>
+        </div>
+
+        {/* MOBILE HAMBURGER BUTTON */}
+        <div className="flex md:hidden items-center gap-3">
+          <div className="relative cursor-pointer p-2" onClick={handleMarkRead}>
+            <Bell className="w-6 h-6 text-slate-600 dark:text-slate-300" />
+            {unreadCount > 0 && <span className="absolute top-1 right-1 bg-red-500 h-3 w-3 rounded-full animate-pulse"></span>}
+          </div>
+          <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="p-2 text-slate-700 dark:text-white">
+            <Menu className="w-7 h-7" />
+          </button>
         </div>
       </motion.nav>
 
+      {/* MOBILE MENU DROPDOWN */}
+      <AnimatePresence>
+        {mobileMenuOpen && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }}
+            className="fixed top-24 left-4 right-4 z-[999] bg-white dark:bg-slate-800 shadow-2xl rounded-2xl p-4 border border-slate-100 dark:border-slate-700 flex flex-col gap-4 overflow-hidden md:hidden"
+          >
+            {/* User Profile Mobile */}
+            <div className="flex items-center gap-3 border-b border-slate-100 dark:border-slate-700 pb-3">
+              <img src={getImageUrl(user.picturePath)} className="w-12 h-12 rounded-full object-cover" />
+              <div>
+                <p className="font-bold dark:text-white text-lg">{user.firstName} {user.lastName}</p>
+                <p className="text-xs text-slate-500">{user.email}</p>
+                {user.role === 'admin' && <Link to="/admin" className="text-xs font-bold text-red-500 mt-1 block">ACCESS ADMIN PANEL</Link>}
+              </div>
+            </div>
+
+            {/* Mobile Actions Grid */}
+            <div className="grid grid-cols-4 gap-2">
+              <button onClick={toggleTheme} className="p-3 bg-slate-50 dark:bg-slate-700 rounded-xl flex flex-col items-center justify-center gap-1">
+                {theme === "dark" ? <Sun className="w-5 h-5 text-yellow-400" /> : <Moon className="w-5 h-5 text-slate-600" />}
+                <span className="text-[10px] dark:text-white">Theme</span>
+              </button>
+              <Link to="/settings" className="p-3 bg-slate-50 dark:bg-slate-700 rounded-xl flex flex-col items-center justify-center gap-1">
+                <Settings className="w-5 h-5 text-slate-600 dark:text-slate-300" />
+                <span className="text-[10px] dark:text-white">Setting</span>
+              </Link>
+              <Link to="/scan" className="p-3 bg-slate-50 dark:bg-slate-700 rounded-xl flex flex-col items-center justify-center gap-1">
+                <List className="w-5 h-5 text-slate-600 dark:text-slate-300" />
+                <span className="text-[10px] dark:text-white">Orders</span>
+              </Link>
+              <Link to={`/profile/${user._id}`} className="p-3 bg-slate-50 dark:bg-slate-700 rounded-xl flex flex-col items-center justify-center gap-1">
+                <User className="w-5 h-5 text-slate-600 dark:text-slate-300" />
+                <span className="text-[10px] dark:text-white">Profile</span>
+              </Link>
+            </div>
+
+            {/* Mobile Language Selector */}
+            <div className="bg-slate-50 dark:bg-slate-700 p-3 rounded-xl">
+              <label className="text-xs font-bold text-slate-400 uppercase mb-1 block">Language</label>
+              <select
+                onChange={(e) => i18n.changeLanguage(e.target.value)}
+                value={i18n.language}
+                className="w-full bg-transparent dark:text-white font-bold outline-none"
+              >
+                <option value="en">🇬🇧 English</option>
+                <option value="es">🇪🇸 Spanish</option>
+                <option value="fr">🇫🇷 French</option>
+                <option value="ur">🇵🇰 Urdu</option>
+                <option value="tr">🇹🇷 Turkish</option>
+                <option value="ar">🇸🇦 Arabic</option>
+              </select>
+            </div>
+
+            <Button variant="danger" onClick={handleLogout} className="w-full justify-center py-3">Logout</Button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* NOTIFICATION DROPDOWN (Global) */}
+      <AnimatePresence>
+        {(showNotifications) && (
+          <motion.div
+            initial={{ opacity: 0, y: 10, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 10, scale: 0.95 }}
+            className="fixed top-20 right-4 w-80 bg-white dark:bg-slate-800 shadow-2xl rounded-2xl overflow-hidden border border-slate-100 dark:border-slate-700 z-[1002]"
+          >
+            {/* ... (Existing notification content remains the same) ... */}
+            <div className="p-3 font-bold border-b border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-slate-700 dark:text-slate-200">
+              {t('notifications')}
+            </div>
+            <div className="max-h-64 overflow-y-auto">
+              {notifications.length === 0 ? (
+                <p className="p-4 text-sm text-slate-400 text-center">{t('no_notifications_yet')}</p>
+              ) : (
+                notifications.map(n => (
+                  <div key={n._id} className={`p-3 border-b border-slate-100 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-sm transition ${!n.isRead ? 'bg-violet-50 dark:bg-slate-700/50 border-l-4 border-violet-500' : ''}`}>
+                    <span className="font-bold text-violet-600 dark:text-violet-400">{n.fromUserName}</span> <span className="dark:text-slate-300">{n.message}</span>
+                    <div className="text-xs text-slate-400 mt-1">{new Date(n.createdAt).toDateString()}</div>
+                  </div>
+                ))
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* FLOATING CREATE EVENT BUTTON */}
-      <motion.button
-        className="fixed bottom-8 right-8 z-[900] p-4 rounded-full shadow-2xl bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white font-bold hover:scale-105 transition-all"
-        onClick={() => setIsCreateModalOpen(true)}
-        initial={{ scale: 0, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        transition={{ type: "spring", stiffness: 200, damping: 20 }}
-        title={t('create_new_event')}
-      >
-        <Plus className="w-6 h-6" />
-      </motion.button>
+      {/* HIDDEN WHEN CHAT IS OPEN TO PREVENT OVERLAP */}
+      {!activeChat && (
+        <motion.button
+          className="fixed bottom-24 right-4 md:bottom-8 md:right-8 z-[900] p-4 rounded-full shadow-2xl bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white font-bold hover:scale-105 transition-all"
+          onClick={() => setIsCreateModalOpen(true)}
+          initial={{ scale: 0, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ type: "spring", stiffness: 200, damping: 20 }}
+          title={t('create_new_event')}
+        >
+          <Plus className="w-6 h-6" />
+        </motion.button>
+      )}
 
       {/* MAIN LAYOUT: CENTERED FEED */}
       {/* Fix: Changed grid to flex/mx-auto approach to center content when left side is empty */}
@@ -820,32 +866,34 @@ const Dashboard = ({ toggleTheme, theme }) => {
               </motion.div>
             )}
 
-            {/* CONTROLS BAR (Glass Card) */}
+            {/* CONTROLS BAR (Mobile Responsive) */}
             <Card className="sticky top-24 z-20 py-4">
-              <div className="flex flex-col md:flex-row justify-between items-center mb-4 gap-4">
-                <div className="flex flex-wrap justify-center md:justify-start items-center gap-3 w-full">
-                  <Button variant="secondary" onClick={() => setShowMap(!showMap)} className="shadow-sm text-sm">
+              <div className="flex flex-col md:flex-row justify-between items-center mb-0 md:mb-4 gap-4">
+
+                {/* Top Row: Map | Filters(Mobile) | Search */}
+                <div className="flex items-center gap-2 w-full md:w-auto">
+                  {/* Map Toggle */}
+                  <Button variant="secondary" onClick={() => setShowMap(!showMap)} className="shadow-sm text-sm whitespace-nowrap">
                     {showMap ? <List className="w-4 h-4" /> : <MapIcon className="w-4 h-4" />}
-                    {showMap ? t('list_view') : t('map_view')}
+                    <span className="hidden md:inline">{showMap ? t('list_view') : t('map_view')}</span>
                   </Button>
 
-                  {/* FEED TOGGLE SWITCH */}
-                  <div className="flex bg-slate-100 dark:bg-slate-900/50 p-1 rounded-xl border border-slate-200 dark:border-slate-700">
-                    <button
-                      onClick={() => setFeedType("all")}
-                      className={`px-3 md:px-4 py-1.5 rounded-lg text-xs md:text-sm font-bold transition-all duration-300 ${feedType === "all" ? "bg-white dark:bg-slate-700 shadow text-violet-600 dark:text-white" : "text-slate-500 hover:text-slate-800 dark:text-slate-400"}`}
-                    >
-                      {t('global_feed')}
-                    </button>
-                    <button
-                      onClick={() => setFeedType("following")}
-                      className={`px-3 md:px-4 py-1.5 rounded-lg text-xs md:text-sm font-bold transition-all duration-300 ${feedType === "following" ? "bg-white dark:bg-slate-700 shadow text-violet-600 dark:text-white" : "text-slate-500 hover:text-slate-800 dark:text-slate-400"}`}
-                    >
-                      {t('following_feed')}
-                    </button>
+                  {/* Mobile Filter Toggle Button */}
+                  <button
+                    onClick={() => setShowFilters(!showFilters)}
+                    className="md:hidden p-2 bg-slate-100 dark:bg-slate-800 rounded-lg text-slate-600 dark:text-slate-300"
+                  >
+                    <Filter className="w-5 h-5" />
+                  </button>
+
+                  {/* Feed Toggle (Hidden on very small screens, shown in filters) */}
+                  <div className="hidden md:flex bg-slate-100 dark:bg-slate-900/50 p-1 rounded-xl border border-slate-200 dark:border-slate-700">
+                    <button onClick={() => setFeedType("all")} className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${feedType === "all" ? "bg-white dark:bg-slate-700 shadow text-violet-600 dark:text-white" : "text-slate-500"}`}>{t('global_feed')}</button>
+                    <button onClick={() => setFeedType("following")} className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${feedType === "following" ? "bg-white dark:bg-slate-700 shadow text-violet-600 dark:text-white" : "text-slate-500"}`}>{t('following_feed')}</button>
                   </div>
                 </div>
 
+                {/* Search Input */}
                 <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-900/50 p-2 rounded-xl border border-slate-200 dark:border-slate-700 w-full md:max-w-xs focus-within:ring-2 ring-violet-500 transition-all">
                   <Search className="w-4 h-4 text-slate-400" />
                   <input
@@ -857,33 +905,45 @@ const Dashboard = ({ toggleTheme, theme }) => {
                 </div>
               </div>
 
-              {!showMap && (
-                <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-                  <select
-                    className="px-3 py-2 rounded-xl text-xs font-bold bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 dark:text-white outline-none cursor-pointer hover:bg-slate-100"
-                    onChange={(e) => setSelectedCategory(e.target.value)}
-                    value={selectedCategory}
+              {/* COLLAPSIBLE FILTERS (Visible on Desktop, Toggled on Mobile) */}
+              <AnimatePresence>
+                {(!showMap && (showFilters || window.innerWidth > 768)) && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }}
+                    className="flex flex-col md:flex-row gap-2 md:gap-4 overflow-hidden pt-3 md:pt-0"
                   >
-                    <option value="All">{t('all_categories')}</option>
-                    <option value="Music">{t('music')}</option>
-                    <option value="Tech">{t('tech')}</option>
-                    <option value="Business">{t('business')}</option>
-                    <option value="Sports">{t('sports')}</option>
-                    <option value="Education">{t('education')}</option>
-                    <option value="Party">{t('party')}</option>
-                  </select>
+                    {/* Mobile Feed Toggle (Only visible on mobile) */}
+                    <div className="flex md:hidden bg-slate-100 dark:bg-slate-900/50 p-1 rounded-xl border border-slate-200 dark:border-slate-700 mb-2">
+                      <button onClick={() => setFeedType("all")} className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all ${feedType === "all" ? "bg-white dark:bg-slate-700 shadow text-violet-600 dark:text-white" : "text-slate-500"}`}>{t('global_feed')}</button>
+                      <button onClick={() => setFeedType("following")} className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all ${feedType === "following" ? "bg-white dark:bg-slate-700 shadow text-violet-600 dark:text-white" : "text-slate-500"}`}>{t('following_feed')}</button>
+                    </div>
 
-                  <select
-                    className="px-3 py-2 rounded-xl text-xs font-bold bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 dark:text-white outline-none cursor-pointer hover:bg-slate-100"
-                    onChange={(e) => setSortOption(e.target.value)}
-                    value={sortOption}
-                  >
-                    <option value="Newest">{t('sort_newest')}</option>
-                    <option value="Oldest">{t('sort_oldest')}</option>
-                    <option value="Popular">{t('sort_popular')}</option>
-                  </select>
-                </div>
-              )}
+                    <select
+                      className="w-full md:w-auto px-3 py-2 rounded-xl text-xs font-bold bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 dark:text-white outline-none cursor-pointer"
+                      onChange={(e) => setSelectedCategory(e.target.value)}
+                      value={selectedCategory}
+                    >
+                      <option value="All">{t('all_categories')}</option>
+                      <option value="Music">{t('music')}</option>
+                      <option value="Tech">{t('tech')}</option>
+                      <option value="Business">{t('business')}</option>
+                      <option value="Sports">{t('sports')}</option>
+                      <option value="Education">{t('education')}</option>
+                      <option value="Party">{t('party')}</option>
+                    </select>
+
+                    <select
+                      className="w-full md:w-auto px-3 py-2 rounded-xl text-xs font-bold bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 dark:text-white outline-none cursor-pointer"
+                      onChange={(e) => setSortOption(e.target.value)}
+                      value={sortOption}
+                    >
+                      <option value="Newest">{t('sort_newest')}</option>
+                      <option value="Oldest">{t('sort_oldest')}</option>
+                      <option value="Popular">{t('sort_popular')}</option>
+                    </select>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </Card>
 
             {/* VIEW 1: MAP VIEW */}
@@ -932,6 +992,7 @@ const Dashboard = ({ toggleTheme, theme }) => {
                       return (
                         <Card
                           key={event._id}
+                          id={event._id}
                           className="group hover:border-violet-500/30 transition-all duration-300 mb-6"
                         >
                           <button

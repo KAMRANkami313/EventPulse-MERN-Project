@@ -1,28 +1,26 @@
 import React, { useEffect, useState, useRef } from "react";
 import io from "socket.io-client";
 import axios from "axios";
+import { Send, X, MessageCircle } from "lucide-react"; // Better icons
 
 // 🎯 IMPORT THE ENV VARIABLE FOR API URL
 const API_URL = import.meta.env.VITE_API_URL; 
 
-// 🟢 DEPLOYMENT CHANGE: Connect socket to the environment variable
 const socket = io.connect(API_URL);
 
 const ChatBox = ({ eventId, eventTitle, user, onClose }) => {
   const [currentMessage, setCurrentMessage] = useState("");
   const [messageList, setMessageList] = useState([]);
-  const scrollRef = useRef(); // To auto-scroll to bottom
+  const scrollRef = useRef(); 
   const token = localStorage.getItem("token");
 
   // 1. Fetch History & Join Room
   useEffect(() => {
     const fetchHistory = async () => {
         try {
-            // 🟢 DEPLOYMENT CHANGE: Using VITE_API_URL variable for API call
             const response = await axios.get(`${API_URL}/messages/${eventId}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
-            // Map DB format to UI format if needed, or keep consistent
             const history = response.data.map(msg => ({
                 room: msg.eventId,
                 author: msg.senderName,
@@ -38,7 +36,6 @@ const ChatBox = ({ eventId, eventTitle, user, onClose }) => {
     fetchHistory();
     socket.emit("join_room", eventId);
 
-    // Setup Listener
     const handleReceive = (data) => {
         setMessageList((list) => [...list, data]);
     };
@@ -49,47 +46,60 @@ const ChatBox = ({ eventId, eventTitle, user, onClose }) => {
     };
   }, [eventId]);
 
-  // Auto-scroll when messageList changes
   useEffect(() => {
     scrollRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messageList]);
 
-  const sendMessage = async () => {
+  const sendMessage = async (e) => {
+    e?.preventDefault();
     if (currentMessage !== "") {
       const messageData = {
         room: eventId,
-        userId: user._id, // Needed for DB
+        userId: user._id, 
         author: user.firstName,
         message: currentMessage,
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       };
 
       await socket.emit("send_message", messageData);
-      setMessageList((list) => [...list, messageData]); // Add locally for instant UI
+      setMessageList((list) => [...list, messageData]); 
       setCurrentMessage("");
     }
   };
 
   return (
-    <div className="fixed bottom-4 right-4 w-80 bg-white dark:bg-gray-800 shadow-2xl rounded-t-lg border border-gray-200 dark:border-gray-600 flex flex-col z-50 h-96">
+    // 🟢 UPDATED CONTAINER CLASSES FOR MOBILE RESPONSIVENESS
+    <div className="fixed bottom-0 left-0 w-full h-[60vh] md:h-96 md:w-80 md:bottom-24 md:right-24 bg-white dark:bg-slate-900 shadow-2xl md:rounded-2xl rounded-t-2xl border border-slate-200 dark:border-slate-700 flex flex-col z-[2100] overflow-hidden transition-all animate-in slide-in-from-bottom-10">
       
       {/* HEADER */}
-      <div className="bg-blue-600 text-white p-3 rounded-t-lg flex justify-between items-center cursor-pointer" onClick={onClose}>
-        <h3 className="font-bold text-sm truncate w-60">Chat: {eventTitle}</h3>
-        <button className="text-white hover:text-gray-200 font-bold">✕</button>
+      <div className="bg-gradient-to-r from-violet-600 to-indigo-600 text-white p-4 flex justify-between items-center shadow-md">
+        <div className="flex items-center gap-2">
+            <MessageCircle className="w-5 h-5 opacity-80" />
+            <div>
+                <h3 className="font-bold text-sm truncate w-48 md:w-40">{eventTitle}</h3>
+                <p className="text-[10px] text-indigo-100 font-medium">Group Chat</p>
+            </div>
+        </div>
+        <button onClick={onClose} className="p-1 hover:bg-white/20 rounded-full transition">
+            <X className="w-5 h-5 text-white" />
+        </button>
       </div>
 
       {/* MESSAGES BODY */}
-      <div className="flex-1 p-3 overflow-y-auto bg-gray-50 dark:bg-gray-700 flex flex-col gap-2">
+      <div className="flex-1 p-4 overflow-y-auto bg-slate-50 dark:bg-slate-950 flex flex-col gap-3">
         {messageList.map((msg, index) => {
            const isMe = msg.author === user.firstName;
            return (
             <div key={index} ref={scrollRef} className={`flex flex-col ${isMe ? "items-end" : "items-start"}`}>
-                <div className={`max-w-[80%] p-2 rounded-lg text-sm ${isMe ? "bg-blue-500 text-white" : "bg-gray-200 dark:bg-gray-600 dark:text-white"}`}>
+                <div className={`max-w-[85%] px-4 py-2 rounded-2xl text-sm shadow-sm ${
+                    isMe 
+                    ? "bg-violet-600 text-white rounded-br-none" 
+                    : "bg-white dark:bg-slate-800 dark:text-slate-200 border border-slate-100 dark:border-slate-700 rounded-bl-none"
+                }`}>
                     <p>{msg.message}</p>
                 </div>
-                <div className="text-[10px] text-gray-400 mt-1">
-                    {msg.author} • {msg.time}
+                <div className="text-[10px] text-slate-400 mt-1 px-1 font-medium">
+                    {isMe ? "You" : msg.author} • {msg.time}
                 </div>
             </div>
            );
@@ -97,19 +107,18 @@ const ChatBox = ({ eventId, eventTitle, user, onClose }) => {
       </div>
 
       {/* FOOTER INPUT */}
-      <div className="p-2 border-t dark:border-gray-600 bg-white dark:bg-gray-800 flex gap-2">
+      <form onSubmit={sendMessage} className="p-3 border-t border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 flex gap-2 pb-6 md:pb-3">
         <input
           type="text"
           value={currentMessage}
           placeholder="Type a message..."
-          className="w-full p-2 text-sm border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white outline-none"
+          className="w-full p-3 text-sm border-none bg-slate-100 dark:bg-slate-800 rounded-xl dark:text-white outline-none focus:ring-2 focus:ring-violet-500 transition"
           onChange={(event) => setCurrentMessage(event.target.value)}
-          onKeyPress={(event) => event.key === "Enter" && sendMessage()}
         />
-        <button onClick={sendMessage} className="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700">
-          ➤
+        <button type="submit" className="bg-violet-600 text-white p-3 rounded-xl hover:bg-violet-700 transition shadow-lg shadow-violet-500/20 active:scale-95">
+          <Send className="w-5 h-5" />
         </button>
-      </div>
+      </form>
     </div>
   );
 };

@@ -153,13 +153,22 @@ export const toggleFollow = async (req, res) => {
 };
 
 
-/* GET RECOMMENDED EVENTS */
+/* GET RECOMMENDED EVENTS (SMART HYBRID) */
 export const getUserRecommendations = async (req, res) => {
   try {
     const { id } = req.params;
     const user = await User.findById(id);
-    const historyEvents = await Event.find({ participants: id });
 
+    // 1. Gather all events user interacted with (Joined or Bookmarked)
+    // We assume 'participants' check covers joined events
+    const historyEvents = await Event.find({
+        $or: [
+            { participants: id }, // Joined
+            { _id: { $in: user.bookmarks } } // Bookmarked
+        ]
+    });
+
+    // 2. Calculate Favorite Category
     const categoryCounts = {};
     historyEvents.forEach((event) => {
       categoryCounts[event.category] = (categoryCounts[event.category] || 0) + 1;
@@ -175,20 +184,53 @@ export const getUserRecommendations = async (req, res) => {
       }
     });
 
-    if (!favoriteCategory || !user) {
-        const trending = await Event.find({ date: { $gte: new Date() } }).sort({ createdAt: -1 }).limit(3);
-        return res.status(200).json({ type: "trending", data: trending });
-    }
-    
+    // 3. Define Excluded IDs (Don't recommend what they already joined/bookmarked)
     const excludedIds = historyEvents.map(e => e._id);
 
-    const recommendations = await Event.find({
-        category: favoriteCategory,
-        date: { $gte: new Date() }, 
-        _id: { $nin: excludedIds }
-    }).limit(3);
+    // 4. Initial Recommendation List
+    let recommendations = [];
+    let type = "trending";
 
-    res.status(200).json({ type: "based_on_history", category: favoriteCategory, data: recommendations });
+    // 5. If we found a favorite category, try to find NEW events in that category
+    if (favoriteCategory) {
+        recommendations = await Event.find({
+            category: favoriteCategory,
+            date: { $gte: new Date() }, // Future events only
+            _id: { $nin: excludedIds }
+        }).limit(5);
+
+        if (recommendations.length > 0) {
+            type = "based_on_history";
+        }
+    }
+
+    // 6. FALLBACK: If list is empty (or short), fill with TRENDING events
+    // This ensures the user ALWAYS sees something.
+    if (recommendations.length < 3) {
+        // Find ids we already have in recommendations so we don't duplicate
+        const currentRecIds = recommendations.map(r => r._id);
+        const allExcluded = [...excludedIds, ...currentRecIds];
+
+        const trending = await Event.find({
+            date: { $gte: new Date() },
+            _id: { $nin: allExcluded }
+        })
+        .sort({ createdAt: -1 }) // Newest first
+        .limit(5 - recommendations.length);
+
+        recommendations = [...recommendations, ...trending];
+        
+        // If we had 0 personalized and just added trending, switch type label
+        if (recommendations.length === trending.length) {
+            type = "trending"; 
+        }
+    }
+
+    res.status(200).json({ 
+        type: type, 
+        category: favoriteCategory, 
+        data: recommendations 
+    });
 
   } catch (err) {
     res.status(404).json({ message: err.message });
