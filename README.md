@@ -1,7 +1,10 @@
 # 🎉 EventPulse — Commercial Grade Progressive Web Application (PWA)
 
+> 🚀 **Live Application**: You can visit and test the fully deployed app here:
+> **[https://eventpulse-tawny.vercel.app/login](https://eventpulse-tawny.vercel.app/login)**
+
 EventPulse is a high-performance, full-stack **MERN Progressive Web Application (PWA)** designed for real-world commercial deployment.
-It includes enterprise-grade analytics, security, monetization, event ticketing, real-time experiences, modern UI/UX animations, and a powerful new **Visual Admin Dashboard**.
+It includes enterprise-grade analytics, security, monetization, event ticketing, real-time experiences, modern UI/UX animations, and a powerful **Visual Admin Dashboard**.
 
 ---
 
@@ -21,6 +24,7 @@ It includes enterprise-grade analytics, security, monetization, event ticketing,
   Category, keyword, price, and date range filtering powered by MongoDB aggregation.
 
 * **Cloudinary CDN Storage**
+  Optimized image uploads and fast global delivery.
 
 * **Scroll Management**
   Global Scroll-to-Top for smooth navigation.
@@ -28,11 +32,14 @@ It includes enterprise-grade analytics, security, monetization, event ticketing,
 * **Dockerized Deployment**
   Docker setup for both frontend and backend.
 
+* **Production Deployment (Vercel + Render)**
+  Frontend deployed on **Vercel** and backend on **Render** with environment-based configuration, dynamic CORS handling, and auto CI/CD via GitHub.
+
 ---
 
 # 🆕 NEW FEATURE — Rule-Based AI Chatbot (Local, Free, No API)
 
-EventPulse now includes a **Rule-Based AI Chatbot** that runs **100% locally** on your server — no API keys, no cloud costs.
+EventPulse includes a **Rule-Based AI Chatbot** that runs **100% locally** on the server — no API keys, no cloud costs.
 
 ### 🔍 How It Works
 
@@ -46,7 +53,7 @@ EventPulse now includes a **Rule-Based AI Chatbot** that runs **100% locally** o
 * Zero cost
 * No external dependencies
 * Fast local responses
-* Can automate support, FAQs, and onboarding
+* Automates support, FAQs, and onboarding
 
 ---
 
@@ -64,10 +71,10 @@ EventPulse now includes a **Rule-Based AI Chatbot** that runs **100% locally** o
 
 ## 🌐 Advanced Social Graph (Followers & Following)
 
-* One-way follow system (like Instagram/Twitter)
-* **Followers** — people who want to see your events
-* **Following** — people whose events you want to see
-* Fully scalable, replaces old “friends array”
+* One-way follow system (Instagram/Twitter style)
+* **Followers** — users who want to see your events
+* **Following** — creators whose events you follow
+* Fully scalable social graph
 
 ## 🔗 Social Identity Profiles
 
@@ -80,44 +87,43 @@ Users can link:
 
 Displayed with clean **Lucide Icons**.
 
-## 🧑‍🤝‍🧑 Followers/Following Modal
+## 🧑‍🤝‍🧑 Followers / Following Modal
 
-* Clicking “Followers” or “Following” opens a dedicated modal
-* Built using **Framer Motion** + Glassmorphism UI
+* Dedicated animated modal
+* Built with **Framer Motion** + Glassmorphism UI
 
 ## 🔖 Bookmarks (Saved Events)
 
-* Users can save events privately without liking or joining
-* Saved events appear in a dedicated “Bookmarks” page
+* Save events privately
+* Dedicated Bookmarks page
 
 ## 🛡️ Privacy Controls
 
 * Hide profile from search
 * Restrict event visibility
-* Control who can follow
-* Control who can message
+* Control followers & messages
 * Toggle social link visibility
 
-All located inside a full **Settings Page**.
+All managed from a full **Settings Page**.
 
 ## 🏆 Gamification System (Badges)
 
 Automatic badge awards:
 
-* **👑 Top Host**
-* **🔥 Early Adopter**
-* **🚀 Rising Creator**
-* **💬 Community Engaged**
+* 👑 Top Host
+* 🔥 Early Adopter
+* 🚀 Rising Creator
+* 💬 Community Engaged
 
 Displayed on profiles and events.
 
 ## 💬 Additional Social Features
 
 * Event ratings & reviews
-* Activity-based smart recommendations
+* Smart recommendations
 * Live chat (Socket.io)
 * Real-time notifications
-* Personalized feed based on creators you follow
+* Personalized creator feed
 
 ---
 
@@ -141,18 +147,35 @@ Event creators can download attendee lists as CSV:
 
 ---
 
+# 📱 Mobile-First & Responsive Experience (Newly Enhanced)
+
+EventPulse has been carefully optimized for **mobile and tablet devices**, transforming it from a demo app into a **production-ready product**.
+
+### Mobile Enhancements
+
+* Responsive **Login & Register** pages (Google OAuth button overflow fixed)
+* Mobile-friendly **Hamburger Navigation Menu**
+* Collapsible **Filters Panel** on small screens
+* Full-screen **AI Chatbot bottom sheet** on mobile (no dragging issues)
+* Slide-in **Admin Sidebar** with overlay for mobile
+* Native mobile-friendly language selector
+
+These changes ensure excellent usability across phones, tablets, and desktops.
+
+---
+
 # ✨ Complete UI/UX Overhaul — Modern SaaS Design
 
-EventPulse adopts a premium app aesthetic inspired by Linear, Stripe, and Instagram.
+Inspired by Linear, Stripe, and Instagram.
 
-### New UI Technologies
+### UI Technologies
 
-* **Framer Motion** — micro-interactions
-* **Glassmorphism** UI
+* **Framer Motion** — animations & micro-interactions
+* **Glassmorphism UI**
 * **Vibrant gradients**
 * **Lucide Icons**
-* **Floating cards + animated modals**
-* Tailwind for styling
+* **Floating cards & animated modals**
+* **Tailwind CSS**
 
 ### Pages Upgraded
 
@@ -160,7 +183,7 @@ EventPulse adopts a premium app aesthetic inspired by Linear, Stripe, and Instag
 * Event Details
 * Create / Edit Event
 * Profile Page
-* Followers/Following Modal
+* Followers / Following Modal
 * Bookmarks Page
 * Notifications
 * Settings Page
@@ -179,7 +202,7 @@ EventPulse adopts a premium app aesthetic inspired by Linear, Stripe, and Instag
 * Admin Moderation Tools
 * Report System
 * Full Audit Logs
-* Transaction History Table
+* Transaction History
 
 ---
 
@@ -187,18 +210,17 @@ EventPulse adopts a premium app aesthetic inspired by Linear, Stripe, and Instag
 
 ## 📊 Visual Analytics (Recharts)
 
-* User growth line chart
-* Monthly revenue line/bar chart
+* User growth charts
+* Monthly revenue charts
 * Category distribution pie chart
-* Event growth stats
-* User activity metrics
+* Event & user activity metrics
 
-## 🗂️ Event Management Table
+## 🗂️ Event Management
 
-* Search events
-* Sort by date, price, category, or popularity
+* Search & filter events
+* Sort by date, price, category, popularity
 * Delete or unlist events
-* View attendee & revenue statistics
+* View revenue & attendee stats
 
 ## 📣 Global Broadcast System
 
@@ -209,19 +231,13 @@ Admins can send platform-wide messages:
 * Alerts
 * Announcements
 
-Displayed via the real-time notification system.
+Delivered via real-time notifications.
 
 ## 🧾 Moderation Queue
 
-Contains all user-reported events with:
-
 * Report reason
 * Reporter details
-* Quick actions
-
-  * Delete Event
-  * Warn Creator
-  * Dismiss Report
+* Quick actions (delete, warn, dismiss)
 
 ## 📝 Audit Logs
 
@@ -229,41 +245,29 @@ Tracks:
 
 * User bans
 * Event deletions
-* Revenue adjustments
+* Revenue changes
 * Admin actions
-* Broadcast messages
 
 ## 💳 Transaction History
-
-Showing:
 
 * Buyer name
 * Event title
 * Amount
-* Stripe Transaction ID
+* Stripe transaction ID
 * Timestamp
-
-## 🔔 Modern Toast Notifications
-
-A complete toast system for:
-
-* Success
-* Error
-* Warning
-* Info
 
 ---
 
 # 🛠️ Tech Stack
 
-| Domain             | Technologies                                                      | Details                       |
-| ------------------ | ----------------------------------------------------------------- | ----------------------------- |
-| **Frontend**       | React (Vite), Tailwind, Framer Motion, Lucide, Recharts, Vite-PWA | Modern SaaS UI + animations   |
-| **Backend**        | Node.js, Express.js, Socket.io, Nodemailer                        | API + real-time communication |
-| **Database**       | MongoDB Atlas, Mongoose                                           | Scalable NoSQL                |
-| **Infrastructure** | Docker, Cloudinary CDN                                            | Deployment-ready              |
-| **Payments**       | Stripe SDK, Stripe Webhooks                                       | Secure billing                |
-| **Maps**           | Leaflet                                                           | Interactive event locations   |
+| Domain         | Technologies                                                      | Details          |
+| -------------- | ----------------------------------------------------------------- | ---------------- |
+| Frontend       | React (Vite), Tailwind, Framer Motion, Lucide, Recharts, Vite-PWA | Modern SaaS UI   |
+| Backend        | Node.js, Express.js, Socket.io, Nodemailer                        | APIs & real-time |
+| Database       | MongoDB Atlas, Mongoose                                           | Scalable NoSQL   |
+| Infrastructure | Docker, Cloudinary CDN                                            | Production ready |
+| Payments       | Stripe SDK, Webhooks                                              | Secure billing   |
+| Maps           | Leaflet                                                           | Interactive maps |
 
 ---
 
@@ -275,8 +279,6 @@ A complete toast system for:
 git clone https://github.com/KAMRANkami313/EventPulse-MERN-Project.git
 cd EventPulse-MERN-Project
 ```
-
----
 
 ## 2️⃣ Backend Setup
 
@@ -292,17 +294,14 @@ PORT=5000
 MONGO_URL=your_mongodb_connection_string
 JWT_SECRET=your_super_secret_key
 
-# Email (Nodemailer)
 EMAIL_USER=your_email@gmail.com
 EMAIL_PASS=your_gmail_app_password
 GOOGLE_CLIENT_ID=your_google_oauth_client_id
 
-# Cloudinary CDN
 CLOUDINARY_CLOUD_NAME=...
 CLOUDINARY_API_KEY=...
 CLOUDINARY_API_SECRET=...
 
-# Stripe
 STRIPE_SECRET_KEY=sk_test_...
 STRIPE_WEBHOOK_SECRET=whsec_...
 STRIPE_PUBLIC_KEY=pk_test_...
@@ -313,8 +312,6 @@ Start server:
 ```bash
 npm start
 ```
-
----
 
 ## 3️⃣ Frontend Setup
 
@@ -340,13 +337,13 @@ docker compose up --build
 
 # 👨‍💻 Admin Access
 
-In MongoDB → Users Collection → Change:
+In MongoDB → Users Collection:
 
 ```json
 "role": "user"
 ```
 
-to:
+Change to:
 
 ```json
 "role": "admin"
@@ -359,6 +356,3 @@ Refresh → Admin Dashboard appears.
 # 📄 License
 
 Developed by **KAMRANkami313**.
-
----
-
