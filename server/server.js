@@ -6,7 +6,7 @@ import morgan from 'morgan';
 import mongoose from 'mongoose';
 import path from "path";
 import { fileURLToPath } from "url";
-import { createServer } from "http"; 
+import { createServer } from "http";
 import { Server } from "socket.io";
 import rateLimit from "express-rate-limit";
 
@@ -17,8 +17,11 @@ import notificationRoutes from "./routes/notifications.js";
 import messageRoutes from "./routes/messages.js";
 import adminRoutes from "./routes/admin.js";
 import paymentRoutes from "./routes/payment.js";
-import Message from "./models/Message.js";  
+import Message from "./models/Message.js";
 import aiRoutes from "./routes/ai.js";
+
+// Sanitization & Security Middleware
+import { noSqlSanitizer, xssSanitizer, securityHeaders } from "./middleware/sanitize.js";
 
 // Config
 const __filename = fileURLToPath(import.meta.url);
@@ -31,20 +34,32 @@ const app = express();
 const limiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
     max: process.env.NODE_ENV === "production" ? 200 : 1000, // Stricter in production
-    standardHeaders: true, 
+    standardHeaders: true,
     legacyHeaders: false,
     message: "Too many requests, please try again later."
 });
-app.use(limiter); 
+app.use(limiter);
 
 // --- MIDDLEWARE ---
 // Set body size limit to prevent oversized payload attacks
 app.use(express.json({ limit: "10mb" }));
 
+// --- 2. NoSQL INJECTION PROTECTION ---
+// Must come AFTER express.json() so it can sanitize the parsed body
+// Prevents attackers from using MongoDB operators like $gt, $ne in req.body/query/params
+app.use(noSqlSanitizer);
+
+// --- 3. XSS PROTECTION ---
+// Strips HTML tags from string values in req.body
+app.use(xssSanitizer);
+
+// --- 4. SECURITY HEADERS ---
+app.use(securityHeaders);
+
 // Helmet for Google Auth
 app.use(
   helmet({
-    crossOriginOpenerPolicy: { policy: "same-origin-allow-popups" }, 
+    crossOriginOpenerPolicy: { policy: "same-origin-allow-popups" },
     crossOriginResourcePolicy: { policy: "cross-origin" },
   })
 );
@@ -78,8 +93,8 @@ app.use("/assets", express.static(path.join(__dirname, "public/assets")));
 // --- HEALTH CHECK ENDPOINT ---
 // Useful for Docker, load balancers, and monitoring
 app.get("/health", (req, res) => {
-  res.status(200).json({ 
-    status: "ok", 
+  res.status(200).json({
+    status: "ok",
     uptime: process.uptime(),
     timestamp: new Date().toISOString()
   });

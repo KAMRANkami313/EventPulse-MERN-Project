@@ -1,23 +1,32 @@
 import express from "express";
-import { 
-    register, 
-    login, 
-    googleLogin, 
-    forgotPassword, 
-    resetPassword, 
-    changePassword // <--- NEW IMPORT
-} from "../controllers/auth.js"; 
-import { verifyToken } from "../middleware/auth.js"; // <--- IMPORT MIDDLEWARE
+import {
+    register,
+    login,
+    googleLogin,
+    forgotPassword,
+    resetPassword,
+    changePassword
+} from "../controllers/auth.js";
+import { verifyToken } from "../middleware/auth.js";
+import {
+    registerRules,
+    loginRules,
+    googleLoginRules,
+    forgotPasswordRules,
+    resetPasswordRules,
+    changePasswordRules
+} from "../middleware/validate.js";
 
 const router = express.Router();
 
-router.post("/register", register);
-router.post("/login", login);
-router.post("/google", googleLogin); 
-router.post("/forgot-password", forgotPassword); 
-router.post("/reset-password/:token", resetPassword); 
+// Public routes with input validation
+router.post("/register", registerRules, register);
+router.post("/login", loginRules, login);
+router.post("/google", googleLoginRules, googleLogin);
+router.post("/forgot-password", forgotPasswordRules, forgotPassword);
+router.post("/reset-password/:token", resetPasswordRules, resetPassword);
 
-// NEW: CHANGE PASSWORD (Protected)
-router.patch("/change-password", verifyToken, changePassword); 
+// Protected route with input validation
+router.patch("/change-password", verifyToken, changePasswordRules, changePassword);
 
 export default router;

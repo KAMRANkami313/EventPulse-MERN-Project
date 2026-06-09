@@ -1,43 +1,49 @@
 import express from "express";
-import { 
-    getUser, 
-    getAllUsers, 
-    deleteUser, 
-    updateUser, 
-    toggleFollow,       // <--- CHANGED FROM addRemoveFriend
+import {
+    getUser,
+    getAllUsers,
+    deleteUser,
+    updateUser,
+    toggleFollow,
     getUserRecommendations,
-    toggleBookmark,      
-    getBookmarkedEvents 
+    toggleBookmark,
+    getBookmarkedEvents
 } from "../controllers/users.js";
 import { verifyToken } from "../middleware/auth.js";
+import {
+    updateUserRules,
+    toggleFollowRules,
+    toggleBookmarkRules,
+    objectIdParamRules
+} from "../middleware/validate.js";
 import multer from "multer";
-import storage from "../config/cloudinary.js"; // ✅ Import Cloud Configuration
+import storage from "../config/cloudinary.js";
 
 const router = express.Router();
 
-// ✅ USE CLOUDINARY STORAGE
+// Use Cloudinary Storage
 const upload = multer({ storage });
 
 /* READ ROUTES */
-router.get("/:id", verifyToken, getUser);
+router.get("/:id", verifyToken, objectIdParamRules("id"), getUser);
 router.get("/", verifyToken, getAllUsers);
 
-// NEW RECOMMENDATIONS ROUTE
-router.get("/:id/recommendations", verifyToken, getUserRecommendations);
+// RECOMMENDATIONS ROUTE
+router.get("/:id/recommendations", verifyToken, objectIdParamRules("id"), getUserRecommendations);
 
-/* NEW BOOKMARK ROUTES */
-router.get("/:id/bookmarks", verifyToken, getBookmarkedEvents); // Get saved events
-router.patch("/:id/bookmark/:eventId", verifyToken, toggleBookmark); // Toggle save/unsave
+/* BOOKMARK ROUTES */
+router.get("/:id/bookmarks", verifyToken, objectIdParamRules("id"), getBookmarkedEvents);
+router.patch("/:id/bookmark/:eventId", verifyToken, toggleBookmarkRules, toggleBookmark);
 
 /* DELETE ROUTE */
-router.delete("/:id", verifyToken, deleteUser);
+router.delete("/:id", verifyToken, objectIdParamRules("id"), deleteUser);
 
 /* UPDATE ROUTES */
 
-// CHANGED: Follow Logic (One-way)
-router.patch("/:id/follow/:targetId", verifyToken, toggleFollow); 
+// Follow Logic (One-way)
+router.patch("/:id/follow/:targetId", verifyToken, toggleFollowRules, toggleFollow);
 
-// ✅ 'upload.single' sends the profile picture to the cloud
-router.patch("/:id", verifyToken, upload.single("picture"), updateUser);
+// Profile update with picture upload
+router.patch("/:id", verifyToken, upload.single("picture"), updateUserRules, updateUser);
 
 export default router;
