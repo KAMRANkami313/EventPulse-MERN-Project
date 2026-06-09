@@ -8,6 +8,9 @@ import { sendWelcomeEmail, sendResetEmail } from "../services/email.js";
 // Initialize Google Client
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
+// JWT Token expiry configuration
+const JWT_EXPIRY = "7d"; // Tokens expire after 7 days
+
 /* REGISTER USER */
 export const register = async (req, res) => {
   try {
@@ -20,6 +23,21 @@ export const register = async (req, res) => {
       location,
       occupation,
     } = req.body;
+
+    // Basic input validation
+    if (!firstName || !lastName || !email || !password) {
+      return res.status(400).json({ error: "First name, last name, email, and password are required." });
+    }
+
+    if (password.length < 6) {
+      return res.status(400).json({ error: "Password must be at least 6 characters." });
+    }
+
+    // Check if user already exists
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(409).json({ error: "An account with this email already exists." });
+    }
 
     // 1. Encrypt the password (Security Best Practice)
     const salt = await bcrypt.genSalt(10);
@@ -34,29 +52,33 @@ export const register = async (req, res) => {
       picturePath,
       location,
       occupation,
-      viewedProfile: Math.floor(Math.random() * 1000), // Dummy data for now
-      impressions: Math.floor(Math.random() * 1000),   // Dummy data for now
+      viewedProfile: 0, // Removed fake random data
+      impressions: 0,
     });
 
     // 3. Save to MongoDB
     const savedUser = await newUser.save();
 
-    // 4. SEND WELCOME EMAIL (Background Task)
+    // 4. SEND WELCOME EMAIL (Background Task - fire and forget)
     try {
       sendWelcomeEmail(savedUser.email, savedUser.firstName);
     } catch (emailError) {
       console.error("Failed to send welcome email:", emailError);
     }
     
-    // 5. Send back the saved user (remove password before sending for security)
+    // 5. Generate JWT token with expiry
+    const token = jwt.sign({ id: savedUser._id }, process.env.JWT_SECRET, { expiresIn: JWT_EXPIRY });
+
+    // 6. Send back token and user data (remove password before sending for security)
     const userResponse = savedUser.toObject();
     delete userResponse.password;
     
-    res.status(201).json(userResponse);
+    res.status(201).json({ token, user: userResponse });
 
   } catch (err) {
-    console.log(err);
-    res.status(500).json({ error: err.message });
+    console.error("Registration Error:", err);
+    // Don't leak internal error details to client
+    res.status(500).json({ error: "Registration failed. Please try again." });
   }
 };
 
@@ -67,14 +89,14 @@ export const login = async (req, res) => {
 
     // 1. Find user by email
     const user = await User.findOne({ email: email });
-    if (!user) return res.status(400).json({ msg: "User does not exist. " });
+    if (!user) return res.status(400).json({ msg: "Invalid credentials." }); // Generic message — prevents user enumeration
 
     // 2. Check if password matches
     const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) return res.status(400).json({ msg: "Invalid credentials. " });
+    if (!isMatch) return res.status(400).json({ msg: "Invalid credentials." }); // Same generic message
 
-    // 3. Generate JWT Token
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET);
+    // 3. Generate JWT Token WITH expiry
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: JWT_EXPIRY });
 
     // 4. Send token and user data back
     const userResponse = user.toObject();
@@ -83,7 +105,7 @@ export const login = async (req, res) => {
     res.status(200).json({ token, user: userResponse });
     
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: "Login failed. Please try again." });
   }
 };
 
@@ -105,7 +127,8 @@ export const googleLogin = async (req, res) => {
 
     if (!user) {
         // 3. If NOT exists, Register them automatically
-        const randomPassword = Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-8);
+        // Use crypto.randomBytes instead of Math.random for secure password generation
+        const randomPassword = crypto.randomBytes(16).toString("base64url");
         const salt = await bcrypt.genSalt(10);
         const passwordHash = await bcrypt.hash(randomPassword, salt);
 
@@ -114,7 +137,7 @@ export const googleLogin = async (req, res) => {
             lastName: family_name,
             email,
             password: passwordHash,
-            picturePath: "", // We handle external URLs differently in frontend usually
+            picturePath: "",
             location: "Earth",
             occupation: "Google User",
             viewedProfile: 0,
@@ -130,8 +153,8 @@ export const googleLogin = async (req, res) => {
         }
     }
 
-    // 4. Generate JWT (Same as normal login)
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET);
+    // 4. Generate JWT WITH expiry (Same as normal login)
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: JWT_EXPIRY });
     const userResponse = user.toObject();
     delete userResponse.password;
 
@@ -139,7 +162,7 @@ export const googleLogin = async (req, res) => {
 
   } catch (err) {
     console.error("Google Auth Error:", err);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: "Google authentication failed." });
   }
 };
 
@@ -149,7 +172,11 @@ export const forgotPassword = async (req, res) => {
     const { email } = req.body;
     const user = await User.findOne({ email });
 
-    if (!user) return res.status(404).json({ message: "User not found" });
+    // SECURITY: Always return the same response whether user exists or not
+    // This prevents email enumeration (attackers discovering which emails are registered)
+    if (!user) {
+      return res.status(200).json({ message: "If an account with that email exists, a reset link has been sent." });
+    }
 
     // 1. Generate Token
     const resetToken = crypto.randomBytes(32).toString("hex");
@@ -161,16 +188,19 @@ export const forgotPassword = async (req, res) => {
     await user.save();
 
     // 3. Send Email
-    // Use CLIENT_URL from .env or default to localhost
     const clientUrl = process.env.CLIENT_URL || "http://localhost:5173";
     const resetUrl = `${clientUrl}/reset-password/${resetToken}`;
     
-    sendResetEmail(user.email, resetUrl);
+    try {
+      sendResetEmail(user.email, resetUrl);
+    } catch (emailErr) {
+      console.error("Error sending reset email:", emailErr);
+    }
 
-    res.status(200).json({ message: "Email sent" });
+    res.status(200).json({ message: "If an account with that email exists, a reset link has been sent." });
 
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: "Password reset request failed. Please try again." });
   }
 };
 
@@ -179,6 +209,11 @@ export const resetPassword = async (req, res) => {
   try {
     const { token } = req.params;
     const { password } = req.body;
+
+    // Validate new password
+    if (!password || password.length < 6) {
+      return res.status(400).json({ message: "Password must be at least 6 characters." });
+    }
 
     // 1. Hash the token from URL to compare with DB
     const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
@@ -204,21 +239,33 @@ export const resetPassword = async (req, res) => {
     res.status(200).json({ message: "Password updated successfully" });
 
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: "Password reset failed. Please try again." });
   }
 };
 
-/* --- NEW: CHANGE PASSWORD (FROM SETTINGS) --- */
+/* --- CHANGE PASSWORD (FROM SETTINGS) --- */
 export const changePassword = async (req, res) => {
   try {
-    const { userId, current, new: newPassword } = req.body;
+    // SECURITY FIX: Use userId from JWT token (req.user.id), NOT from request body
+    // This prevents users from changing anyone else's password
+    const userId = req.user.id;
+    const { current, new: newPassword } = req.body;
+
     const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found." });
+    }
 
     // 1. Verify Current Password
     const isMatch = await bcrypt.compare(current, user.password);
     if (!isMatch) return res.status(400).json({ message: "Incorrect current password" });
 
-    // 2. Hash New Password
+    // 2. Validate new password
+    if (!newPassword || newPassword.length < 6) {
+      return res.status(400).json({ message: "New password must be at least 6 characters." });
+    }
+
+    // 3. Hash New Password
     const salt = await bcrypt.genSalt(10);
     user.password = await bcrypt.hash(newPassword, salt);
 
@@ -226,6 +273,6 @@ export const changePassword = async (req, res) => {
     res.status(200).json({ message: "Password updated successfully" });
 
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    res.status(500).json({ message: "Password change failed. Please try again." });
   }
 };

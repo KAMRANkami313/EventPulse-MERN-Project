@@ -1,23 +1,21 @@
 import express from "express";
-import { getAdminStats, getAllEvents, sendBroadcast, createReport, getReports, resolveReport, getSystemLogs, getTransactions } from "../controllers/admin.js"; // <-- ADDED getTransactions
+import { getAdminStats, getAllEvents, sendBroadcast, createReport, getReports, resolveReport, getSystemLogs, getTransactions } from "../controllers/admin.js";
 import { verifyToken } from "../middleware/auth.js";
+import { isAdmin } from "../middleware/isAdmin.js"; // NEW: Admin-only middleware
 
 const router = express.Router();
 
-// Existing Admin Routes
-router.get("/stats", verifyToken, getAdminStats);
-router.get("/events", verifyToken, getAllEvents);
-router.post("/broadcast", verifyToken, sendBroadcast); 
-
-// Moderation Routes
+// All admin routes now require BOTH authentication AND admin role
+// Public route: anyone can submit a report
 router.post("/report", verifyToken, createReport);
-router.get("/reports", verifyToken, getReports);
-router.patch("/reports/:id", verifyToken, resolveReport);
 
-// Audit Logs
-router.get("/logs", verifyToken, getSystemLogs); 
-
-// NEW FINANCIAL ROUTE (Phase 29)
-router.get("/transactions", verifyToken, getTransactions); 
+// Admin-only routes (require verifyToken + isAdmin)
+router.get("/stats", verifyToken, isAdmin, getAdminStats);
+router.get("/events", verifyToken, isAdmin, getAllEvents);
+router.post("/broadcast", verifyToken, isAdmin, sendBroadcast); 
+router.get("/reports", verifyToken, isAdmin, getReports);
+router.patch("/reports/:id", verifyToken, isAdmin, resolveReport);
+router.get("/logs", verifyToken, isAdmin, getSystemLogs); 
+router.get("/transactions", verifyToken, isAdmin, getTransactions); 
 
 export default router;

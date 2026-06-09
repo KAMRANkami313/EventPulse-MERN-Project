@@ -8,7 +8,9 @@ import { createLog } from "../utils/logger.js";
 /* CREATE EVENT */
 export const createEvent = async (req, res) => {
   try {
-    const { userId, title, description, location, date, category, coordinates, price } = req.body;
+    // SECURITY FIX: Use userId from JWT token, not from request body
+    const userId = req.user.id;
+    const { title, description, location, date, category, coordinates, price } = req.body;
     
     // Get the Full Cloudinary URL
     const picturePath = req.file ? req.file.path : "";  
@@ -21,6 +23,9 @@ export const createEvent = async (req, res) => {
     }
 
     const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found." });
+    }
 
     const newEvent = new Event({
       userId,
@@ -40,8 +45,8 @@ export const createEvent = async (req, res) => {
 
     await newEvent.save();
     
-    const events = await Event.find().sort({ createdAt: -1 });
-    res.status(201).json(events);
+    // Return only the created event instead of fetching all events
+    res.status(201).json(newEvent);
   } catch (err) {
     console.error("Create Event Error:", err);
     res.status(409).json({ message: err.message });
@@ -87,7 +92,7 @@ export const getFeedEvents = async (req, res) => {
     });
 
   } catch (err) {
-    res.status(404).json({ message: err.message });
+    res.status(500).json({ message: err.message });
   }
 };
 
@@ -98,7 +103,7 @@ export const getUserEvents = async (req, res) => {
     const events = await Event.find({ userId });
     res.status(200).json(events);
   } catch (err) {
-    res.status(404).json({ message: err.message });
+    res.status(500).json({ message: err.message });
   }
 };
 
@@ -106,12 +111,14 @@ export const getUserEvents = async (req, res) => {
 export const joinEvent = async (req, res) => {
   try {
     const { id } = req.params;
-    const { userId } = req.body;
+    // SECURITY FIX: Use userId from JWT token, not from request body
+    const userId = req.user.id;
 
     const event = await Event.findById(id);
     const user = await User.findById(userId);
 
     if (!event) return res.status(404).json({ message: "Event not found" });
+    if (!user) return res.status(404).json({ message: "User not found" });
 
     const isJoined = event.participants.includes(userId);
 
@@ -120,7 +127,6 @@ export const joinEvent = async (req, res) => {
       event.participants = event.participants.filter((uid) => uid !== userId);
     } else {
       // JOIN LOGIC
-      // Check again to be safe
       if (!event.participants.includes(userId)) {
           event.participants.push(userId);
       }
@@ -140,7 +146,6 @@ export const joinEvent = async (req, res) => {
               });
               await newTransaction.save();
           } catch (txErr) {
-              // Code 11000 = Duplicate Key Error (MongoDB blocked it)
               if (txErr.code === 11000) {
                   console.log("Duplicate Transaction prevented.");
               } else {
@@ -162,14 +167,13 @@ export const joinEvent = async (req, res) => {
             });
             await newNotif.save();
         } catch (notifErr) {
-            // Code 11000 = Duplicate Key Error
             if (notifErr.code === 11000) {
                 console.log("Duplicate Notification prevented.");
             }
         }
       }
 
-      // 3. SEND EMAIL (Only if not duplicate logic triggered? Email is harder to dedupe, but this is fine for now)
+      // 3. SEND EMAIL
       try {
         const ticketId = `${event._id.toString().slice(-6)}-${user._id.toString().slice(-4)}`;
         sendTicketEmail(user.email, user.firstName, event.title, ticketId);
@@ -182,7 +186,7 @@ export const joinEvent = async (req, res) => {
     res.status(200).json(updatedEvent);
 
   } catch (err) {
-    res.status(404).json({ message: err.message });
+    res.status(500).json({ message: err.message });
   }
 };
 
@@ -190,12 +194,19 @@ export const joinEvent = async (req, res) => {
 export const postComment = async (req, res) => {
   try {
     const { id } = req.params;
-    const { userId, text } = req.body;
+    // SECURITY FIX: Use userId from JWT token, not from request body
+    const userId = req.user.id;
+    const { text } = req.body;
+
+    if (!text || text.trim().length === 0) {
+      return res.status(400).json({ message: "Comment text is required." });
+    }
 
     const event = await Event.findById(id);
     const user = await User.findById(userId);
 
     if (!event) return res.status(404).json({ message: "Event not found" });
+    if (!user) return res.status(404).json({ message: "User not found" });
 
     const newComment = {
       userId,
@@ -211,7 +222,7 @@ export const postComment = async (req, res) => {
     const updatedEvent = await event.save();
     res.status(200).json(updatedEvent);
   } catch (err) {
-    res.status(404).json({ message: err.message });
+    res.status(500).json({ message: err.message });
   }
 };
 
@@ -219,7 +230,8 @@ export const postComment = async (req, res) => {
 export const likeEvent = async (req, res) => {
   try {
     const { id } = req.params;
-    const { userId } = req.body;
+    // SECURITY FIX: Use userId from JWT token, not from request body
+    const userId = req.user.id;
 
     const event = await Event.findById(id);
     const user = await User.findById(userId);
@@ -257,7 +269,7 @@ export const likeEvent = async (req, res) => {
 
   } catch (err) {
     console.log("Like Error:", err.message);
-    res.status(404).json({ message: err.message });
+    res.status(500).json({ message: err.message });
   }
 };
 
@@ -290,7 +302,7 @@ export const deleteEvent = async (req, res) => {
     res.status(200).json({ message: "Event deleted successfully" });
 
   } catch (err) {
-    res.status(404).json({ message: err.message });
+    res.status(500).json({ message: err.message });
   }
 };
 
@@ -299,24 +311,35 @@ export const getEvent = async (req, res) => {
   try {
     const { id } = req.params;
     const event = await Event.findById(id);
+    if (!event) return res.status(404).json({ message: "Event not found" });
     res.status(200).json(event);
   } catch (err) {
-    res.status(404).json({ message: err.message });
+    res.status(500).json({ message: err.message });
   }
 };
 
 /* VERIFY TICKET */
 export const verifyTicket = async (req, res) => {
   try {
-    const { eventId, userId } = req.body;
+    // SECURITY: Only event creators or admins can verify tickets
+    const userId = req.user.id;
+    const { eventId, ticketUserId } = req.body; // Renamed from userId to ticketUserId to avoid confusion
 
     const event = await Event.findById(eventId);
     if (!event) return res.status(404).json({ message: "Event not found", valid: false });
 
-    const user = await User.findById(userId);
-    if (!user) return res.status(404).json({ message: "User not found", valid: false });
+    // Check if the requesting user is the event creator or an admin
+    const requestingUser = await User.findById(userId);
+    if (!requestingUser) return res.status(401).json({ message: "User not found", valid: false });
+    
+    if (event.userId !== userId && requestingUser.role !== "admin") {
+      return res.status(403).json({ message: "Only event creators or admins can verify tickets.", valid: false });
+    }
 
-    const isParticipant = event.participants.includes(userId);
+    const user = await User.findById(ticketUserId);
+    if (!user) return res.status(404).json({ message: "Ticket user not found", valid: false });
+
+    const isParticipant = event.participants.includes(ticketUserId);
 
     if (isParticipant) {
       res.status(200).json({ 
@@ -344,7 +367,7 @@ export const getAttendingEvents = async (req, res) => {
     const events = await Event.find({ participants: userId });
     res.status(200).json(events);
   } catch (err) {
-    res.status(404).json({ message: err.message });
+    res.status(500).json({ message: err.message });
   }
 };
 
@@ -354,11 +377,20 @@ export const getFollowingEvents = async (req, res) => {
         const { userId } = req.params;
         const user = await User.findById(userId);
         
-        const events = await Event.find({ userId: { $in: user.friends } }).sort({ createdAt: -1 });
+        if (!user) return res.status(404).json({ message: "User not found" });
+
+        // BUG FIX: Use user.following instead of user.friends
+        const followingIds = user.following && user.following.length > 0 ? user.following : [];
+        
+        if (followingIds.length === 0) {
+          return res.status(200).json([]); // Return empty array if not following anyone
+        }
+
+        const events = await Event.find({ userId: { $in: followingIds } }).sort({ createdAt: -1 });
         
         res.status(200).json(events);
     } catch (err) {
-        res.status(404).json({ message: err.message });
+        res.status(500).json({ message: err.message });
     }
 };
 
@@ -366,7 +398,13 @@ export const getFollowingEvents = async (req, res) => {
 export const addReview = async (req, res) => {
   try {
     const { id } = req.params;
-    const { userId, rating, text } = req.body;
+    // SECURITY FIX: Use userId from JWT token, not from request body
+    const userId = req.user.id;
+    const { rating, text } = req.body;
+
+    if (!rating || rating < 1 || rating > 5) {
+      return res.status(400).json({ message: "Rating must be between 1 and 5." });
+    }
 
     const event = await Event.findById(id);
     const user = await User.findById(userId);
@@ -403,23 +441,22 @@ export const addReview = async (req, res) => {
 
   } catch (err) {
     console.error("Add Review Error:", err);
-    res.status(404).json({ message: err.message });
+    res.status(500).json({ message: err.message });
   }
 };
 
 /* GET EVENT GUESTS (For Organizer) */
 export const getEventGuests = async (req, res) => {
   try {
-    const { id } = req.params; // Event ID
+    const { id } = req.params;
     const event = await Event.findById(id);
     
     if (!event) return res.status(404).json({ message: "Event not found" });
 
-    // Find all users whose ID is in the participants array
     const guests = await User.find({ _id: { $in: event.participants } }).select("firstName lastName email location");
     
     res.status(200).json(guests);
   } catch (err) {
-    res.status(404).json({ message: err.message });
+    res.status(500).json({ message: err.message });
   }
 };
