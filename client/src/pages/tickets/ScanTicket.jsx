@@ -1,16 +1,14 @@
 import { useState } from "react";
 import { Scanner } from '@yudiel/react-qr-scanner';
-import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, ScanLine, CheckCircle, XCircle, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
-
-// 🎯 IMPORT THE ENV VARIABLE FOR API URL
-const API_URL = import.meta.env.VITE_API_URL;
+import api from "../../api";
+import { useAuth } from "../../context/AuthContext";
 
 const ScanTicket = () => {
   const navigate = useNavigate();
-  const token = localStorage.getItem("token");
+  const { token } = useAuth();
 
   const [scanResult, setScanResult] = useState(null);
   const [status, setStatus] = useState("idle"); // idle, processing, success, error
@@ -26,11 +24,9 @@ const ScanTicket = () => {
 
         setStatus("processing");
 
-        // 🟢 DEPLOYMENT CHANGE: Using VITE_API_URL variable
-        const response = await axios.post(
-          `${API_URL}/events/verify`,
-          { eventId: ticketData.eventId, userId: ticketData.userId },
-          { headers: { Authorization: `Bearer ${token}` } }
+        const response = await api.post(
+          `/events/verify`,
+          { eventId: ticketData.eventId, userId: ticketData.userId }
         );
 
         if (response.data.valid) {

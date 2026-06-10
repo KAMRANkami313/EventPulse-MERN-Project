@@ -1,6 +1,5 @@
 import { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import axios from "axios";
 import QRCode from "react-qr-code";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
@@ -14,28 +13,21 @@ import {
   Clock,
   Ticket
 } from "lucide-react";
-
-// 🎯 IMPORT THE ENV VARIABLE FOR API URL
-const API_URL = import.meta.env.VITE_API_URL;
+import api from "../../api";
+import { useAuth } from "../../context/AuthContext";
 
 const TicketPage = () => {
   const { eventId } = useParams();
   const navigate = useNavigate();
   const [event, setEvent] = useState(null);
-  const user = JSON.parse(localStorage.getItem("user"));
-  const token = localStorage.getItem("token");
+  const { user, token } = useAuth();
 
   const ticketRef = useRef();
 
   useEffect(() => {
     const fetchEvent = async () => {
       try {
-        const response = await axios.get(
-          `${API_URL}/events/${eventId}`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
+        const response = await api.get(`/events/${eventId}`);
         setEvent(response.data);
       } catch (err) {
         console.error("Error fetching ticket", err);

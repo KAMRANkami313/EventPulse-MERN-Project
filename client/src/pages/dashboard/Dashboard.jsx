@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
 import { useNavigate, Link } from "react-router-dom";
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -15,21 +14,29 @@ import toast from 'react-hot-toast';
 // --- i18n Imports ---
 import { useTranslation } from "react-i18next";
 
-// --- MODERN UI IMPORTS (New) ---
+// --- MODERN UI IMPORTS ---
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Search, Map as MapIcon, List, Bell, LogOut, Sun, Moon,
   Plus, Filter, Heart, MessageCircle, Share2, Flag,
   Bookmark, Download, Trash2, Calendar, MapPin, DollarSign, User, X, Settings, Menu
 } from "lucide-react";
-import Button from "../../components/ui/Button"; // Your new component
-import Card from "../../components/ui/Card";     // Your new component
+import Button from "../../components/ui/Button";
+import Card from "../../components/ui/Card";
 
-// 🎯 IMPORT THE ENV VARIABLE FOR API URL
-const API_URL = import.meta.env.VITE_API_URL;
+// --- CENTRALIZED API & AUTH ---
+import api from "../../api";
+import { useAuth } from "../../context/AuthContext";
+import { useTheme } from "../../hooks/useTheme";
+
+// --- CONSTANTS ---
+import { CITIES, STRIPE_PUBLIC_KEY, getCategoryIcon, LANGUAGES, CATEGORIES } from "../../constants";
+
+// --- EXTRACTED COMPONENTS ---
+import CreateEventModal from "../../components/dashboard/CreateEventModal";
 
 // --- STRIPE CONFIGURATION ---
-const stripePromise = loadStripe("pk_test_51SH0CJ7HwdZq8BC7oyKPQxaAQ47C8IBRy0hzIgeUo4jdCSL6q6fTnI4Ut3JkRjgfvd0ys0cfWaiyVPqFSX3gKFd00ZEBHxmlC");
+const stripePromise = loadStripe(STRIPE_PUBLIC_KEY);
 
 // Swiper Imports (Carousel)
 import { Swiper, SwiperSlide } from 'swiper/react';
@@ -52,193 +59,15 @@ let DefaultIcon = L.icon({
 
 L.Marker.prototype.options.icon = DefaultIcon;
 
-// PRESET CITIES
-const CITIES = [
-  { name: "New York, USA", lat: 40.7128, lng: -74.0060 },
-  { name: "London, UK", lat: 51.5074, lng: -0.1278 },
-  { name: "Paris, France", lat: 48.8566, lng: 2.3522 },
-  { name: "Tokyo, Japan", lat: 35.6762, lng: 139.6503 },
-  { name: "Dubai, UAE", lat: 25.2048, lng: 55.2708 },
-  { name: "Mumbai, India", lat: 19.0760, lng: 72.8777 },
-  { name: "Sydney, Australia", lat: -33.8688, lng: 151.2093 },
-  { name: "Berlin, Germany", lat: 52.5200, lng: 13.4050 },
-  { name: "Toronto, Canada", lat: 43.6510, lng: -79.3470 },
-  { name: "Singapore", lat: 1.3521, lng: 103.8198 },
-];
-
-// Helper for Category Icons
-const getCategoryIcon = (category) => {
-  const lowerCat = category.toLowerCase();
-  if (lowerCat.includes("music")) return "🎵";
-  if (lowerCat.includes("tech")) return "💻";
-  if (lowerCat.includes("sport")) return "⚽";
-  if (lowerCat.includes("education")) return "📚";
-  if (lowerCat.includes("party")) return "🎉";
-  if (lowerCat.includes("art")) return "🎨";
-  if (lowerCat.includes("food")) return "🍔";
-  return "🏷️";
-};
-
-// --- START: NEW CREATE EVENT MODAL COMPONENT (Dynamic) ---
-
-const CreateEventModal = ({
-  isOpen,
-  onClose,
-  newEvent,
-  handleChange,
-  handleCityChange,
-  handleImageChange,
-  handleSubmit,
-  CITIES,
-  t
-}) => {
-  if (!isOpen) return null;
-
-  // Custom submit handler to close the modal on successful submission
-  const handleFormSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      // Call the main Dashboard handleSubmit logic
-      await handleSubmit(e);
-      // Close modal only if no error toast was shown (implicit success)
-      onClose();
-    } catch (error) {
-      // Error handled by handleSubmit and toast, modal remains open
-    }
-  };
-
-  return (
-    <AnimatePresence>
-      {isOpen && (
-        <motion.div
-          className="fixed inset-0 z-[1100] flex items-center justify-center p-4"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-        >
-          {/* Backdrop with Glassmorphism Effect */}
-          <div
-            className="absolute inset-0 bg-black/50 backdrop-blur-md"
-            onClick={onClose}
-          ></div>
-
-          {/* Modal Card */}
-          <motion.div
-            initial={{ scale: 0.9, y: 50 }}
-            animate={{ scale: 1, y: 0 }}
-            exit={{ scale: 0.9, y: 50 }}
-            transition={{ duration: 0.3 }}
-            className="relative w-full max-w-lg mx-auto bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/20 dark:border-slate-800 p-8 overflow-y-auto max-h-[90vh]"
-          >
-            <button
-              onClick={onClose}
-              className="absolute top-4 right-4 p-2 rounded-full bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition"
-              title={t('close')}
-            >
-              <X className="w-5 h-5" />
-            </button>
-
-            <h3 className="text-3xl font-extrabold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-violet-600 to-fuchsia-600">
-              {t('create_new_event')}
-            </h3>
-            <p className="text-slate-600 dark:text-slate-300 mb-6">{t('fill_event_details')}</p>
-
-            <form onSubmit={handleFormSubmit} className="space-y-4">
-              <input
-                name="title"
-                value={newEvent.title}
-                onChange={handleChange}
-                placeholder={t('event_title')}
-                className="w-full p-3 rounded-xl bg-white dark:bg-slate-800 border border-transparent focus:border-violet-500 outline-none transition dark:text-white shadow-sm"
-                required
-              />
-
-              <textarea
-                name="description"
-                value={newEvent.description}
-                onChange={handleChange}
-                placeholder={t('description')}
-                className="w-full p-3 rounded-xl bg-white dark:bg-slate-800 border border-transparent focus:border-violet-500 outline-none transition dark:text-white resize-none h-24 shadow-sm"
-                required
-              />
-
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <label className="text-[10px] uppercase font-bold text-slate-500 dark:text-slate-400">{t('location')}</label>
-                  <select
-                    name="location"
-                    value={newEvent.location}
-                    onChange={handleCityChange}
-                    className="w-full p-3 rounded-xl bg-white dark:bg-slate-800 outline-none text-sm font-medium dark:text-white cursor-pointer border focus:border-violet-500 transition shadow-sm"
-                  >
-                    {CITIES.map(city => (
-                      <option key={city.name} value={city.name}>{city.name}</option>
-                    ))}
-                  </select>
-                </div>
-                <div className="space-y-1">
-                  <label className="text-[10px] uppercase font-bold text-slate-500 dark:text-slate-400">{t('date')}</label>
-                  <input
-                    name="date"
-                    type="date"
-                    value={newEvent.date}
-                    onChange={handleChange}
-                    className="w-full p-3 rounded-xl bg-white dark:bg-slate-800 outline-none text-sm font-medium dark:text-white border focus:border-violet-500 transition shadow-sm"
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="flex gap-3">
-                <input
-                  name="price"
-                  type="number"
-                  min="0"
-                  value={newEvent.price}
-                  onChange={handleChange}
-                  placeholder={t('price_usd')}
-                  className="w-1/3 p-3 rounded-xl bg-white dark:bg-slate-800 outline-none focus:ring-2 focus:ring-violet-500 dark:text-white transition shadow-sm"
-                />
-                <input
-                  name="category"
-                  value={newEvent.category}
-                  onChange={handleChange}
-                  placeholder={t('category_placeholder')}
-                  className="w-2/3 p-3 rounded-xl bg-white dark:bg-slate-800 outline-none focus:ring-2 focus:ring-violet-500 dark:text-white transition shadow-sm"
-                  required
-                />
-              </div>
-
-              <div className="p-4 rounded-xl bg-white/70 dark:bg-slate-800/70 border border-dashed border-slate-300 dark:border-slate-700 text-center">
-                <label className="text-sm font-medium text-slate-600 dark:text-slate-300 block mb-2">{t('upload_image')}</label>
-                <input
-                  type="file"
-                  onChange={handleImageChange}
-                  className="w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-violet-50 file:text-violet-700 hover:file:bg-violet-100"
-                />
-              </div>
-
-              <Button type="submit" className="w-full py-3 text-lg font-bold shadow-lg shadow-violet-500/30 mt-6">
-                {t('submit_event')}
-              </Button>
-            </form>
-          </motion.div>
-        </motion.div>
-      )}
-    </AnimatePresence>
-  );
-};
-
-// --- END: NEW CREATE EVENT MODAL COMPONENT ---
-
-const Dashboard = ({ toggleTheme, theme }) => {
+const Dashboard = () => {
   const navigate = useNavigate();
 
   // --- i18n Hook Initialization ---
   const { t, i18n } = useTranslation();
 
-  const user = JSON.parse(localStorage.getItem("user"));
-  const token = localStorage.getItem("token");
+  // --- Centralized Auth & Theme ---
+  const { user, token, logout, updateUser } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   // --- MOBILE RESPONSIVE STATES ---
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
@@ -299,11 +128,8 @@ const Dashboard = ({ toggleTheme, theme }) => {
     if (pageNum > 1) setIsFetchingMore(true);
 
     try {
-      let url;
       if (feedType === "following") {
-        // 🟢 DEPLOYMENT CHANGE 1/14
-        url = `${API_URL}/events/following/${user._id}`;
-        const response = await axios.get(url, { headers: { Authorization: `Bearer ${token}` } });
+        const response = await api.get(`/events/following/${user._id}`);
         setEvents(response.data);
         setHasMore(false);
         setPage(1);
@@ -315,9 +141,7 @@ const Dashboard = ({ toggleTheme, theme }) => {
           category: selectedCategory,
           sort: sortOption
         });
-        // 🟢 DEPLOYMENT CHANGE 2/14
-        url = `${API_URL}/events?${params.toString()}`;
-        const response = await axios.get(url, { headers: { Authorization: `Bearer ${token}` } });
+        const response = await api.get(`/events?${params.toString()}`);
 
         if (reset) {
           setEvents(response.data.data);
@@ -337,10 +161,7 @@ const Dashboard = ({ toggleTheme, theme }) => {
 
   const fetchNotifications = async () => {
     try {
-      // 🟢 DEPLOYMENT CHANGE 3/14
-      const response = await axios.get(`${API_URL}/notifications/${user._id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const response = await api.get(`/notifications/${user._id}`);
       setNotifications(response.data);
       setUnreadCount(response.data.filter(n => !n.isRead).length);
     } catch (err) {
@@ -366,10 +187,7 @@ const Dashboard = ({ toggleTheme, theme }) => {
   const handleMarkRead = async () => {
     if (unreadCount > 0) {
       try {
-        // 🟢 DEPLOYMENT CHANGE 4/14
-        await axios.patch(`${API_URL}/notifications/${user._id}/read`, {}, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+        await api.patch(`/notifications/${user._id}/read`);
         setUnreadCount(0);
       } catch (err) { console.error(err); }
     }
@@ -418,9 +236,8 @@ const Dashboard = ({ toggleTheme, theme }) => {
       formData.append("price", newEvent.price);
       if (newEvent.picture) formData.append("picture", newEvent.picture);
 
-      // 🟢 DEPLOYMENT CHANGE 5/14
-      const response = await axios.post(`${API_URL}/events`, formData, {
-        headers: { Authorization: `Bearer ${token}`, "Content-Type": "multipart/form-data" },
+      const response = await api.post(`/events`, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
       });
 
       if (response.status === 201) {
@@ -435,7 +252,10 @@ const Dashboard = ({ toggleTheme, theme }) => {
       }
     } catch (err) {
       console.error("Error creating event", err);
-      toast.error(err.response?.data?.message || "Error creating event. Check form details.");
+      const serverMsg = err.response?.data?.details?.map(d => d.message).join(', ')
+        || err.response?.data?.message
+        || "Error creating event. Check form details.";
+      toast.error(serverMsg);
       e.defaultPrevented = true;
     }
   };
@@ -443,10 +263,8 @@ const Dashboard = ({ toggleTheme, theme }) => {
   // 2. JOIN EVENT
   const handleJoin = async (eventId) => {
     try {
-      // 🟢 DEPLOYMENT CHANGE 6/14
-      const response = await axios.patch(`${API_URL}/events/${eventId}/join`,
-        { userId: user._id },
-        { headers: { Authorization: `Bearer ${token}` } }
+      const response = await api.patch(`/events/${eventId}/join`,
+        { userId: user._id }
       );
       const updatedEvent = response.data;
       setEvents(events.map((e) => (e._id === eventId ? updatedEvent : e)));
@@ -460,13 +278,12 @@ const Dashboard = ({ toggleTheme, theme }) => {
   // 3. PAYMENT
   const handlePayment = async (event) => {
     try {
-      // 🟢 DEPLOYMENT CHANGE 7/14
-      const response = await axios.post(`${API_URL}/payment/create-checkout-session`, {
+      const response = await api.post(`/payment/create-checkout-session`, {
         eventId: event._id,
         eventTitle: event.title,
         price: event.price,
         userId: user._id
-      }, { headers: { Authorization: `Bearer ${token}` } });
+      });
 
       if (response.data.url) {
         window.location.href = response.data.url;
@@ -482,10 +299,8 @@ const Dashboard = ({ toggleTheme, theme }) => {
 
   const handleLike = async (eventId) => {
     try {
-      // 🟢 DEPLOYMENT CHANGE 8/14
-      const response = await axios.patch(`${API_URL}/events/${eventId}/like`,
-        { userId: user._id },
-        { headers: { Authorization: `Bearer ${token}` } }
+      const response = await api.patch(`/events/${eventId}/like`,
+        { userId: user._id }
       );
       const updatedEvent = response.data;
       setEvents(events.map((e) => (e._id === eventId ? updatedEvent : e)));
@@ -494,10 +309,8 @@ const Dashboard = ({ toggleTheme, theme }) => {
 
   const handleComment = async (eventId, text) => {
     try {
-      // 🟢 DEPLOYMENT CHANGE 9/14
-      const response = await axios.post(`${API_URL}/events/${eventId}/comments`,
-        { userId: user._id, text },
-        { headers: { Authorization: `Bearer ${token}` } }
+      const response = await api.post(`/events/${eventId}/comments`,
+        { userId: user._id, text }
       );
       const updatedEvent = response.data;
       setEvents(events.map((e) => (e._id === eventId ? updatedEvent : e)));
@@ -507,10 +320,8 @@ const Dashboard = ({ toggleTheme, theme }) => {
   // 4. RATING
   const handleRateEvent = async (eventId, rating, text) => {
     try {
-      // 🟢 DEPLOYMENT CHANGE 10/14
-      const response = await axios.post(`${API_URL}/events/${eventId}/reviews`,
-        { userId: user._id, rating, text },
-        { headers: { Authorization: `Bearer ${token}` } }
+      const response = await api.post(`/events/${eventId}/reviews`,
+        { userId: user._id, rating, text }
       );
       const updatedEvent = response.data;
       setEvents(events.map((e) => (e._id === eventId ? updatedEvent : e)));
@@ -527,14 +338,13 @@ const Dashboard = ({ toggleTheme, theme }) => {
     if (!reason || reason.trim() === "") return;
 
     try {
-      // 🟢 DEPLOYMENT CHANGE 11/14
-      await axios.post(`${API_URL}/admin/report`, {
+      await api.post(`/admin/report`, {
         reporterId: user._id,
         reporterName: user.firstName,
         targetEventId: event._id,
         eventTitle: event.title,
         reason: reason
-      }, { headers: { Authorization: `Bearer ${token}` } });
+      });
       toast.success("Report submitted to Admins.");
     } catch (err) {
       console.error(err);
@@ -546,10 +356,7 @@ const Dashboard = ({ toggleTheme, theme }) => {
   const handleDelete = async (eventId) => {
     if (!window.confirm("Are you sure you want to delete this event? This action cannot be undone.")) return;
     try {
-      // 🟢 DEPLOYMENT CHANGE 12/14
-      await axios.delete(`${API_URL}/events/${eventId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      await api.delete(`/events/${eventId}`);
       setEvents(events.filter((e) => e._id !== eventId));
       toast.success("Event deleted successfully.");
     } catch (err) {
@@ -566,13 +373,10 @@ const Dashboard = ({ toggleTheme, theme }) => {
   // 8. BOOKMARK
   const handleBookmark = async (eventId) => {
     try {
-      // 🟢 DEPLOYMENT CHANGE 13/14
-      const res = await axios.patch(`${API_URL}/users/${user._id}/bookmark/${eventId}`, {}, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const res = await api.patch(`/users/${user._id}/bookmark/${eventId}`);
       setBookmarks(res.data);
-      const updatedUser = { ...user, bookmarks: res.data };
-      localStorage.setItem("user", JSON.stringify(updatedUser));
+      // Update auth context instead of raw localStorage
+      updateUser({ bookmarks: res.data });
       toast.success("Bookmarks updated! 🔖");
     } catch (err) {
       console.error(err);
@@ -583,10 +387,7 @@ const Dashboard = ({ toggleTheme, theme }) => {
   // 9. DOWNLOAD GUEST LIST
   const downloadGuestList = async (eventId, eventTitle) => {
     try {
-      // 🟢 DEPLOYMENT CHANGE 14/14
-      const res = await axios.get(`${API_URL}/events/${eventId}/guests`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const res = await api.get(`/events/${eventId}/guests`);
       const guests = res.data;
       if (guests.length === 0) return toast.error("No guests yet!");
 
@@ -611,8 +412,7 @@ const Dashboard = ({ toggleTheme, theme }) => {
   };
 
   const handleLogout = () => {
-    localStorage.clear();
-    navigate("/login");
+    logout();
   };
 
   // Language Button Styling Helper
@@ -923,13 +723,11 @@ const Dashboard = ({ toggleTheme, theme }) => {
                       onChange={(e) => setSelectedCategory(e.target.value)}
                       value={selectedCategory}
                     >
-                      <option value="All">{t('all_categories')}</option>
-                      <option value="Music">{t('music')}</option>
-                      <option value="Tech">{t('tech')}</option>
-                      <option value="Business">{t('business')}</option>
-                      <option value="Sports">{t('sports')}</option>
-                      <option value="Education">{t('education')}</option>
-                      <option value="Party">{t('party')}</option>
+                      {CATEGORIES.map((cat) => (
+                        <option key={cat} value={cat}>
+                          {cat === "All" ? t('all_categories') : cat}
+                        </option>
+                      ))}
                     </select>
 
                     <select

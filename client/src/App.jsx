@@ -1,7 +1,8 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { Toaster } from 'react-hot-toast';
 import { useAuth } from "./context/AuthContext";
+import { useTheme } from "./hooks/useTheme";
 
 // --- ANIMATION LIBRARY IMPORT ---
 import AOS from "aos";
@@ -10,6 +11,11 @@ import "aos/dist/aos.css";
 // --- BOT IMPORT ---
 import AIAssistant from "./components/AIAssistant";
 
+// --- LAYOUT COMPONENTS ---
+import ProtectedRoute from "./components/layout/ProtectedRoute";
+import AdminRoute from "./components/layout/AdminRoute";
+
+// --- PAGE IMPORTS ---
 import Register from "./pages/auth/Register";
 import Login from "./pages/auth/Login";
 import Dashboard from "./pages/dashboard/Dashboard";
@@ -27,9 +33,7 @@ import ScrollToTop from "./components/ScrollToTop";
 
 function App() {
   const { user, token, isAuthenticated } = useAuth();
-
-  /* ---------------- DARK MODE STATE ---------------- */
-  const [theme, setTheme] = useState(localStorage.getItem("theme") || "light");
+  const { theme } = useTheme();
 
   // --- INITIALIZE SCROLL ANIMATIONS ---
   useEffect(() => {
@@ -39,20 +43,6 @@ function App() {
       offset: 100,
     });
   }, []);
-
-  useEffect(() => {
-    if (theme === "dark") {
-      document.documentElement.classList.add("dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-    }
-    localStorage.setItem("theme", theme);
-  }, [theme]);
-
-  const toggleTheme = () => {
-    setTheme(theme === "light" ? "dark" : "light");
-  };
-  /* --------------------------------------------------- */
 
   return (
     <BrowserRouter>
@@ -81,58 +71,66 @@ function App() {
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password/:token" element={<ResetPassword />} />
 
-        {/* Dashboard */}
+        {/* PROTECTED ROUTES — use ProtectedRoute instead of manual isAuthenticated check */}
         <Route
           path="/dashboard"
           element={
-            isAuthenticated ? (
-              <Dashboard toggleTheme={toggleTheme} theme={theme} />
-            ) : (
-              <Navigate to="/login" />
-            )
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
           }
         />
-
-        {/* Profile */}
         <Route
           path="/profile/:userId"
           element={
-            isAuthenticated ? (
-              <ProfilePage toggleTheme={toggleTheme} theme={theme} />
-            ) : (
-              <Navigate to="/login" />
-            )
+            <ProtectedRoute>
+              <ProfilePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/settings"
+          element={
+            <ProtectedRoute>
+              <SettingsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/ticket/:eventId"
+          element={
+            <ProtectedRoute>
+              <TicketPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/scan"
+          element={
+            <ProtectedRoute>
+              <ScanTicket />
+            </ProtectedRoute>
           }
         />
 
-        {/* Settings Page */}
-        <Route
-          path="/settings"
-          element={isAuthenticated ? <SettingsPage /> : <Navigate to="/login" />}
-        />
-
-        {/* Ticket Page */}
-        <Route
-          path="/ticket/:eventId"
-          element={isAuthenticated ? <TicketPage /> : <Navigate to="/login" />}
-        />
-
-        {/* Scanner Page */}
-        <Route
-          path="/scan"
-          element={isAuthenticated ? <ScanTicket /> : <Navigate to="/login" />}
-        />
-
-        {/* ADMIN DASHBOARD */}
+        {/* ADMIN ROUTE — uses AdminRoute which checks both auth AND admin role */}
         <Route
           path="/admin"
-          element={isAuthenticated ? <AdminDashboard /> : <Navigate to="/login" />}
+          element={
+            <AdminRoute>
+              <AdminDashboard />
+            </AdminRoute>
+          }
         />
 
         {/* PAYMENT SUCCESS PAGE */}
         <Route
           path="/payment/success"
-          element={isAuthenticated ? <PaymentSuccess /> : <Navigate to="/login" />}
+          element={
+            <ProtectedRoute>
+              <PaymentSuccess />
+            </ProtectedRoute>
+          }
         />
 
         {/* CATCH-ALL ROUTE */}

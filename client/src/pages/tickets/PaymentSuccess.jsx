@@ -1,11 +1,9 @@
 import { useEffect, useRef } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
-import axios from "axios";
 import { motion } from "framer-motion";
 import { CheckCircle, Loader2 } from "lucide-react";
-
-// 🎯 IMPORT THE ENV VARIABLE FOR API URL
-const API_URL = import.meta.env.VITE_API_URL;
+import api from "../../api";
+import { useAuth } from "../../context/AuthContext";
 
 const PaymentSuccess = () => {
   const [searchParams] = useSearchParams();
@@ -13,7 +11,7 @@ const PaymentSuccess = () => {
 
   const eventId = searchParams.get("eventId");
   const userId = searchParams.get("userId");
-  const token = localStorage.getItem("token");
+  const { token } = useAuth();
 
   const hasCalledAPI = useRef(false); // Prevent double API calls
 
@@ -25,11 +23,9 @@ const PaymentSuccess = () => {
       hasCalledAPI.current = true;
 
       try {
-        // 🟢 DEPLOYMENT CHANGE: Using VITE_API_URL variable
-        await axios.patch(
-          `${API_URL}/events/${eventId}/join`,
-          { userId },
-          { headers: { Authorization: `Bearer ${token}` } }
+        await api.patch(
+          `/events/${eventId}/join`,
+          { userId }
         );
 
         // Redirect to ticket after a short animation delay

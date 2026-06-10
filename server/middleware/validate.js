@@ -157,7 +157,7 @@ export const createEventRules = [
     .notEmpty().withMessage("Event category is required")
     .isIn([
       "Music", "Tech", "Sports", "Art", "Food", "Business",
-      "Education", "Health", "Social", "Travel", "Gaming", "Other"
+      "Education", "Health", "Social", "Travel", "Gaming", "Party", "Other"
     ]).withMessage("Invalid event category"),
 
   body("price")

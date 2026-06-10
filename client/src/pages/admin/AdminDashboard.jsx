@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import {
     AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -11,17 +10,13 @@ import {
     LogOut, Flag, FileText, AlertTriangle, CheckCircle, Ban, XCircle,
     Menu, X 
 } from "lucide-react";
-
-// 🎯 IMPORT THE ENV VARIABLE FOR API URL
-const API_URL = import.meta.env.VITE_API_URL; 
-
-// Pie Chart Colors
-const COLORS = ['#8b5cf6', '#10b981', '#f59e0b', '#ef4444', '#3b82f6', '#ec4899'];
+import api from "../../api";
+import { useAuth } from "../../context/AuthContext";
+import { CHART_COLORS } from "../../constants";
 
 const AdminDashboard = () => {
     const navigate = useNavigate();
-    const token = localStorage.getItem("token");
-    const user = JSON.parse(localStorage.getItem("user"));
+    const { user, token } = useAuth();
 
     const [stats, setStats] = useState(null);
     const [allUsers, setAllUsers] = useState([]);
@@ -50,33 +45,26 @@ const AdminDashboard = () => {
     const fetchAllData = async () => {
         try {
             // Fetch core stats
-            // 🟢 DEPLOYMENT CHANGE 1/12
-            const statsRes = await axios.get(`${API_URL}/admin/stats`, { headers: { Authorization: `Bearer ${token}` } });
+            const statsRes = await api.get("/admin/stats");
             setStats(statsRes.data);
 
             // Fetch user data
-            // 🟢 DEPLOYMENT CHANGE 2/12
-            const usersRes = await axios.get(`${API_URL}/users`, { headers: { Authorization: `Bearer ${token}` } });
+            const usersRes = await api.get("/users");
             setAllUsers(usersRes.data);
 
             // Fetch event data
-            // 🟢 DEPLOYMENT CHANGE 3/12
-            const eventsRes = await axios.get(`${API_URL}/admin/events`, { headers: { Authorization: `Bearer ${token}` } });
+            const eventsRes = await api.get("/admin/events");
             setAllEvents(eventsRes.data);
 
             // Fetch reports
-            // 🟢 DEPLOYMENT CHANGE 4/12
-            const reportsRes = await axios.get(`${API_URL}/admin/reports`, { headers: { Authorization: `Bearer ${token}` } });
+            const reportsRes = await api.get("/admin/reports");
             setReports(reportsRes.data);
 
             // Fetch logs
-            // 🟢 DEPLOYMENT CHANGE 5/12
-            const logsRes = await axios.get(`${API_URL}/admin/logs`, { headers: { Authorization: `Bearer ${token}` } });
+            const logsRes = await api.get("/admin/logs");
             setLogs(logsRes.data);
 
-            // --- FETCH TRANSACTIONS (Phase 29) ---
-            // 🟢 DEPLOYMENT CHANGE 6/12
-            const txnRes = await axios.get(`${API_URL}/admin/transactions`, { headers: { Authorization: `Bearer ${token}` } });
+            const txnRes = await api.get("/admin/transactions");
             setTransactions(txnRes.data);
             // -------------------------------------
 
@@ -112,8 +100,7 @@ const AdminDashboard = () => {
         if (!window.confirm("Ban this user?")) return;
         try {
             // Deletion triggers logging in server/controllers/users.js
-            // 🟢 DEPLOYMENT CHANGE 7/12
-            await axios.delete(`${API_URL}/users/${userId}`, { headers: { Authorization: `Bearer ${token}` } });
+            await api.delete(`/users/${userId}`);
             // Re-fetch all data after action (to update users and logs)
             fetchAllData();
         } catch (err) { alert("Failed to delete."); }
@@ -123,8 +110,7 @@ const AdminDashboard = () => {
         if (!window.confirm("Delete this event permanently?")) return;
         try {
             // Deletion triggers logging in server/controllers/events.js
-            // 🟢 DEPLOYMENT CHANGE 8/12
-            await axios.delete(`${API_URL}/events/${eventId}`, { headers: { Authorization: `Bearer ${token}` } });
+            await api.delete(`/events/${eventId}`);
             // Re-fetch all data after action (to update events and logs)
             fetchAllData();
         } catch (err) { alert("Failed to delete."); }
@@ -135,10 +121,7 @@ const AdminDashboard = () => {
         if (!window.confirm("Send this message to ALL users?")) return;
         try {
             // Broadcast triggers logging in server/controllers/admin.js
-            // 🟢 DEPLOYMENT CHANGE 9/12
-            await axios.post(`${API_URL}/admin/broadcast`, broadcast, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            await api.post("/admin/broadcast", broadcast);
             // Re-fetch logs after action
             fetchAllData();
             alert("Broadcast Sent!");
@@ -149,8 +132,7 @@ const AdminDashboard = () => {
     const handleDismissReport = async (reportId) => {
         if (!window.confirm("Are you sure you want to dismiss this report?")) return;
         // Resolution triggers logging in server/controllers/admin.js
-        // 🟢 DEPLOYMENT CHANGE 10/12
-        await axios.patch(`${API_URL}/admin/reports/${reportId}`, {}, { headers: { Authorization: `Bearer ${token}` } });
+        await api.patch(`/admin/reports/${reportId}`);
         // Re-fetch reports and logs
         fetchAllData();
         alert("Report dismissed.");
@@ -159,13 +141,10 @@ const AdminDashboard = () => {
     const handleBanEvent = async (report) => {
         if (!window.confirm(`Are you sure you want to DELETE the event "${report.eventTitle}" based on this report? This action is permanent.`)) return;
         try {
-            // 1. Delete Event (Logging happens in events.js)
-            // 🟢 DEPLOYMENT CHANGE 11/12
-            await axios.delete(`${API_URL}/events/${report.targetEventId}`, { headers: { Authorization: `Bearer ${token}` } });
+            await api.delete(`/events/${report.targetEventId}`);
 
             // 2. Mark Report Resolved (Logging happens in admin.js)
-            // 🟢 DEPLOYMENT CHANGE 12/12
-            await axios.patch(`${API_URL}/admin/reports/${report._id}`, {}, { headers: { Authorization: `Bearer ${token}` } });
+            await api.patch(`/admin/reports/${report._id}`);
 
             // 3. Update all data
             fetchAllData();
@@ -346,7 +325,7 @@ return (
                                     <ResponsiveContainer>
                                         <PieChart>
                                             <Pie data={stats.categoryData} innerRadius={60} outerRadius={90} paddingAngle={5} dataKey="value">
-                                                {stats.categoryData?.map((entry, index) => (<Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} stroke="none" />))}
+                                                {stats.categoryData?.map((entry, index) => (<Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} stroke="none" />))}
                                             </Pie>
                                             <Tooltip contentStyle={{backgroundColor: '#1e293b', border: 'none', borderRadius: '12px', color: '#fff'}} />
                                             <Legend verticalAlign="bottom" height={36}/>

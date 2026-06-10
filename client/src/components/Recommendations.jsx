@@ -109,9 +109,4 @@ const Recommendations = ({ userId }) => {
   );
 };
 
-// Helper for image if not imported from utility
-const getImageUrlLocal = (path) => {
-    return path?.startsWith("http") ? path : `${import.meta.env.VITE_API_URL}/assets/${path}`;
-};
-
 export default Recommendations;

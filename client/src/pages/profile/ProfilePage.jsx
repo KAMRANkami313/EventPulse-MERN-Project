@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
@@ -9,17 +8,15 @@ import {
 } from "lucide-react";
 import { getImageUrl } from "../../utils/imageHelper";
 import { getUserBadges } from "../../utils/badgeHelper";
-
-// 🎯 IMPORT THE ENV VARIABLE FOR API URL
-const API_URL = import.meta.env.VITE_API_URL;
+import api from "../../api";
+import { useAuth } from "../../context/AuthContext";
 
 const ProfilePage = () => {
     const { userId } = useParams();
     const navigate = useNavigate();
 
-    // Get current user from local storage
-    const loggedInUser = JSON.parse(localStorage.getItem("user"));
-    const token = localStorage.getItem("token");
+    // Get current user from centralized auth context
+    const { user: loggedInUser, token, updateUser } = useAuth();
 
     // Data States
     const [userProfile, setUserProfile] = useState(null);
@@ -47,10 +44,7 @@ const ProfilePage = () => {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                // 🟢 DEPLOYMENT CHANGE 1/8: Fetch User Profile
-                const userRes = await axios.get(`${API_URL}/users/${userId}`, {
-                    headers: { Authorization: `Bearer ${token}` },
-                });
+                const userRes = await api.get(`/users/${userId}`);
                 setUserProfile(userRes.data);
 
                 // Load existing data + socials
@@ -65,24 +59,15 @@ const ProfilePage = () => {
                     picture: null
                 });
 
-                // 🟢 DEPLOYMENT CHANGE 2/8: Fetch Hosted Events
-                const hostedRes = await axios.get(`${API_URL}/events/user/${userId}`, {
-                    headers: { Authorization: `Bearer ${token}` },
-                });
+                const hostedRes = await api.get(`/events/user/${userId}`);
                 setHostedEvents(hostedRes.data);
 
-                // 🟢 DEPLOYMENT CHANGE 3/8: Fetch Attending Events
-                const attendingRes = await axios.get(`${API_URL}/events/attending/${userId}`, {
-                    headers: { Authorization: `Bearer ${token}` },
-                });
+                const attendingRes = await api.get(`/events/attending/${userId}`);
                 setAttendingEvents(attendingRes.data);
 
                 // Fetch Saved Events (Only if own profile)
                 if (isOwnProfile) {
-                    // 🟢 DEPLOYMENT CHANGE 4/8: Fetch Bookmarks
-                    const savedRes = await axios.get(`${API_URL}/users/${userId}/bookmarks`, {
-                        headers: { Authorization: `Bearer ${token}` },
-                    });
+                    const savedRes = await api.get(`/users/${userId}/bookmarks`);
                     setSavedEvents(savedRes.data);
                 }
 
@@ -102,12 +87,7 @@ const ProfilePage = () => {
     // FOLLOW/UNFOLLOW HANDLER
     const handleFollow = async () => {
         try {
-            // 🟢 DEPLOYMENT CHANGE 5/8: Follow/Unfollow User
-            await axios.patch(
-                `${API_URL}/users/${loggedInUser._id}/follow/${userId}`,
-                {},
-                { headers: { Authorization: `Bearer ${token}` } }
-            );
+            await api.patch(`/users/${loggedInUser._id}/follow/${userId}`);
 
             const newIsFollowing = !isFollowing;
             setIsFollowing(newIsFollowing);
@@ -139,8 +119,7 @@ const ProfilePage = () => {
 
         try {
             const list = await Promise.all(
-                // 🟢 DEPLOYMENT CHANGE 6/8: Fetch User details for modal list
-                listIds.map(id => axios.get(`${API_URL}/users/${id}`, { headers: { Authorization: `Bearer ${token}` } }))
+                listIds.map(id => api.get(`/users/${id}`))
             );
             setModalList(list.map(res => res.data));
             setModalType(type);
@@ -165,22 +144,15 @@ const ProfilePage = () => {
 
             if (editFormData.picture) formData.append("picture", editFormData.picture);
 
-            // 🟢 DEPLOYMENT CHANGE 7/8: Update Profile
-            const res = await axios.patch(`${API_URL}/users/${userId}`, formData, {
-                headers: { Authorization: `Bearer ${token}`, "Content-Type": "multipart/form-data" }
+            const res = await api.patch(`/users/${userId}`, formData, {
+                headers: { "Content-Type": "multipart/form-data" }
             });
 
             setUserProfile(res.data);
 
             if (isOwnProfile) {
-                const currentUserData = JSON.parse(localStorage.getItem("user"));
-                // 🟢 DEPLOYMENT CHANGE 8/8: Get Image URL
-                localStorage.setItem("user", JSON.stringify({
-                    ...res.data,
-                    following: currentUserData.following,
-                    bookmarks: currentUserData.bookmarks,
-                    password: loggedInUser.password
-                }));
+                // Update auth context instead of raw localStorage
+                updateUser(res.data);
             }
             setIsEditing(false);
             alert("Profile Updated!");
