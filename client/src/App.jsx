@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useState, useEffect } from "react";
-import { Toaster } from 'react-hot-toast'; 
+import { Toaster } from 'react-hot-toast';
+import { useAuth } from "./context/AuthContext";
 
 // --- ANIMATION LIBRARY IMPORT ---
 import AOS from "aos";
@@ -20,15 +21,12 @@ import PaymentSuccess from "./pages/tickets/PaymentSuccess";
 import ForgotPassword from "./pages/auth/ForgotPassword";
 import ResetPassword from "./pages/auth/ResetPassword";
 import NotFound from "./pages/NotFound";
-import SettingsPage from "./pages/settings/SettingsPage"; 
+import SettingsPage from "./pages/settings/SettingsPage";
 
-import ScrollToTop from "./components/ScrollToTop"; 
+import ScrollToTop from "./components/ScrollToTop";
 
 function App() {
-  // Retrieve token string and user object
-  const token = localStorage.getItem("token");
-  const user = JSON.parse(localStorage.getItem("user"));
-  const isAuth = Boolean(token);
+  const { user, token, isAuthenticated } = useAuth();
 
   /* ---------------- DARK MODE STATE ---------------- */
   const [theme, setTheme] = useState(localStorage.getItem("theme") || "light");
@@ -60,13 +58,13 @@ function App() {
     <BrowserRouter>
       {/* Global Notifications */}
       <Toaster position="top-center" reverseOrder={false} />
-      
-      {/* Scroll Reset on Navigation */}
-      <ScrollToTop /> 
 
-      {/* 
+      {/* Scroll Reset on Navigation */}
+      <ScrollToTop />
+
+      {/*
           🤖 AI BOT:
-          Added `key={user?._id}`. This forces React to destroy and recreate 
+          Added `key={user?._id}`. This forces React to destroy and recreate
           the bot component whenever the user ID changes (e.g. logout/login).
           This wipes the chat history and resets the greeting to the new user.
       */}
@@ -87,7 +85,7 @@ function App() {
         <Route
           path="/dashboard"
           element={
-            isAuth ? (
+            isAuthenticated ? (
               <Dashboard toggleTheme={toggleTheme} theme={theme} />
             ) : (
               <Navigate to="/login" />
@@ -99,47 +97,47 @@ function App() {
         <Route
           path="/profile/:userId"
           element={
-            isAuth ? (
+            isAuthenticated ? (
               <ProfilePage toggleTheme={toggleTheme} theme={theme} />
             ) : (
               <Navigate to="/login" />
             )
           }
         />
-        
+
         {/* Settings Page */}
-        <Route 
-          path="/settings" 
-          element={isAuth ? <SettingsPage /> : <Navigate to="/login" />} 
+        <Route
+          path="/settings"
+          element={isAuthenticated ? <SettingsPage /> : <Navigate to="/login" />}
         />
 
         {/* Ticket Page */}
         <Route
           path="/ticket/:eventId"
-          element={isAuth ? <TicketPage /> : <Navigate to="/login" />}
+          element={isAuthenticated ? <TicketPage /> : <Navigate to="/login" />}
         />
 
         {/* Scanner Page */}
         <Route
           path="/scan"
-          element={isAuth ? <ScanTicket /> : <Navigate to="/login" />}
+          element={isAuthenticated ? <ScanTicket /> : <Navigate to="/login" />}
         />
 
         {/* ADMIN DASHBOARD */}
         <Route
           path="/admin"
-          element={isAuth ? <AdminDashboard /> : <Navigate to="/login" />}
+          element={isAuthenticated ? <AdminDashboard /> : <Navigate to="/login" />}
         />
 
         {/* PAYMENT SUCCESS PAGE */}
-        <Route 
-          path="/payment/success" 
-          element={isAuth ? <PaymentSuccess /> : <Navigate to="/login" />} 
+        <Route
+          path="/payment/success"
+          element={isAuthenticated ? <PaymentSuccess /> : <Navigate to="/login" />}
         />
 
         {/* CATCH-ALL ROUTE */}
         <Route path="*" element={<NotFound />} />
-        
+
       </Routes>
     </BrowserRouter>
   );

@@ -1,26 +1,21 @@
 import React, { useEffect, useState, useRef } from "react";
 import io from "socket.io-client";
-import axios from "axios";
-import { Send, X, MessageCircle } from "lucide-react"; // Better icons
+import { Send, X, MessageCircle } from "lucide-react";
+import api from "../api";
 
-// 🎯 IMPORT THE ENV VARIABLE FOR API URL
-const API_URL = import.meta.env.VITE_API_URL; 
-
+const API_URL = import.meta.env.VITE_API_URL;
 const socket = io.connect(API_URL);
 
 const ChatBox = ({ eventId, eventTitle, user, onClose }) => {
   const [currentMessage, setCurrentMessage] = useState("");
   const [messageList, setMessageList] = useState([]);
   const scrollRef = useRef(); 
-  const token = localStorage.getItem("token");
 
   // 1. Fetch History & Join Room
   useEffect(() => {
     const fetchHistory = async () => {
         try {
-            const response = await axios.get(`${API_URL}/messages/${eventId}`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            const response = await api.get(`/messages/${eventId}`);
             const history = response.data.map(msg => ({
                 room: msg.eventId,
                 author: msg.senderName,

@@ -1,11 +1,8 @@
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Sparkles, Send, X, Bot, User, Minus } from "lucide-react";
-import axios from "axios";
+import api from "../api";
 import { getImageUrl } from "../utils/imageHelper";
-
-// 🎯 IMPORT THE ENV VARIABLE FOR API URL
-const API_URL = import.meta.env.VITE_API_URL;
 
 const AIAssistant = ({ token, user }) => {
     const [isOpen, setIsOpen] = useState(false);
@@ -44,10 +41,10 @@ const AIAssistant = ({ token, user }) => {
 
         try {
             const history = messages.slice(-6);
-            const res = await axios.post(`${API_URL}/ai/chat`,
-                { message: userMsg.content, history },
-                { headers: { Authorization: `Bearer ${token}` } }
-            );
+            const res = await api.post("/ai/chat", {
+                message: userMsg.content,
+                history,
+            });
             const botMsg = { role: "assistant", content: res.data.reply };
             setMessages((prev) => [...prev, botMsg]);
         } catch (err) {

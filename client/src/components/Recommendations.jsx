@@ -1,12 +1,10 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import { Sparkles, CalendarX } from "lucide-react"; // Added CalendarX for empty state
+import { Sparkles, CalendarX } from "lucide-react";
+import api from "../api";
+import { getImageUrl } from "../utils/imageHelper";
 
-// 🎯 IMPORT THE ENV VARIABLE FOR API URL
-const API_URL = import.meta.env.VITE_API_URL; 
-
-const Recommendations = ({ userId, token }) => {
+const Recommendations = ({ userId }) => {
   const [recs, setRecs] = useState([]);
   const [reason, setReason] = useState("Loading...");
   const [loading, setLoading] = useState(true);
@@ -16,9 +14,7 @@ const Recommendations = ({ userId, token }) => {
     const fetchRecs = async () => {
       try {
         setLoading(true);
-        const res = await axios.get(`${API_URL}/users/${userId}/recommendations`, {
-            headers: { Authorization: `Bearer ${token}` }
-        });
+        const res = await api.get(`/users/${userId}/recommendations`);
         
         // Ensure we always have an array
         const data = Array.isArray(res.data.data) ? res.data.data : [];
@@ -114,8 +110,8 @@ const Recommendations = ({ userId, token }) => {
 };
 
 // Helper for image if not imported from utility
-const getImageUrl = (path) => {
-    return path?.startsWith("http") ? path : `${API_URL}/assets/${path}`;
+const getImageUrlLocal = (path) => {
+    return path?.startsWith("http") ? path : `${import.meta.env.VITE_API_URL}/assets/${path}`;
 };
 
 export default Recommendations;

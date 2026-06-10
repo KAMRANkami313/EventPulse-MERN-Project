@@ -1,11 +1,8 @@
 import { useState } from "react";
-import axios from "axios";
 import { useParams, useNavigate } from "react-router-dom";
 import { Lock, CheckCircle } from "lucide-react";
 import toast from "react-hot-toast";
-
-// 🎯 IMPORT THE ENV VARIABLE FOR API URL
-const API_URL = import.meta.env.VITE_API_URL; 
+import api from "../../api"; 
 
 const ResetPassword = () => {
   const { token } = useParams();
@@ -40,11 +37,7 @@ const handleSubmit = async (e) => {
 
     setLoading(true);
     try {
-      // 🟢 DEPLOYMENT CHANGE: Using VITE_API_URL variable
-      await axios.post(
-        `${API_URL}/auth/reset-password/${token}`,
-        { password }
-      );
+      await api.post(`/auth/reset-password/${token}`, { password });
       toast.success("Password Reset Successful!");
       navigate("/login");
     } catch (err) {

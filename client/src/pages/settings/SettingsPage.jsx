@@ -1,17 +1,13 @@
 import { useState } from "react";
-import axios from "axios";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
-
 import { motion } from "framer-motion";
 import { ArrowLeft, Lock, Shield, Trash } from "lucide-react";
-
-// 🎯 IMPORT THE ENV VARIABLE FOR API URL
-const API_URL = import.meta.env.VITE_API_URL;
+import { useAuth } from "../../context/AuthContext";
+import api from "../../api";
 
 const SettingsPage = () => {
-  const user = JSON.parse(localStorage.getItem("user"));
-  const token = localStorage.getItem("token");
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
 
   const [passwords, setPasswords] = useState({
@@ -22,7 +18,7 @@ const SettingsPage = () => {
 
   const [privacy, setPrivacy] = useState(user?.privacy || "public");
 
-const handlePasswordChange = async (e) => {
+  const handlePasswordChange = async (e) => {
     e.preventDefault();
 
     // 1. Check Matching
@@ -41,19 +37,29 @@ const handlePasswordChange = async (e) => {
     }
 
     try {
-      // 🟢 DEPLOYMENT CHANGE: Using VITE_API_URL variable
-      await axios.patch(
-        `${API_URL}/auth/change-password`,
-        { userId: user._id, ...passwords },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      // SECURITY: userId is NOT sent — the server reads it from the JWT token (req.user.id)
+      await api.patch("/auth/change-password", {
+        current: passwords.current,
+        new: passwords.new,
+      });
 
       toast.success("Password Updated Successfully");
       setPasswords({ current: "", new: "", confirm: "" });
-      // Clear inputs manually in UI if needed, though state reset handles it
-      e.target.reset(); 
+      e.target.reset();
     } catch (err) {
       toast.error(err.response?.data?.message || "Error updating password");
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    if (!window.confirm("Are you sure you want to delete your account? This cannot be undone!")) return;
+
+    try {
+      await api.delete(`/users/${user._id}`);
+      toast.success("Account deleted. Goodbye!");
+      logout();
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Error deleting account");
     }
   };
 
@@ -149,7 +155,10 @@ const handlePasswordChange = async (e) => {
             <h3 className="font-bold text-red-600 dark:text-red-400 text-lg">Danger Zone</h3>
           </div>
 
-          <button className="w-full bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-900 px-4 py-3 rounded-xl font-bold hover:bg-red-100 dark:hover:bg-red-900/30 transition">
+          <button
+            onClick={handleDeleteAccount}
+            className="w-full bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-900 px-4 py-3 rounded-xl font-bold hover:bg-red-100 dark:hover:bg-red-900/30 transition"
+          >
             Delete Account
           </button>
         </div>

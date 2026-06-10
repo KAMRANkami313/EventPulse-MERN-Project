@@ -1,10 +1,7 @@
 import { useState } from "react";
-import axios from "axios";
 import { Link } from "react-router-dom";
-import { Mail, ArrowLeft } from "lucide-react"; // Added icons for better UI
-
-// 🎯 IMPORT THE ENV VARIABLE FOR API URL
-const API_URL = import.meta.env.VITE_API_URL; 
+import { Mail, ArrowLeft } from "lucide-react";
+import api from "../../api"; 
 
 const ForgotPassword = () => {
   const [email, setEmail] = useState("");
@@ -15,8 +12,7 @@ const ForgotPassword = () => {
     setStatus("loading");
 
     try {
-      // 🟢 DEPLOYMENT CHANGE: Using VITE_API_URL variable
-      await axios.post(`${API_URL}/auth/forgot-password`, { email });
+      await api.post("/auth/forgot-password", { email });
       setStatus("success");
     } catch (err) {
       setStatus("error");

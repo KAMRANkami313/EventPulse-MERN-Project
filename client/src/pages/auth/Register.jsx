@@ -1,15 +1,14 @@
 import { useState } from "react";
-import axios from "axios";
 import { useNavigate, Link } from "react-router-dom";
 import { GoogleLogin } from "@react-oauth/google";
 import toast from "react-hot-toast";
 import { Mail, Lock, User, MapPin, Briefcase } from "lucide-react";
-
-// 🎯 IMPORT THE ENV VARIABLE FOR API URL
-const API_URL = import.meta.env.VITE_API_URL; 
+import { useAuth } from "../../context/AuthContext";
+import api from "../../api";
 
 const Register = () => {
   const navigate = useNavigate();
+  const { login } = useAuth();
   const [loading, setLoading] = useState(false);
 
   // Form state
@@ -26,10 +25,10 @@ const Register = () => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  /* 🔒 PASSWORD VALIDATION LOGIC */
+  /* PASSWORD VALIDATION LOGIC */
   const validateForm = () => {
     const { password } = formData;
-    
+
     // Check length
     if (password.length < 8) {
         toast.error("Password must be at least 8 characters long.");
@@ -49,17 +48,13 @@ const Register = () => {
   /* STANDARD REGISTRATION */
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     // Run Validation
     if (!validateForm()) return;
 
     setLoading(true);
     try {
-      // 🟢 DEPLOYMENT CHANGE 1/2: Standard Registration API call
-      const response = await axios.post(
-        `${API_URL}/auth/register`,
-        formData
-      );
+      const response = await api.post("/auth/register", formData);
 
       if (response.status === 201) {
         toast.success("Registration Successful! Please login.");
@@ -67,7 +62,7 @@ const Register = () => {
       }
     } catch (error) {
       console.error("Registration error:", error);
-      toast.error(error.response?.data?.message || "Registration failed.");
+      toast.error(error.response?.data?.message || error.response?.data?.error || "Registration failed.");
     } finally {
       setLoading(false);
     }
@@ -77,20 +72,18 @@ const Register = () => {
   const handleGoogleSuccess = async (credentialResponse) => {
     setLoading(true);
     try {
-      // 🟢 DEPLOYMENT CHANGE 2/2: Google Signup/Login API call
-      const response = await axios.post(`${API_URL}/auth/google`, {
+      const response = await api.post("/auth/google", {
         credential: credentialResponse.credential,
       });
 
       if (response.status === 200) {
-        localStorage.setItem("token", response.data.token);
-        localStorage.setItem("user", JSON.stringify(response.data.user));
-
+        login(response.data.token, response.data.user);
         toast.success("Account created and signed in!");
+
         if (response.data.user.role === "admin") {
-           window.location.href = "/admin"; 
+          window.location.href = "/admin";
         } else {
-           window.location.href = "/dashboard";
+          window.location.href = "/dashboard";
         }
       }
     } catch (error) {
