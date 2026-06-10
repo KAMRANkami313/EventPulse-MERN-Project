@@ -10,6 +10,7 @@ import { getImageUrl } from "../../utils/imageHelper";
 import { getUserBadges } from "../../utils/badgeHelper";
 import api from "../../api";
 import { useAuth } from "../../context/AuthContext";
+import toast from "react-hot-toast";
 
 const ProfilePage = () => {
     const { userId } = useParams();
@@ -155,8 +156,8 @@ const ProfilePage = () => {
                 updateUser(res.data);
             }
             setIsEditing(false);
-            alert("Profile Updated!");
-        } catch (err) { console.error(err); alert("Update failed"); }
+            toast.success("Profile Updated!");
+        } catch (err) { console.error(err); toast.error("Update failed"); }
     };
 
     if (!userProfile) return <div className="min-h-screen flex items-center justify-center dark:bg-slate-900"><div className="w-8 h-8 border-4 border-violet-500 border-t-transparent rounded-full animate-spin"></div></div>;

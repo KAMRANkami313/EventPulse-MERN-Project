@@ -13,6 +13,7 @@ import {
 import api from "../../api";
 import { useAuth } from "../../context/AuthContext";
 import { CHART_COLORS } from "../../constants";
+import toast from "react-hot-toast";
 
 const AdminDashboard = () => {
     const navigate = useNavigate();
@@ -96,62 +97,49 @@ const AdminDashboard = () => {
     };
 
     const handleDeleteUser = async (userId) => {
-        if (userId === user._id) return alert("Cannot delete self.");
+        if (userId === user._id) return toast.error("Cannot delete self.");
         if (!window.confirm("Ban this user?")) return;
         try {
-            // Deletion triggers logging in server/controllers/users.js
             await api.delete(`/users/${userId}`);
-            // Re-fetch all data after action (to update users and logs)
             fetchAllData();
-        } catch (err) { alert("Failed to delete."); }
+        } catch (err) { toast.error("Failed to delete."); }
     };
 
     const handleDeleteEvent = async (eventId) => {
         if (!window.confirm("Delete this event permanently?")) return;
         try {
-            // Deletion triggers logging in server/controllers/events.js
             await api.delete(`/events/${eventId}`);
-            // Re-fetch all data after action (to update events and logs)
             fetchAllData();
-        } catch (err) { alert("Failed to delete."); }
+        } catch (err) { toast.error("Failed to delete."); }
     };
 
     const handleBroadcast = async (e) => {
         e.preventDefault();
         if (!window.confirm("Send this message to ALL users?")) return;
         try {
-            // Broadcast triggers logging in server/controllers/admin.js
             await api.post("/admin/broadcast", broadcast);
-            // Re-fetch logs after action
             fetchAllData();
-            alert("Broadcast Sent!");
+            toast.success("Broadcast Sent!");
             setBroadcast({ title: "", message: "" });
-        } catch (err) { alert("Failed to send."); }
+        } catch (err) { toast.error("Failed to send."); }
     };
 
     const handleDismissReport = async (reportId) => {
         if (!window.confirm("Are you sure you want to dismiss this report?")) return;
-        // Resolution triggers logging in server/controllers/admin.js
         await api.patch(`/admin/reports/${reportId}`);
-        // Re-fetch reports and logs
         fetchAllData();
-        alert("Report dismissed.");
+        toast.success("Report dismissed.");
     };
 
     const handleBanEvent = async (report) => {
         if (!window.confirm(`Are you sure you want to DELETE the event "${report.eventTitle}" based on this report? This action is permanent.`)) return;
         try {
             await api.delete(`/events/${report.targetEventId}`);
-
-            // 2. Mark Report Resolved (Logging happens in admin.js)
             await api.patch(`/admin/reports/${report._id}`);
-
-            // 3. Update all data
             fetchAllData();
-
-            alert("Event Deleted & Report Resolved");
+            toast.success("Event Deleted & Report Resolved");
         } catch (err) {
-            alert("Failed to complete ban/resolution process.");
+            toast.error("Failed to complete ban/resolution process.");
             console.error(err);
         }
     };

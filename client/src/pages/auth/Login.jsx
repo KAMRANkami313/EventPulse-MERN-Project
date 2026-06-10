@@ -29,9 +29,9 @@ const Login = () => {
         toast.success("Welcome back!");
 
         if (response.data.user.role === "admin") {
-          window.location.href = "/admin";
+          navigate("/admin");
         } else {
-          window.location.href = "/dashboard";
+          navigate("/dashboard");
         }
       }
     } catch (error) {
@@ -54,9 +54,9 @@ const Login = () => {
         toast.success("Welcome back via Google!");
 
         if (response.data.user.role === "admin") {
-          window.location.href = "/admin";
+          navigate("/admin");
         } else {
-          window.location.href = "/dashboard";
+          navigate("/dashboard");
         }
       }
     } catch (error) {
@@ -68,21 +68,29 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex w-full bg-gradient-to-br from-white via-blue-50 to-indigo-50">
+    <div className="min-h-screen flex w-full bg-gradient-to-br from-white via-violet-50/50 to-fuchsia-50/50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 transition-colors duration-500">
       {/* LEFT SIDE: BRANDING */}
       <div className="hidden lg:flex w-1/2 items-center justify-center relative overflow-hidden">
-        <div className="absolute -top-10 -left-10 w-40 h-40 bg-blue-200/50 rounded-full blur-3xl" />
-        <div className="absolute bottom-0 right-0 w-72 h-72 bg-indigo-200/60 rounded-full blur-3xl" />
+        <div className="absolute -top-10 -left-10 w-40 h-40 bg-violet-200/50 dark:bg-violet-800/20 rounded-full blur-3xl" />
+        <div className="absolute bottom-0 right-0 w-72 h-72 bg-fuchsia-200/60 dark:bg-fuchsia-800/20 rounded-full blur-3xl" />
 
-        <div className="relative z-10 text-center px-10">
-          <h1 className="text-5xl font-extrabold mb-4 tracking-tight text-slate-900">
-            EventPulse.
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, ease: "easeOut" }}
+          className="relative z-10 text-center px-10"
+        >
+          <div className="w-20 h-20 bg-gradient-to-br from-violet-600 to-fuchsia-600 rounded-3xl flex items-center justify-center text-white font-bold text-3xl shadow-2xl shadow-violet-500/30 mx-auto mb-8">
+            E
+          </div>
+          <h1 className="text-5xl font-extrabold mb-4 tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-violet-600 to-fuchsia-600">
+            EventPulse
           </h1>
-          <p className="text-lg text-slate-600">
+          <p className="text-lg text-slate-600 dark:text-slate-400">
             Discover events, connect with communities, and create memories that
             last a lifetime.
           </p>
-        </div>
+        </motion.div>
       </div>
 
       {/* RIGHT SIDE: LOGIN CARD */}
@@ -91,11 +99,11 @@ const Login = () => {
           initial={{ opacity: 0, y: 30, scale: 0.97 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           transition={{ duration: 0.4, ease: "easeOut" }}
-          className="w-full max-w-md bg-white/70 backdrop-blur-xl border border-white/80 rounded-3xl shadow-xl p-8"
+          className="w-full max-w-md bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl border border-white/80 dark:border-slate-800/80 rounded-3xl shadow-xl p-8"
         >
           <div className="mb-8 text-center lg:text-left">
-            <h2 className="text-3xl font-bold text-slate-900">Welcome Back</h2>
-            <p className="text-slate-500 mt-2">
+            <h2 className="text-3xl font-bold text-slate-900 dark:text-white">Welcome Back</h2>
+            <p className="text-slate-500 dark:text-slate-400 mt-2">
               Please enter your details to sign in.
             </p>
           </div>
@@ -103,7 +111,7 @@ const Login = () => {
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Email */}
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                 Email Address
               </label>
               <div className="relative">
@@ -114,7 +122,7 @@ const Login = () => {
                   type="email"
                   name="email"
                   onChange={handleChange}
-                  className="w-full pl-10 pr-4 py-3 rounded-xl bg-white border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition"
+                  className="w-full pl-10 pr-4 py-3 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 outline-none transition dark:text-white"
                   placeholder="name@company.com"
                   required
                 />
@@ -123,7 +131,7 @@ const Login = () => {
 
             {/* Password */}
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                 Password
               </label>
               <div className="relative">
@@ -134,7 +142,7 @@ const Login = () => {
                   type="password"
                   name="password"
                   onChange={handleChange}
-                  className="w-full pl-10 pr-4 py-3 rounded-xl bg-white border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition"
+                  className="w-full pl-10 pr-4 py-3 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 outline-none transition dark:text-white"
                   placeholder="••••••••"
                   required
                 />
@@ -145,7 +153,7 @@ const Login = () => {
             <div className="flex justify-end">
               <Link
                 to="/forgot-password"
-                className="text-sm text-blue-600 hover:underline font-medium"
+                className="text-sm text-violet-600 dark:text-violet-400 hover:underline font-medium"
               >
                 Forgot Password?
               </Link>
@@ -154,7 +162,7 @@ const Login = () => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl transition duration-300 shadow-lg shadow-blue-500/30 transform hover:-translate-y-0.5 disabled:opacity-70 disabled:cursor-not-allowed"
+              className="w-full bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-700 hover:to-fuchsia-700 text-white font-bold py-3 rounded-xl transition duration-300 shadow-lg shadow-violet-500/30 transform hover:-translate-y-0.5 disabled:opacity-70 disabled:cursor-not-allowed disabled:hover:translate-y-0"
             >
               {loading ? "Signing in..." : "Sign In"}
             </button>
@@ -162,9 +170,9 @@ const Login = () => {
 
           {/* Divider */}
           <div className="flex items-center my-6">
-            <div className="flex-1 border-t border-slate-200" />
-            <p className="mx-4 text-slate-400 text-sm font-medium">OR</p>
-            <div className="flex-1 border-t border-slate-200" />
+            <div className="flex-1 border-t border-slate-200 dark:border-slate-700" />
+            <p className="mx-4 text-slate-400 dark:text-slate-500 text-sm font-medium">OR</p>
+            <div className="flex-1 border-t border-slate-200 dark:border-slate-700" />
           </div>
 
           {/* Google Login */}
@@ -176,7 +184,7 @@ const Login = () => {
                 toast.error("Google Login failed or was cancelled.");
               }}
               useOneTap={false}
-              theme="filled_blue"
+              theme="outline"
               size="large"
               width="300"
               text="signin_with"
@@ -185,11 +193,11 @@ const Login = () => {
           </div>
 
           <div className="mt-8 text-center">
-            <p className="text-slate-600 text-sm">
+            <p className="text-slate-600 dark:text-slate-400 text-sm">
               Don&apos;t have an account?
               <Link
                 to="/register"
-                className="text-blue-600 font-bold hover:underline ml-1"
+                className="text-violet-600 dark:text-violet-400 font-bold hover:underline ml-1"
               >
                 Sign up for free
               </Link>

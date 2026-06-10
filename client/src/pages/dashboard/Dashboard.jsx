@@ -34,6 +34,7 @@ import { CITIES, STRIPE_PUBLIC_KEY, getCategoryIcon, LANGUAGES, CATEGORIES } fro
 
 // --- EXTRACTED COMPONENTS ---
 import CreateEventModal from "../../components/dashboard/CreateEventModal";
+import ConfirmModal from "../../components/ui/ConfirmModal";
 
 // --- STRIPE CONFIGURATION ---
 const stripePromise = loadStripe(STRIPE_PUBLIC_KEY);
@@ -111,6 +112,9 @@ const Dashboard = () => {
 
   // MODAL STATE (NEW)
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+
+  // CONFIRM MODAL STATE
+  const [confirmModal, setConfirmModal] = useState({ isOpen: false, title: "", message: "", onConfirm: () => {} });
 
   // Notification States
   const [notifications, setNotifications] = useState([]);
@@ -344,7 +348,7 @@ const Dashboard = () => {
     try {
       await api.post(`/admin/report`, {
         reporterId: user._id,
-        reporterName: user.firstName,
+        reporterName: `${user.firstName} ${user.lastName}`,
         targetEventId: event._id,
         eventTitle: event.title,
         reason: reason
@@ -357,15 +361,23 @@ const Dashboard = () => {
   };
 
   // 6. DELETE
-  const handleDelete = async (eventId) => {
-    if (!window.confirm("Are you sure you want to delete this event? This action cannot be undone.")) return;
-    try {
-      await api.delete(`/events/${eventId}`);
-      setEvents((prev) => prev.filter((e) => e._id !== eventId));
-      toast.success("Event deleted successfully.");
-    } catch (err) {
-      toast.error("Could not delete event.");
-    }
+  const handleDelete = (eventId) => {
+    setConfirmModal({
+      isOpen: true,
+      title: "Delete Event",
+      message: "Are you sure you want to delete this event? This action cannot be undone.",
+      confirmText: "Delete",
+      variant: "danger",
+      onConfirm: async () => {
+        try {
+          await api.delete(`/events/${eventId}`);
+          setEvents((prev) => prev.filter((e) => e._id !== eventId));
+          toast.success("Event deleted successfully.");
+        } catch (err) {
+          toast.error("Could not delete event.");
+        }
+      },
+    });
   };
 
   // 7. SHARE
@@ -1077,6 +1089,17 @@ const Dashboard = () => {
           onClose={() => setActiveChat(null)}
         />
       )}
+
+      {/* CONFIRM MODAL (Replaces window.confirm) */}
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        onClose={() => setConfirmModal({ ...confirmModal, isOpen: false })}
+        onConfirm={confirmModal.onConfirm}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        confirmText={confirmModal.confirmText}
+        variant={confirmModal.variant}
+      />
 
     </div>
   );

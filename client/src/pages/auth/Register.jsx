@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { GoogleLogin } from "@react-oauth/google";
 import toast from "react-hot-toast";
+import { motion } from "framer-motion";
 import { Mail, Lock, User, MapPin, Briefcase } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import api from "../../api";
@@ -62,7 +63,11 @@ const Register = () => {
       }
     } catch (error) {
       console.error("Registration error:", error);
-      toast.error(error.response?.data?.message || error.response?.data?.error || "Registration failed.");
+      const serverMsg = error.response?.data?.details?.map(d => d.message).join(', ')
+        || error.response?.data?.message
+        || error.response?.data?.error
+        || "Registration failed.";
+      toast.error(serverMsg);
     } finally {
       setLoading(false);
     }
@@ -81,9 +86,9 @@ const Register = () => {
         toast.success("Account created and signed in!");
 
         if (response.data.user.role === "admin") {
-          window.location.href = "/admin";
+          navigate("/admin");
         } else {
-          window.location.href = "/dashboard";
+          navigate("/dashboard");
         }
       }
     } catch (error) {
@@ -95,30 +100,43 @@ const Register = () => {
   };
 
   return (
-    <div className="min-h-screen flex w-full bg-gradient-to-br from-white via-blue-50 to-indigo-50">
+    <div className="min-h-screen flex w-full bg-gradient-to-br from-white via-violet-50/50 to-fuchsia-50/50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 transition-colors duration-500">
 
       {/* LEFT PANEL — LIGHT GRADIENT + ABSTRACT SHAPES (Hidden on Mobile) */}
       <div className="hidden lg:flex w-5/12 relative overflow-hidden items-center justify-center">
-        <div className="absolute top-10 left-10 w-48 h-48 bg-blue-300/30 rounded-full blur-3xl"></div>
-        <div className="absolute bottom-10 right-10 w-64 h-64 bg-indigo-300/20 rounded-full blur-2xl"></div>
+        <div className="absolute top-10 left-10 w-48 h-48 bg-violet-300/30 dark:bg-violet-800/20 rounded-full blur-3xl"></div>
+        <div className="absolute bottom-10 right-10 w-64 h-64 bg-fuchsia-300/20 dark:bg-fuchsia-800/20 rounded-full blur-2xl"></div>
 
-        <div className="relative z-10 text-center px-10">
-            <h1 className="text-5xl font-extrabold mb-4 tracking-tight text-slate-900">
-              EventPulse.
-            </h1>
-            <p className="text-lg text-slate-600">
-              Discover events, connect with people, and create unforgettable experiences.
-            </p>
-        </div>
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, ease: "easeOut" }}
+          className="relative z-10 text-center px-10"
+        >
+          <div className="w-20 h-20 bg-gradient-to-br from-violet-600 to-fuchsia-600 rounded-3xl flex items-center justify-center text-white font-bold text-3xl shadow-2xl shadow-violet-500/30 mx-auto mb-8">
+            E
+          </div>
+          <h1 className="text-5xl font-extrabold mb-4 tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-violet-600 to-fuchsia-600">
+            EventPulse
+          </h1>
+          <p className="text-lg text-slate-600 dark:text-slate-400">
+            Discover events, connect with people, and create unforgettable experiences.
+          </p>
+        </motion.div>
       </div>
 
       {/* RIGHT SIDE — FORM */}
       <div className="w-full lg:w-7/12 flex items-center justify-center p-4 md:p-10">
-        <div className="w-full max-w-lg bg-white/70 backdrop-blur-xl border border-white/80 rounded-3xl shadow-xl p-6 md:p-8">
+        <motion.div
+          initial={{ opacity: 0, y: 30, scale: 0.97 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          transition={{ duration: 0.4, ease: "easeOut" }}
+          className="w-full max-w-lg bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl border border-white/80 dark:border-slate-800/80 rounded-3xl shadow-xl p-6 md:p-8"
+        >
 
           <div className="mb-6 text-center lg:text-left">
-            <h2 className="text-3xl font-bold text-slate-900">Create Account</h2>
-            <p className="text-slate-500 mt-2">
+            <h2 className="text-3xl font-bold text-slate-900 dark:text-white">Create Account</h2>
+            <p className="text-slate-500 dark:text-slate-400 mt-2">
               Enter your details to get started.
             </p>
           </div>
@@ -128,14 +146,14 @@ const Register = () => {
             {/* NAME ROW */}
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="text-xs font-bold text-slate-500 uppercase mb-1 block">First Name</label>
+                <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1 block">First Name</label>
                 <div className="relative">
                     <span className="absolute inset-y-0 left-3 flex items-center"><User className="w-4 h-4 text-slate-400"/></span>
                     <input
                     type="text"
                     name="firstName"
                     onChange={handleChange}
-                    className="w-full pl-9 pr-3 py-3 rounded-xl bg-white border border-slate-200 focus:border-blue-500 outline-none transition"
+                    className="w-full pl-9 pr-3 py-3 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 outline-none transition dark:text-white"
                     placeholder="John"
                     required
                     />
@@ -143,14 +161,14 @@ const Register = () => {
               </div>
 
               <div>
-                <label className="text-xs font-bold text-slate-500 uppercase mb-1 block">Last Name</label>
+                <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1 block">Last Name</label>
                 <div className="relative">
                     <span className="absolute inset-y-0 left-3 flex items-center"><User className="w-4 h-4 text-slate-400"/></span>
                     <input
                     type="text"
                     name="lastName"
                     onChange={handleChange}
-                    className="w-full pl-9 pr-3 py-3 rounded-xl bg-white border border-slate-200 focus:border-blue-500 outline-none transition"
+                    className="w-full pl-9 pr-3 py-3 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 outline-none transition dark:text-white"
                     placeholder="Doe"
                     required
                     />
@@ -160,14 +178,14 @@ const Register = () => {
 
             {/* EMAIL */}
             <div>
-              <label className="text-xs font-bold text-slate-500 uppercase mb-1 block">Email</label>
+              <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1 block">Email</label>
               <div className="relative">
                   <span className="absolute inset-y-0 left-3 flex items-center"><Mail className="w-4 h-4 text-slate-400"/></span>
                   <input
                     type="email"
                     name="email"
                     onChange={handleChange}
-                    className="w-full pl-9 pr-3 py-3 rounded-xl bg-white border border-slate-200 focus:border-blue-500 outline-none transition"
+                    className="w-full pl-9 pr-3 py-3 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 outline-none transition dark:text-white"
                     placeholder="name@company.com"
                     required
                   />
@@ -177,8 +195,8 @@ const Register = () => {
             {/* PASSWORD */}
             <div>
               <div className="flex justify-between items-center mb-1">
-                 <label className="text-xs font-bold text-slate-500 uppercase block">Password</label>
-                 <span className="text-[10px] text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">Min 8 chars + Symbol</span>
+                 <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase block">Password</label>
+                 <span className="text-[10px] text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-full">Min 8 chars + Symbol</span>
               </div>
               <div className="relative">
                   <span className="absolute inset-y-0 left-3 flex items-center"><Lock className="w-4 h-4 text-slate-400"/></span>
@@ -186,7 +204,7 @@ const Register = () => {
                     type="password"
                     name="password"
                     onChange={handleChange}
-                    className="w-full pl-9 pr-3 py-3 rounded-xl bg-white border border-slate-200 focus:border-blue-500 outline-none transition"
+                    className="w-full pl-9 pr-3 py-3 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 outline-none transition dark:text-white"
                     placeholder="••••••••"
                     required
                   />
@@ -196,28 +214,28 @@ const Register = () => {
             {/* LOCATION / OCCUPATION */}
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="text-xs font-bold text-slate-500 uppercase mb-1 block">Location</label>
+                <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1 block">Location</label>
                 <div className="relative">
                     <span className="absolute inset-y-0 left-3 flex items-center"><MapPin className="w-4 h-4 text-slate-400"/></span>
                     <input
                     type="text"
                     name="location"
                     onChange={handleChange}
-                    className="w-full pl-9 pr-3 py-3 rounded-xl bg-white border border-slate-200 focus:border-blue-500 outline-none transition"
+                    className="w-full pl-9 pr-3 py-3 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 outline-none transition dark:text-white"
                     placeholder="City"
                     />
                 </div>
               </div>
 
               <div>
-                <label className="text-xs font-bold text-slate-500 uppercase mb-1 block">Occupation</label>
+                <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1 block">Occupation</label>
                 <div className="relative">
                     <span className="absolute inset-y-0 left-3 flex items-center"><Briefcase className="w-4 h-4 text-slate-400"/></span>
                     <input
                     type="text"
                     name="occupation"
                     onChange={handleChange}
-                    className="w-full pl-9 pr-3 py-3 rounded-xl bg-white border border-slate-200 focus:border-blue-500 outline-none transition"
+                    className="w-full pl-9 pr-3 py-3 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 outline-none transition dark:text-white"
                     placeholder="Student/Dev"
                     />
                 </div>
@@ -228,7 +246,7 @@ const Register = () => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl shadow-lg shadow-blue-500/20 transition transform hover:-translate-y-0.5 mt-2"
+              className="w-full bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-700 hover:to-fuchsia-700 text-white font-bold py-3 rounded-xl shadow-lg shadow-violet-500/30 transition transform hover:-translate-y-0.5 disabled:opacity-70 disabled:cursor-not-allowed disabled:hover:translate-y-0 mt-2"
             >
               {loading ? "Creating Account..." : "Sign Up"}
             </button>
@@ -236,9 +254,9 @@ const Register = () => {
 
           {/* DIVIDER */}
           <div className="flex items-center my-6">
-            <div className="flex-1 border-t border-slate-200"></div>
-            <p className="mx-4 text-slate-400 text-sm font-medium">OR</p>
-            <div className="flex-1 border-t border-slate-200"></div>
+            <div className="flex-1 border-t border-slate-200 dark:border-slate-700"></div>
+            <p className="mx-4 text-slate-400 dark:text-slate-500 text-sm font-medium">OR</p>
+            <div className="flex-1 border-t border-slate-200 dark:border-slate-700"></div>
           </div>
 
           {/* GOOGLE LOGIN - MOBILE RESPONSIVE WRAPPER */}
@@ -246,7 +264,7 @@ const Register = () => {
             <GoogleLogin
               onSuccess={handleGoogleSuccess}
               onError={() => toast.error("Google Sign Up Failed")}
-              theme="filled_blue"
+              theme="outline"
               size="large"
               width="300"
               text="signup_with"
@@ -255,16 +273,16 @@ const Register = () => {
           </div>
 
           {/* SWITCH TO LOGIN */}
-          <p className="mt-8 text-center text-slate-600 text-sm">
+          <p className="mt-8 text-center text-slate-600 dark:text-slate-400 text-sm">
             Already have an account?
             <Link
               to="/login"
-              className="text-blue-600 font-bold hover:underline ml-1"
+              className="text-violet-600 dark:text-violet-400 font-bold hover:underline ml-1"
             >
               Log in
             </Link>
           </p>
-        </div>
+        </motion.div>
       </div>
 
     </div>
