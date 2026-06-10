@@ -325,6 +325,10 @@ export const updateUserRules = [
     .trim()
     .isLength({ max: 200 }).withMessage("Instagram URL too long"),
 
+  body("privacy")
+    .optional({ checkFalsy: true })
+    .isIn(["public", "private"]).withMessage("Privacy must be 'public' or 'private'"),
+
   handleValidation,
 ];
 

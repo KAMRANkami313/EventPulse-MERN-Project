@@ -33,12 +33,8 @@ const CreateEventModal = ({
 
   const handleFormSubmit = async (e) => {
     e.preventDefault();
-    try {
-      await handleSubmit(e);
-      onClose();
-    } catch (error) {
-      // Error handled by handleSubmit and toast, modal remains open
-    }
+    const success = await handleSubmit(e);
+    if (success) onClose();
   };
 
   return (

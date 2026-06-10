@@ -78,7 +78,7 @@ export const updateUser = async (req, res) => {
       return res.status(403).json({ message: "You can only update your own profile." });
     }
 
-    const { firstName, lastName, location, occupation, twitter, linkedin, instagram } = req.body;
+    const { firstName, lastName, location, occupation, twitter, linkedin, instagram, privacy } = req.body;
     
     const picturePath = req.file ? req.file.path : undefined;
 
@@ -93,6 +93,9 @@ export const updateUser = async (req, res) => {
           instagram: instagram || ""
       }
     };
+
+    // Only include privacy if provided (from Settings page toggle)
+    if (privacy) updateData.privacy = privacy;
     
     if (picturePath) updateData.picturePath = picturePath;
 

@@ -96,9 +96,17 @@ const SettingsPage = () => {
             <input
               type="checkbox"
               checked={privacy === "private"}
-              onChange={() =>
-                setPrivacy((prev) => (prev === "public" ? "private" : "public"))
-              }
+              onChange={async () => {
+                const newPrivacy = privacy === "public" ? "private" : "public";
+                setPrivacy(newPrivacy);
+                try {
+                  await api.patch(`/users/${user._id}`, { privacy: newPrivacy });
+                  toast.success("Privacy updated!");
+                } catch (err) {
+                  setPrivacy(privacy); // revert on failure
+                  toast.error("Failed to update privacy");
+                }
+              }}
               className="accent-violet-600 w-5 h-5 rounded"
             />
             <span className="text-sm font-medium">

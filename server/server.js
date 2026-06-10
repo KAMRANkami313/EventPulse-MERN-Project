@@ -158,6 +158,10 @@ io.on("connection", (socket) => {
     socket.join(eventId);
   });
 
+  socket.on("leave_room", (eventId) => {
+    socket.leave(eventId);
+  });
+
   socket.on("send_message", async (data) => {
     try {
       const savedMessage = new Message({

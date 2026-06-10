@@ -71,6 +71,14 @@ const Dashboard = () => {
   // --- MOBILE RESPONSIVE STATES ---
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
+  const [isDesktop, setIsDesktop] = useState(window.innerWidth > 768);
+
+  // Track desktop/mobile breakpoint for responsive filter visibility
+  useEffect(() => {
+    const handleResize = () => setIsDesktop(window.innerWidth > 768);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
   // --- STATES (ALL ORIGINAL STATES KEPT) ---
   const [loading, setLoading] = useState(true);
 
@@ -189,6 +197,7 @@ const Dashboard = () => {
       try {
         await api.patch(`/notifications/${user._id}/read`);
         setUnreadCount(0);
+        setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
       } catch (err) { console.error(err); }
     }
     setShowNotifications(!showNotifications);
@@ -211,22 +220,17 @@ const Dashboard = () => {
     });
   };
 
-  // 1. CREATE EVENT
+  // 1. CREATE EVENT — Returns true on success, false on failure (so modal knows whether to close)
   const handleSubmit = async (e) => {
-    // Note: The modal calls e.preventDefault() before calling this if using handleFormSubmit
-    // We only need to construct the logic here.
-
-    // Safety check: ensure required fields are present if not using native form validation
+    // Safety check: ensure required fields are present
     if (!newEvent.title || !newEvent.description || !newEvent.date || !newEvent.category) {
       toast.error("Please fill all required fields.");
-      // We set defaultPrevented true to tell the modal not to close
-      e.defaultPrevented = true;
-      return;
+      return false;
     }
 
     try {
       const formData = new FormData();
-      formData.append("userId", user._id);
+      // Note: Server uses JWT for userId, this is sent for reference only
       formData.append("title", newEvent.title);
       formData.append("description", newEvent.description);
       formData.append("location", newEvent.location);
@@ -249,14 +253,16 @@ const Dashboard = () => {
           location: CITIES[0].name, coordinates: { lat: CITIES[0].lat, lng: CITIES[0].lng },
           date: "", category: "", price: 0, picture: null
         });
+        return true;
       }
+      return false;
     } catch (err) {
       console.error("Error creating event", err);
       const serverMsg = err.response?.data?.details?.map(d => d.message).join(', ')
         || err.response?.data?.message
         || "Error creating event. Check form details.";
       toast.error(serverMsg);
-      e.defaultPrevented = true;
+      return false;
     }
   };
 
@@ -267,7 +273,7 @@ const Dashboard = () => {
         { userId: user._id }
       );
       const updatedEvent = response.data;
-      setEvents(events.map((e) => (e._id === eventId ? updatedEvent : e)));
+      setEvents((prev) => prev.map((e) => (e._id === eventId ? updatedEvent : e)));
       toast.success("Ticket Booked! check your email 📧");
     } catch (err) {
       console.error(err);
@@ -299,21 +305,19 @@ const Dashboard = () => {
 
   const handleLike = async (eventId) => {
     try {
-      const response = await api.patch(`/events/${eventId}/like`,
-        { userId: user._id }
-      );
+      const response = await api.patch(`/events/${eventId}/like`);
       const updatedEvent = response.data;
-      setEvents(events.map((e) => (e._id === eventId ? updatedEvent : e)));
+      setEvents((prev) => prev.map((e) => (e._id === eventId ? updatedEvent : e)));
     } catch (err) { console.error(err); }
   };
 
   const handleComment = async (eventId, text) => {
     try {
       const response = await api.post(`/events/${eventId}/comments`,
-        { userId: user._id, text }
+        { text }
       );
       const updatedEvent = response.data;
-      setEvents(events.map((e) => (e._id === eventId ? updatedEvent : e)));
+      setEvents((prev) => prev.map((e) => (e._id === eventId ? updatedEvent : e)));
     } catch (err) { console.error(err); }
   };
 
@@ -321,10 +325,10 @@ const Dashboard = () => {
   const handleRateEvent = async (eventId, rating, text) => {
     try {
       const response = await api.post(`/events/${eventId}/reviews`,
-        { userId: user._id, rating, text }
+        { rating, text }
       );
       const updatedEvent = response.data;
-      setEvents(events.map((e) => (e._id === eventId ? updatedEvent : e)));
+      setEvents((prev) => prev.map((e) => (e._id === eventId ? updatedEvent : e)));
       setTempRating(5);
       toast.success("Review Submitted successfully! Thank you.");
     } catch (err) {
@@ -357,7 +361,7 @@ const Dashboard = () => {
     if (!window.confirm("Are you sure you want to delete this event? This action cannot be undone.")) return;
     try {
       await api.delete(`/events/${eventId}`);
-      setEvents(events.filter((e) => e._id !== eventId));
+      setEvents((prev) => prev.filter((e) => e._id !== eventId));
       toast.success("Event deleted successfully.");
     } catch (err) {
       toast.error("Could not delete event.");
@@ -366,7 +370,8 @@ const Dashboard = () => {
 
   // 7. SHARE
   const handleShare = (eventId) => {
-    navigator.clipboard.writeText(`Check out this event on EventPulse!`);
+    const shareUrl = `${window.location.origin}/ticket/${eventId}`;
+    navigator.clipboard.writeText(`Check out this event on EventPulse! ${shareUrl}`);
     toast.success("Link copied to clipboard! Ready to share.");
   };
 
@@ -413,11 +418,6 @@ const Dashboard = () => {
 
   const handleLogout = () => {
     logout();
-  };
-
-  // Language Button Styling Helper
-  const getLanguageButtonClass = (lang) => {
-    return `hover:scale-110 transition active:scale-95 text-xl ${i18n.language === lang ? 'opacity-100 ring-2 ring-violet-500 rounded-lg p-0.5' : 'opacity-60'} cursor-pointer select-none`;
   };
 
   // --- MODERN RENDER ---
@@ -705,9 +705,9 @@ const Dashboard = () => {
                 </div>
               </div>
 
-              {/* COLLAPSIBLE FILTERS (Visible on Desktop, Toggled on Mobile) */}
+              {/* COLLAPSIBLE FILTERS (Always visible on Desktop, Toggled on Mobile) */}
               <AnimatePresence>
-                {(!showMap && (showFilters || window.innerWidth > 768)) && (
+                {(!showMap && (showFilters || isDesktop)) && (
                   <motion.div
                     initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }}
                     className="flex flex-col md:flex-row gap-2 md:gap-4 overflow-hidden pt-3 md:pt-0"

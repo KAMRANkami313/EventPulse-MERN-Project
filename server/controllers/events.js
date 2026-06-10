@@ -219,6 +219,25 @@ export const postComment = async (req, res) => {
 
     event.comments.push(newComment);
 
+    // Notify the event creator about the new comment
+    if (event.userId !== userId) {
+      try {
+        const newNotif = new Notification({
+          userId: event.userId,
+          fromUserId: userId,
+          fromUserName: `${user.firstName} ${user.lastName}`,
+          type: "comment",
+          message: `commented on your event: ${event.title}`,
+          eventId: id
+        });
+        await newNotif.save();
+      } catch (notifErr) {
+        if (notifErr.code !== 11000) {
+          console.error("Comment Notification Error:", notifErr);
+        }
+      }
+    }
+
     const updatedEvent = await event.save();
     res.status(200).json(updatedEvent);
   } catch (err) {
