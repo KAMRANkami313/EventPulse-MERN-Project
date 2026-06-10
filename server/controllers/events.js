@@ -107,7 +107,7 @@ export const getUserEvents = async (req, res) => {
   }
 };
 
-/* UPDATE JOIN (FIXED FOR DUPLICATES) */
+/* UPDATE JOIN (FIXED FOR DUPLICATES + PAYMENT SECURITY) */
 export const joinEvent = async (req, res) => {
   try {
     const { id } = req.params;
@@ -125,36 +125,53 @@ export const joinEvent = async (req, res) => {
     if (isJoined) {
       // UNJOIN LOGIC
       event.participants = event.participants.filter((uid) => uid !== userId);
+
+      // If the event was paid, mark the transaction as refunded
+      if (event.price > 0) {
+        try {
+          await Transaction.findOneAndUpdate(
+            { userId, eventId: event._id },
+            { status: "refunded" }
+          );
+        } catch (txErr) {
+          console.error("Transaction refund error:", txErr);
+        }
+      }
     } else {
-      // JOIN LOGIC
+      // JOIN LOGIC — SECURITY FIX: Only allow free events via this endpoint.
+      // Paid events must go through Stripe checkout → webhook/verify flow.
+      if (event.price > 0) {
+        return res.status(400).json({
+          message: "Paid events require Stripe checkout. Use /payment/create-checkout-session instead."
+        });
+      }
+
       if (!event.participants.includes(userId)) {
           event.participants.push(userId);
       }
 
-      // 1. SAVE TRANSACTION (Handle Race Condition)
-      if (event.price > 0) {
-          try {
-              const newTransaction = new Transaction({
-                  userId: user._id,
-                  userName: `${user.firstName} ${user.lastName}`,
-                  userEmail: user.email,
-                  eventId: event._id,
-                  eventTitle: event.title,
-                  amount: event.price,
-                  status: "success",
-                  stripePaymentId: `TXN-${Date.now()}`
-              });
-              await newTransaction.save();
-          } catch (txErr) {
-              if (txErr.code === 11000) {
-                  console.log("Duplicate Transaction prevented.");
-              } else {
-                  console.error("Transaction Error:", txErr);
-              }
+      // SAVE TRANSACTION for FREE events only (paid events handled by webhook)
+      try {
+          const newTransaction = new Transaction({
+              userId: user._id,
+              userName: `${user.firstName} ${user.lastName}`,
+              userEmail: user.email,
+              eventId: event._id,
+              eventTitle: event.title,
+              amount: 0,
+              status: "success",
+              stripePaymentId: `FREE-${Date.now()}`
+          });
+          await newTransaction.save();
+      } catch (txErr) {
+          if (txErr.code === 11000) {
+              console.log("Duplicate Transaction prevented.");
+          } else {
+              console.error("Transaction Error:", txErr);
           }
       }
 
-      // 2. SEND NOTIFICATION (Handle Race Condition)
+      // SEND NOTIFICATION (Handle Race Condition)
       if (event.userId !== userId) {
         try {
             const newNotif = new Notification({
@@ -173,7 +190,7 @@ export const joinEvent = async (req, res) => {
         }
       }
 
-      // 3. SEND EMAIL
+      // SEND EMAIL
       try {
         const ticketId = `${event._id.toString().slice(-6)}-${user._id.toString().slice(-4)}`;
         sendTicketEmail(user.email, user.firstName, event.title, ticketId);

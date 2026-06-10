@@ -2,6 +2,8 @@ import React, { useEffect, useState, useRef } from "react";
 import io from "socket.io-client";
 import { Send, X, MessageCircle } from "lucide-react";
 import api from "../api";
+import { useAuth } from "../context/AuthContext";
+import toast from "react-hot-toast";
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -10,17 +12,33 @@ const ChatBox = ({ eventId, eventTitle, user, onClose }) => {
   const [messageList, setMessageList] = useState([]);
   const scrollRef = useRef();
   const socketRef = useRef();
+  const { token } = useAuth();
 
-  // 1. Create socket connection on mount, disconnect on unmount
+  // 1. Create socket connection WITH JWT auth on mount, disconnect on unmount
   useEffect(() => {
-    socketRef.current = io.connect(API_URL);
+    if (!token) return; // Don't connect without a token
+
+    socketRef.current = io.connect(API_URL, {
+      auth: { token }, // Pass JWT token for Socket.IO auth middleware
+    });
+
+    // Handle connection errors (auth failures)
+    socketRef.current.on("connect_error", (err) => {
+      console.error("Socket auth error:", err.message);
+      toast.error("Chat connection failed. Please re-login.");
+    });
+
+    // Handle rate limit / validation errors from server
+    socketRef.current.on("error_message", (data) => {
+      toast.error(data.message || "Message error");
+    });
 
     return () => {
       if (socketRef.current) {
         socketRef.current.disconnect();
       }
     };
-  }, []);
+  }, [token]);
 
   // 2. Fetch History & Join Room when eventId changes
   useEffect(() => {
@@ -46,7 +64,21 @@ const ChatBox = ({ eventId, eventTitle, user, onClose }) => {
     socketRef.current.emit("join_room", eventId);
 
     const handleReceive = (data) => {
-      setMessageList((list) => [...list, data]);
+      // Server now broadcasts to ALL (including sender), so we
+      // must avoid duplicating our own messages that we already added optimistically
+      setMessageList((prev) => {
+        // Deduplicate: if the last message we added locally matches this one, skip
+        const lastMsg = prev[prev.length - 1];
+        if (
+          lastMsg &&
+          lastMsg.userId === data.userId &&
+          lastMsg.message === data.message &&
+          lastMsg.time === data.time
+        ) {
+          return prev; // Already have it (our optimistic add)
+        }
+        return [...prev, data];
+      });
     };
     socketRef.current.on("receive_message", handleReceive);
 
@@ -64,6 +96,12 @@ const ChatBox = ({ eventId, eventTitle, user, onClose }) => {
   const sendMessage = async (e) => {
     e?.preventDefault();
     if (currentMessage.trim() !== "") {
+      // 500 character limit (matching server validation)
+      if (currentMessage.length > 500) {
+        toast.error("Message must be 500 characters or less.");
+        return;
+      }
+
       const messageData = {
         room: eventId,
         userId: user._id,
@@ -75,8 +113,9 @@ const ChatBox = ({ eventId, eventTitle, user, onClose }) => {
         }),
       };
 
-      socketRef.current.emit("send_message", messageData);
+      // Optimistically add to local state (server will also broadcast)
       setMessageList((list) => [...list, messageData]);
+      socketRef.current.emit("send_message", messageData);
       setCurrentMessage("");
     }
   };
@@ -142,6 +181,7 @@ const ChatBox = ({ eventId, eventTitle, user, onClose }) => {
           type="text"
           value={currentMessage}
           placeholder="Type a message..."
+          maxLength={500}
           className="w-full p-3 text-sm border-none bg-slate-100 dark:bg-slate-800 rounded-xl dark:text-white outline-none focus:ring-2 focus:ring-violet-500 transition"
           onChange={(event) => setCurrentMessage(event.target.value)}
         />

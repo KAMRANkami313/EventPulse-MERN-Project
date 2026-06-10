@@ -9,6 +9,7 @@ import { fileURLToPath } from "url";
 import { createServer } from "http";
 import { Server } from "socket.io";
 import rateLimit from "express-rate-limit";
+import jwt from "jsonwebtoken";
 
 import authRoutes from "./routes/auth.js";
 import userRoutes from "./routes/users.js";
@@ -145,41 +146,138 @@ const httpServer = createServer(app);
 
 const io = new Server(httpServer, {
   cors: {
-    origin: allowedOrigins, // Use the cleaned array
+    origin: allowedOrigins,
     methods: ["GET", "POST"],
     credentials: true
   }
 });
 
+// --- SOCKET.IO JWT AUTH MIDDLEWARE ---
+// Rejects unauthenticated socket connections
+io.use((socket, next) => {
+  const token = socket.handshake.auth?.token || socket.handshake.query?.token;
+
+  if (!token) {
+    return next(new Error("Authentication required"));
+  }
+
+  try {
+    const rawToken = token.startsWith("Bearer ") ? token.slice(7).trim() : token;
+    const decoded = jwt.verify(rawToken, process.env.JWT_SECRET);
+    socket.user = decoded; // Attach user to socket for use in handlers
+    next();
+  } catch (err) {
+    if (err.name === "TokenExpiredError") {
+      return next(new Error("Token expired"));
+    }
+    return next(new Error("Invalid token"));
+  }
+});
+
+// --- SOCKET.IO MESSAGE RATE LIMITER ---
+// Prevents spam: max 30 messages per 60 seconds per socket
+const messageTimestamps = new Map();
+const MESSAGE_RATE_LIMIT = 30;
+const MESSAGE_RATE_WINDOW = 60_000; // 60 seconds
+
+const checkMessageRate = (socketId) => {
+  const now = Date.now();
+  const timestamps = messageTimestamps.get(socketId) || [];
+  // Remove timestamps outside the window
+  const recent = timestamps.filter((t) => now - t < MESSAGE_RATE_WINDOW);
+  recent.push(now);
+  messageTimestamps.set(socketId, recent);
+  return recent.length <= MESSAGE_RATE_LIMIT;
+};
+
+// Clean up rate limit map periodically (every 5 minutes)
+setInterval(() => {
+  const now = Date.now();
+  for (const [socketId, timestamps] of messageTimestamps) {
+    const recent = timestamps.filter((t) => now - t < MESSAGE_RATE_WINDOW);
+    if (recent.length === 0) {
+      messageTimestamps.delete(socketId);
+    } else {
+      messageTimestamps.set(socketId, recent);
+    }
+  }
+}, 5 * 60_000);
+
+// --- XSS SANITIZATION HELPER FOR SOCKET MESSAGES ---
+const sanitizeString = (str) => {
+  if (typeof str !== "string") return "";
+  return str.replace(/<[^>]*>/g, "").trim();
+};
+
 io.on("connection", (socket) => {
-  console.log(`User Connected: ${socket.id}`);
+  console.log(`Socket Connected: ${socket.id} (User: ${socket.user?.id || "unknown"})`);
 
   socket.on("join_room", (eventId) => {
+    if (!eventId || typeof eventId !== "string") return;
     socket.join(eventId);
   });
 
   socket.on("leave_room", (eventId) => {
+    if (!eventId || typeof eventId !== "string") return;
     socket.leave(eventId);
   });
 
   socket.on("send_message", async (data) => {
     try {
+      // 1. Rate limit check
+      if (!checkMessageRate(socket.id)) {
+        socket.emit("error_message", { message: "You are sending messages too fast. Slow down." });
+        return;
+      }
+
+      // 2. Validate required fields
+      if (!data?.room || !data?.message) {
+        socket.emit("error_message", { message: "Room and message are required." });
+        return;
+      }
+
+      // 3. Sanitize inputs (prevent XSS)
+      const sanitizedText = sanitizeString(data.message);
+      const sanitizedRoom = sanitizeString(data.room);
+
+      // 4. Message length limit (500 chars)
+      if (sanitizedText.length === 0 || sanitizedText.length > 500) {
+        socket.emit("error_message", { message: "Message must be between 1 and 500 characters." });
+        return;
+      }
+
+      // 5. Use verified userId from JWT (NOT from client data)
+      const verifiedUserId = socket.user?.id;
+      const verifiedSenderName = data.author || "Anonymous";
+
+      const messageData = {
+        room: sanitizedRoom,
+        userId: verifiedUserId,
+        author: sanitizeString(verifiedSenderName),
+        message: sanitizedText,
+        time: data.time || new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+      };
+
+      // 6. Save to database with verified data
       const savedMessage = new Message({
-        eventId: data.room,
-        senderId: data.userId,
-        senderName: data.author,
-        text: data.message,
-        time: data.time
+        eventId: sanitizedRoom,
+        senderId: verifiedUserId,
+        senderName: sanitizeString(verifiedSenderName),
+        text: sanitizedText,
+        time: messageData.time
       });
       await savedMessage.save();
-      socket.to(data.room).emit("receive_message", data);
+
+      // 7. Broadcast to room (including sender for consistency)
+      io.to(sanitizedRoom).emit("receive_message", messageData);
     } catch (err) {
       console.error("Error saving message:", err);
     }
   });
 
   socket.on("disconnect", () => {
-    console.log("User Disconnected", socket.id);
+    console.log(`Socket Disconnected: ${socket.id}`);
+    messageTimestamps.delete(socket.id); // Clean up rate limit data
   });
 });
 

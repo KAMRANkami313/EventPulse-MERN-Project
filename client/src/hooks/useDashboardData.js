@@ -246,11 +246,11 @@ const useDashboardData = () => {
   // PAYMENT
   const handlePayment = async (event) => {
     try {
+      // SECURITY FIX: No longer sending userId in body — server uses JWT
       const response = await api.post(`/payment/create-checkout-session`, {
         eventId: event._id,
         eventTitle: event.title,
         price: event.price,
-        userId: user._id,
       });
 
       if (response.data.url) {
@@ -261,7 +261,7 @@ const useDashboardData = () => {
       }
     } catch (err) {
       console.error("Payment Error", err);
-      toast.error("Could not initiate payment.");
+      toast.error(err.response?.data?.error || "Could not initiate payment.");
     }
   };
 

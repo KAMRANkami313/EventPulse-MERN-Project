@@ -437,12 +437,9 @@ export const createCheckoutRules = [
     .isFloat({ min: 0.5, max: 10000 }).withMessage("Price must be between $0.50 and $10,000")
     .toFloat(),
 
-  body("userId")
-    .optional({ checkFalsy: true })
-    .custom((value) => {
-      if (value && !isValidObjectId(value)) throw new Error("Invalid user ID format");
-      return true;
-    }),
+  // SECURITY FIX: userId is no longer accepted from req.body.
+  // The server uses req.user.id from the JWT token instead.
+  // This prevents users from creating checkout sessions for other users.
 
   handleValidation,
 ];
