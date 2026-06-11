@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#7c3aed"/>
+      <stop offset="100%" style="stop-color:#d946ef"/>
+    </linearGradient>
+  </defs>
+  <!-- Safe zone for maskable icons: content within inner 40% (204x204 centered at 256,256) -->
+  <rect width="512" height="512" fill="url(#bg)"/>
+  <rect x="64" y="64" width="384" height="384" rx="80" fill="white" fill-opacity="0.15"/>
+  <text x="256" y="330" font-family="system-ui, -apple-system, sans-serif" font-size="260" font-weight="800" fill="white" text-anchor="middle" dominant-baseline="middle">E</text>
+</svg>
