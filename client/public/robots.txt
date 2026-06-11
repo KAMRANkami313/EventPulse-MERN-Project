@@ -1,0 +1,24 @@
+# EventPulse — robots.txt
+# https://www.robotstxt.org/robotstxt.html
+
+# Allow all crawlers access to public pages
+User-agent: *
+Allow: /
+Allow: /login
+Allow: /register
+Allow: /forgot-password
+
+# Block crawlers from authenticated/private pages
+Disallow: /dashboard
+Disallow: /profile/
+Disallow: /settings
+Disallow: /ticket/
+Disallow: /scan
+Disallow: /admin
+Disallow: /payment/
+
+# Block API and asset paths
+Disallow: /api/
+
+# Sitemap location
+Sitemap: https://eventpulse-tawny.vercel.app/sitemap.xml

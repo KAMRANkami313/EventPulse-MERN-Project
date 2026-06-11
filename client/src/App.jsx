@@ -11,6 +11,10 @@ import "aos/dist/aos.css";
 // --- BOT IMPORT ---
 import AIAssistant from "./components/AIAssistant";
 
+// --- SEO IMPORT ---
+import SEO from "./components/SEO";
+import { organizationSchema, webSiteSchema } from "./components/JsonLd";
+
 // --- LAYOUT COMPONENTS ---
 import ProtectedRoute from "./components/layout/ProtectedRoute";
 import AdminRoute from "./components/layout/AdminRoute";
@@ -30,6 +34,9 @@ import NotFound from "./pages/NotFound";
 import SettingsPage from "./pages/settings/SettingsPage";
 
 import ScrollToTop from "./components/ScrollToTop";
+
+// --- COMBINED GLOBAL SCHEMAS (Organization + WebSite) ---
+const globalJsonLd = [organizationSchema, webSiteSchema];
 
 function App() {
   const { user, token, isAuthenticated } = useAuth();
@@ -52,74 +59,150 @@ function App() {
       {/* Scroll Reset on Navigation */}
       <ScrollToTop />
 
-      {/*
-          🤖 AI BOT:
-          Added `key={user?._id}`. This forces React to destroy and recreate
-          the bot component whenever the user ID changes (e.g. logout/login).
-          This wipes the chat history and resets the greeting to the new user.
-      */}
+      {/* Global SEO — Organization + WebSite structured data on every page */}
+      <SEO jsonLd={globalJsonLd} />
+
       {token && user && (
           <AIAssistant key={user._id} token={token} user={user} />
       )}
 
       <Routes>
         <Route path="/" element={<Navigate to="/login" />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
+
+        {/* ── PUBLIC ROUTES (SEO-optimized for Google indexing) ── */}
+        <Route
+          path="/login"
+          element={
+            <>
+              <SEO
+                title="Login"
+                description="Sign in to your EventPulse account to discover events, connect with communities, and manage your event tickets."
+                keywords="login, sign in, event login, EventPulse login, access events"
+                jsonLd={globalJsonLd}
+              />
+              <Login />
+            </>
+          }
+        />
+        <Route
+          path="/register"
+          element={
+            <>
+              <SEO
+                title="Create Account"
+                description="Join EventPulse for free — discover amazing events, create your own, and connect with communities near you."
+                keywords="register, sign up, create account, join events, free event platform"
+                jsonLd={globalJsonLd}
+              />
+              <Register />
+            </>
+          }
+        />
 
         {/* PASSWORD ROUTES */}
-        <Route path="/forgot-password" element={<ForgotPassword />} />
-        <Route path="/reset-password/:token" element={<ResetPassword />} />
+        <Route
+          path="/forgot-password"
+          element={
+            <>
+              <SEO
+                title="Forgot Password"
+                description="Reset your EventPulse password. Enter your email and we'll send you a link to create a new password."
+                keywords="forgot password, reset password, password recovery, EventPulse"
+                jsonLd={globalJsonLd}
+              />
+              <ForgotPassword />
+            </>
+          }
+        />
+        <Route
+          path="/reset-password/:token"
+          element={
+            <>
+              <SEO
+                title="Reset Password"
+                description="Set a new password for your EventPulse account."
+                noindex={true}
+              />
+              <ResetPassword />
+            </>
+          }
+        />
 
-        {/* PROTECTED ROUTES — use ProtectedRoute instead of manual isAuthenticated check */}
+        {/* ── PROTECTED ROUTES (noindex — behind auth wall) ── */}
         <Route
           path="/dashboard"
           element={
-            <ProtectedRoute>
-              <Dashboard />
-            </ProtectedRoute>
+            <>
+              <SEO
+                title="Dashboard"
+                description="Browse and discover events near you on your EventPulse dashboard."
+                noindex={true}
+              />
+              <ProtectedRoute>
+                <Dashboard />
+              </ProtectedRoute>
+            </>
           }
         />
         <Route
           path="/profile/:userId"
           element={
-            <ProtectedRoute>
-              <ProfilePage />
-            </ProtectedRoute>
+            <>
+              <SEO
+                title="Profile"
+                description="View your EventPulse profile, events, and community activity."
+                noindex={true}
+              />
+              <ProtectedRoute>
+                <ProfilePage />
+              </ProtectedRoute>
+            </>
           }
         />
         <Route
           path="/settings"
           element={
-            <ProtectedRoute>
-              <SettingsPage />
-            </ProtectedRoute>
+            <>
+              <SEO title="Settings" description="Manage your EventPulse account settings." noindex={true} />
+              <ProtectedRoute>
+                <SettingsPage />
+              </ProtectedRoute>
+            </>
           }
         />
         <Route
           path="/ticket/:eventId"
           element={
-            <ProtectedRoute>
-              <TicketPage />
-            </ProtectedRoute>
+            <>
+              <SEO title="Your Ticket" description="View your EventPulse event ticket and QR code." noindex={true} />
+              <ProtectedRoute>
+                <TicketPage />
+              </ProtectedRoute>
+            </>
           }
         />
         <Route
           path="/scan"
           element={
-            <ProtectedRoute>
-              <ScanTicket />
-            </ProtectedRoute>
+            <>
+              <SEO title="Scan Ticket" description="Scan an EventPulse event ticket QR code." noindex={true} />
+              <ProtectedRoute>
+                <ScanTicket />
+              </ProtectedRoute>
+            </>
           }
         />
 
-        {/* ADMIN ROUTE — uses AdminRoute which checks both auth AND admin role */}
+        {/* ADMIN ROUTE */}
         <Route
           path="/admin"
           element={
-            <AdminRoute>
-              <AdminDashboard />
-            </AdminRoute>
+            <>
+              <SEO title="Admin Panel" noindex={true} />
+              <AdminRoute>
+                <AdminDashboard />
+              </AdminRoute>
+            </>
           }
         />
 
@@ -127,14 +210,29 @@ function App() {
         <Route
           path="/payment/success"
           element={
-            <ProtectedRoute>
-              <PaymentSuccess />
-            </ProtectedRoute>
+            <>
+              <SEO title="Payment Successful" noindex={true} />
+              <ProtectedRoute>
+                <PaymentSuccess />
+              </ProtectedRoute>
+            </>
           }
         />
 
         {/* CATCH-ALL ROUTE */}
-        <Route path="*" element={<NotFound />} />
+        <Route
+          path="*"
+          element={
+            <>
+              <SEO
+                title="Page Not Found"
+                description="The page you're looking for doesn't exist on EventPulse."
+                noindex={true}
+              />
+              <NotFound />
+            </>
+          }
+        />
 
       </Routes>
     </BrowserRouter>

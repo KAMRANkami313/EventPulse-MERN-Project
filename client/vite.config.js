@@ -2,70 +2,100 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 
+// Sitemap generation plugin — creates sitemap.xml at build time
+const viteSitemap = (options = {}) => {
+  const {
+    hostname = 'https://eventpulse-tawny.vercel.app',
+    dynamicRoutes = [],
+  } = options;
+
+  return {
+    name: 'vite-plugin-sitemap',
+    apply: 'build',
+    closeBundle: async () => {
+      const fs = await import('fs');
+      const path = await import('path');
+
+      const staticRoutes = [
+        '',
+        '/login',
+        '/register',
+        '/forgot-password',
+      ];
+
+      const allRoutes = [...staticRoutes, ...dynamicRoutes];
+      const today = new Date().toISOString().split('T')[0];
+
+      const urls = allRoutes
+        .map((route) => {
+          const priority = route === '' ? '1.0' : route === '/login' ? '0.9' : '0.7';
+          return `  <url>
+    <loc>${hostname}${route}</loc>
+    <lastmod>${today}</lastmod>
+    <changefreq>${route === '' ? 'daily' : 'weekly'}</changefreq>
+    <priority>${priority}</priority>
+  </url>`;
+        })
+        .join('\n');
+
+      const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+ ${urls}
+</urlset>`;
+
+      const outDir = path.resolve('dist');
+      if (fs.existsSync(outDir)) {
+        fs.writeFileSync(path.join(outDir, 'sitemap.xml'), sitemap, 'utf-8');
+        console.log(`[sitemap] Generated sitemap.xml with ${allRoutes.length} URLs`);
+      }
+    },
+  };
+};
+
 export default defineConfig({
-  // SERVER CONFIGURATION
   server: {
-    host: true, // Allow LAN access (so you can open on phone)
+    host: true,
     port: 5173,
-    // Fix Google Auth Console Warnings
     headers: {
       'Cross-Origin-Opener-Policy': 'unsafe-none',
       'Cross-Origin-Embedder-Policy': 'unsafe-none',
     }
   },
 
-  // BUILD OPTIMIZATION — Code Splitting
-  // Breaks the 2.12MB single bundle into smaller chunks so:
-  // 1. PWA service worker can precache all files (each under 2MB)
-  // 2. Browser only loads what's needed for the current page (faster initial load)
-  // 3. Vendors (React, Leaflet, Recharts, etc.) are cached separately and rarely change
   build: {
     rollupOptions: {
       output: {
         manualChunks: {
-          // Core React libraries (change rarely → long cache)
           'vendor-react': ['react', 'react-dom', 'react-router-dom'],
-
-          // Heavy visualization libraries (only loaded when needed)
           'vendor-charts': ['recharts'],
           'vendor-maps': ['leaflet', 'react-leaflet'],
-
-          // UI & Animation libraries
           'vendor-ui': ['framer-motion', 'lucide-react', 'react-icons', 'react-hot-toast'],
-
-          // Utility libraries
           'vendor-utils': ['axios', 'socket.io-client', 'i18next', 'react-i18next'],
-
-          // Payment & QR (only loaded on specific pages)
           'vendor-payment': ['@stripe/stripe-js', 'jspdf', 'html2canvas', 'react-qr-code', '@yudiel/react-qr-scanner'],
         }
       }
     },
-    // Increase the chunk size warning limit (we handle splitting manually)
     chunkSizeWarningLimit: 1000,
   },
 
-  // PLUGINS
   plugins: [
     react(),
     VitePWA({
       registerType: 'autoUpdate',
       devOptions: {
-        enabled: false // Disable PWA in dev mode (speeds up dev server)
+        enabled: false
       },
       workbox: {
-        // FIX: Increase maximum file size for precaching (default is 2MB)
-        // This is a safety net in case any single chunk still exceeds 2MB
-        maximumFileSizeToCacheInBytes: 4 * 1024 * 1024, // 4MB
+        maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
       },
-      includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg'],
+      includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg', 'robots.txt'],
       manifest: {
         name: 'EventPulse - Event Manager',
         short_name: 'EventPulse',
         description: 'Connect, Organize, and Celebrate with EventPulse.',
-        theme_color: '#ffffff',
+        theme_color: '#7c3aed',
         background_color: '#ffffff',
-        display: 'standalone', // Makes it look like a native app (no browser bar)
+        display: 'standalone',
         icons: [
           {
             src: 'pwa-192x192.png',
@@ -79,6 +109,9 @@ export default defineConfig({
           }
         ]
       }
-    })
+    }),
+    viteSitemap({
+      hostname: 'https://eventpulse-tawny.vercel.app',
+    }),
   ],
 })
