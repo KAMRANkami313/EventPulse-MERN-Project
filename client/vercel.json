@@ -1,11 +1,13 @@
 {
+  "cleanUrls": false,
+  "trailingSlash": false,
   "rewrites": [
     {
       "source": "/api/og-preview",
       "destination": "/api/og-preview.js"
     },
     {
-      "source": "/(.*)",
+      "source": "/((?!sitemap\\.xml|robots\\.txt|og-image\\.png|favicon.*|pwa-.*|apple-touch-icon.*|masked-icon\\.svg).*)",
       "destination": "/index.html"
     }
   ],
@@ -15,11 +17,15 @@
       "headers": [
         {
           "key": "Content-Type",
-          "value": "application/xml"
+          "value": "application/xml; charset=utf-8"
         },
         {
           "key": "Cache-Control",
-          "value": "public, max-age=86400"
+          "value": "public, max-age=3600"
+        },
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex"
         }
       ]
     },
@@ -28,7 +34,7 @@
       "headers": [
         {
           "key": "Content-Type",
-          "value": "text/plain"
+          "value": "text/plain; charset=utf-8"
         },
         {
           "key": "Cache-Control",
