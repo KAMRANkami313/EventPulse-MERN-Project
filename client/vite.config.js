@@ -17,7 +17,7 @@ const viteSitemap = (options = {}) => {
       const path = await import('path');
 
       const staticRoutes = [
-        '',
+        '/',
         '/login',
         '/register',
         '/forgot-password',
@@ -28,11 +28,11 @@ const viteSitemap = (options = {}) => {
 
       const urls = allRoutes
         .map((route) => {
-          const priority = route === '' ? '1.0' : route === '/login' ? '0.9' : '0.7';
+          const priority = route === '/' ? '1.0' : route === '/login' ? '0.9' : route === '/register' ? '0.8' : '0.5';
           return `  <url>
     <loc>${hostname}${route}</loc>
     <lastmod>${today}</lastmod>
-    <changefreq>${route === '' ? 'daily' : 'weekly'}</changefreq>
+    <changefreq>${route === '/' ? 'daily' : route === '/forgot-password' ? 'monthly' : 'weekly'}</changefreq>
     <priority>${priority}</priority>
   </url>`;
         })
