@@ -1,12 +1,9 @@
 # EventPulse — robots.txt
 # https://www.robotstxt.org/robotstxt.html
 
-# Allow all crawlers access to public pages
+# Allow all crawlers full access to public pages
 User-agent: *
 Allow: /
-Allow: /login
-Allow: /register
-Allow: /forgot-password
 
 # Block crawlers from authenticated/private pages
 Disallow: /dashboard
@@ -16,6 +13,7 @@ Disallow: /ticket/
 Disallow: /scan
 Disallow: /admin
 Disallow: /payment/
+Disallow: /reset-password/
 
 # Block API and asset paths
 Disallow: /api/

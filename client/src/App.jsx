@@ -20,6 +20,7 @@ import ProtectedRoute from "./components/layout/ProtectedRoute";
 import AdminRoute from "./components/layout/AdminRoute";
 
 // --- PAGE IMPORTS ---
+import Landing from "./pages/Landing";
 import Register from "./pages/auth/Register";
 import Login from "./pages/auth/Login";
 import Dashboard from "./pages/dashboard/Dashboard";
@@ -67,7 +68,22 @@ function App() {
       )}
 
       <Routes>
-        <Route path="/" element={<Navigate to="/login" />} />
+        {/* ── PUBLIC LANDING PAGE (SEO-optimized, replaces the old redirect) ── */}
+        <Route
+          path="/"
+          element={
+            <>
+              <SEO
+                title="Discover, Create & Join Events Near You"
+                description="EventPulse is your go-to platform to discover amazing events, connect with communities, and create unforgettable experiences. Join or host events in music, tech, sports, art, food, and more."
+                keywords="events, event management, discover events, create events, join events, music events, tech events, sports events, community, social events, EventPulse"
+                canonical="https://eventpulse-tawny.vercel.app/"
+                jsonLd={globalJsonLd}
+              />
+              <Landing />
+            </>
+          }
+        />
 
         {/* ── PUBLIC ROUTES (SEO-optimized for Google indexing) ── */}
         <Route
