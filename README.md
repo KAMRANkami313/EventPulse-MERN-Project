@@ -1,7 +1,7 @@
 # 🎉 EventPulse — Commercial Grade Progressive Web Application (PWA)
 
 > 🚀 **Live Application**: You can visit and test the fully deployed app here:
-> **[https://eventpulse-tawny.vercel.app/login](https://eventpulse-tawny.vercel.app/login)**
+> **[https://eventpulse-tawny.vercel.app/login](https://eventpulse-tawny.vercel.app/)**
 
 EventPulse is a high-performance, full-stack **MERN Progressive Web Application (PWA)** designed for real-world commercial deployment.
 It includes enterprise-grade analytics, security, monetization, event ticketing, real-time experiences, modern UI/UX animations, and a powerful **Visual Admin Dashboard**.
